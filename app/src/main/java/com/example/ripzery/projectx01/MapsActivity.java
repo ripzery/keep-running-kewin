@@ -63,8 +63,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         bd = BitmapDescriptorFactory.fromResource(R.drawable.nav);
-        //if(loc != null)
-
 
     }
 
