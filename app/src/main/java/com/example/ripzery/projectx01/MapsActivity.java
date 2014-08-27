@@ -51,8 +51,12 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
 
-        mGhostStatus = (TextView) findViewById(R.id.tv1);
+        initVar();
+        initListener();
+    }
 
+    private void initVar() {
+        mGhostStatus = (TextView) findViewById(R.id.tv1);
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.getUiSettings().setCompassEnabled(true);
@@ -69,6 +73,11 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
             }
         });
 
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        bd = BitmapDescriptorFactory.fromResource(R.drawable.nav);
+    }
+
+    private void initListener() {
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
@@ -94,10 +103,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 }
             }
         });
-
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        bd = BitmapDescriptorFactory.fromResource(R.drawable.nav);
-
     }
 
     public void animateMarker(final Marker marker, final Marker toPosition,
