@@ -1,18 +1,26 @@
 package com.example.ripzery.projectx01;
 
 import android.app.ProgressDialog;
+import android.graphics.Point;
 import android.hardware.Sensor;
 
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -20,22 +28,30 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.SphericalUtil;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MapsActivity extends FragmentActivity implements SensorEventListener{
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds Mahidol = new LatLngBounds(new LatLng(13.787486,100.316179),new LatLng(13.800875,100.326897));
     private SensorManager mSensorManager;
+    private TextView mGhostStatus;
     MarkerOptions mArrow;
-    Marker mDirArrow;
+    Marker mMyLocation, mGhost;
     BitmapDescriptor bd;
     private ProgressDialog progress;
+    private Thread ghost;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
+
+        mGhostStatus = (TextView) findViewById(R.id.tv1);
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -44,6 +60,14 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
         progress =  new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+
+        ghost = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mGhost = mMap.addMarker(getRandomMarker(Mahidol));
+                animateMarker(mGhost, mMyLocation, false);
+            }
+        });
 
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
@@ -59,11 +83,14 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     mArrow = new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude()))
                             .title("Current Location")
                             .icon(bd);
-                    mDirArrow = mMap.addMarker(mArrow);
+                    mMyLocation = mMap.addMarker(mArrow);
                     setMapCenter(mArrow.getPosition(),17);
                     progress.dismiss();
                 }else{
-                    mDirArrow.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
+                    mMyLocation.setPosition(new LatLng(location.getLatitude(), location.getLongitude()));
+                    if (mGhost == null) {
+                        ghost.run();
+                    }
                 }
             }
         });
@@ -71,6 +98,72 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         bd = BitmapDescriptorFactory.fromResource(R.drawable.nav);
 
+    }
+
+    public void animateMarker(final Marker marker, final Marker toPosition,
+                              final boolean hideMarker) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+
+        Projection proj = mMap.getProjection();
+        Point startPoint = proj.toScreenLocation(marker.getPosition());
+        final LatLng startLatLng = proj.fromScreenLocation(startPoint);
+        final long duration = 20000;
+
+        final Interpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed
+                        / duration);
+                double lng = t * toPosition.getPosition().longitude + (1 - t)
+                        * startLatLng.longitude;
+                double lat = t * toPosition.getPosition().latitude + (1 - t)
+                        * startLatLng.latitude;
+                marker.setPosition(new LatLng(lat, lng));
+                mGhostStatus.setText("Ghost Status : Coming In " + (int) getDistanceBetweenMarkersInMetres(mMyLocation, marker) + " metres !");
+
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 16);
+                } else {
+                    Toast exit = Toast.makeText(MapsActivity.this, "Go hell bitch !!!", Toast.LENGTH_LONG);
+                    exit.show();
+                    Timer a = new Timer();
+                    TimerTask b = new TimerTask() {
+                        @Override
+                        public void run() {
+                            android.os.Process.killProcess(android.os.Process.myPid());
+                            System.exit(1);
+                        }
+                    };
+                    a.schedule(b, 1500);
+                    if (hideMarker) {
+                        marker.setVisible(false);
+                    } else {
+                        marker.setVisible(true);
+                    }
+                }
+            }
+        });
+    }
+
+    public double getDistanceBetweenMarkersInMetres(Marker mMarker1, Marker mMarker2) {
+        double distance = SphericalUtil.computeDistanceBetween(mMarker1.getPosition(), mMarker2.getPosition());
+//        Toast.makeText(MapsActivity.this, "The ghost are after you come within " + distance + " metres !!!", Toast.LENGTH_SHORT).show();
+        return distance;
+    }
+
+    public MarkerOptions getRandomMarker(LatLngBounds bound) {
+        double latMin = bound.southwest.latitude;
+        double latRange = bound.northeast.latitude - latMin;
+        double lonMin = bound.southwest.longitude;
+        double lonRange = bound.northeast.longitude - lonMin;
+        LatLng ghostLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
+        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng);
+        return ghostMarkerPosition;
     }
 
     @Override
@@ -87,9 +180,9 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         // get the angle around the z-axis rotated
         float degree = Math.round(event.values[0]);
 
-        if(mDirArrow != null){
-            mDirArrow.setAnchor((float) 0.5, (float) 0.5);
-            mDirArrow.setRotation(degree);
+        if (mMyLocation != null) {
+            mMyLocation.setAnchor((float) 0.5, (float) 0.5);
+            mMyLocation.setRotation(degree);
         }
 
 //        Log.d("Degrees : ",""+degree);
