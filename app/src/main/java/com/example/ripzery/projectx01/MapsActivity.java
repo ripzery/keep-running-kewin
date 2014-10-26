@@ -1,27 +1,17 @@
 package com.example.ripzery.projectx01;
 
 import android.app.ProgressDialog;
-import android.graphics.Camera;
 import android.graphics.Point;
 import android.graphics.Typeface;
-import android.hardware.GeomagneticField;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorEventListener2;
-import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,27 +35,14 @@ import java.util.TimerTask;
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-
-
     private LatLngBounds Mahidol = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
-
-    private SensorManager mSensorManager;
-    private TextView mGhostStatus, mDrawerText;
+    private TextView mBlinkyStatus;
     private FlatButton mRestart;
-    private GeomagneticField geomagneticField;
-    private LocationListener locationListener;
-    private float[] mRotationMatrix = new float[16];
-    private double mDeclination;
-    MarkerOptions mArrow;
-    Marker mMyLocation;
-
-
-    Marker mGhost, mTest;
-    BitmapDescriptor bd;
+    private Marker mBlinky;
     private ProgressDialog progress;
-    private Thread ghost;
-//    private ListView mDrawerList;
-
+    private Thread threadBlinky;
+    private Ghost blinky, pinky, inky, clyde; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,27 +54,28 @@ public class MapsActivity extends FragmentActivity {
     }
 
     private void initVar() {
-        mGhostStatus = (TextView) findViewById(R.id.tv1);
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        mMap.getUiSettings().setCompassEnabled(true);
-        mMap.getUiSettings().setRotateGesturesEnabled(true);
-        mDrawerText = (TextView) findViewById(R.id.textList);
+        mBlinkyStatus = (TextView) findViewById(R.id.tv1);
+        getmMap().setMyLocationEnabled(true);
+        getmMap().getUiSettings().setMyLocationButtonEnabled(false);
+        getmMap().getUiSettings().setCompassEnabled(true);
+        getmMap().getUiSettings().setRotateGesturesEnabled(true);
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        bd = BitmapDescriptorFactory.fromResource(R.drawable.nav);
+        blinky = new Ghost();
+        blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.nav));
+        blinky.setName("Blinky");
+        blinky.setSpeed(100);
 
         final Typeface tf = Typeface.createFromAsset(getAssets(), "font/Roboto-Regular.ttf");
-        mGhostStatus.setTypeface(tf);
+        mBlinkyStatus.setTypeface(tf);
 
-        ghost = new Thread(new Runnable() {
+        threadBlinky = new Thread(new Runnable() {
             @Override
             public void run() {
-                mGhost = mMap.addMarker(getRandomMarker(Mahidol));
-                animateMarker(mGhost, mMap.getMyLocation(), false, 10);
-                setCameraPosition(mGhost.getPosition(), 17, 20, (int) SphericalUtil.computeHeading(mGhost.getPosition(), new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude())));
+                setmBlinky(getmMap().addMarker(getRandomMarker(Mahidol)));
+                animateMarker(getmBlinky(), getmMap().getMyLocation(), false, blinky.getSpeed());
+                setCameraPosition(getmBlinky().getPosition(), 17, 20, (int) SphericalUtil.computeHeading(getmBlinky().getPosition(), new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude())));
             }
         });
 
@@ -105,24 +83,24 @@ public class MapsActivity extends FragmentActivity {
         mRestart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mGhost != null)
-                mGhost.remove();
-                ghost.run();
+                if (getmBlinky() != null)
+                    getmBlinky().remove();
+                threadBlinky.run();
             }
         });
     }
 
     private void initListener() {
-        mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+        getmMap().setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
             @Override
             public void onCameraChange(CameraPosition cameraPosition) {
-                if (mGhost == null) {
+                if (getmBlinky() == null) {
                     Log.d("Hello", "Mahidol");
                 }
             }
         });
 
-        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+        getmMap().setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
                 // Do something
@@ -132,13 +110,13 @@ public class MapsActivity extends FragmentActivity {
         });
 
 
-        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+        getmMap().setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
                 setCameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 20);
-                if (mMap.getMyLocation() != null && mGhost == null) {
+                if (getmMap().getMyLocation() != null && getmBlinky() == null) {
                     progress.dismiss();
-                    ghost.run();
+                    threadBlinky.run();
                 }
             }
         });
@@ -151,7 +129,7 @@ public class MapsActivity extends FragmentActivity {
         final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
 
-        Projection proj = mMap.getProjection();
+        Projection proj = getmMap().getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
         final long duration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 3600));
@@ -167,7 +145,7 @@ public class MapsActivity extends FragmentActivity {
                 double lat = t * toPosition.getLatitude() + (1 - t)
                         * startLatLng.latitude;
                 marker.setPosition(new LatLng(lat, lng));
-                mGhostStatus.setText("Ghost Status : Coming In " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres !");
+                mBlinkyStatus.setText("threadBlinky Status : Coming In " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres !");
 
                 if (t < 1.0) {
                     // Post again 96ms later.
@@ -176,7 +154,7 @@ public class MapsActivity extends FragmentActivity {
                 } else {
                     Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
                     mRestart.setEnabled(true);
-                    mGhostStatus.setText("Game Over...");
+                    mBlinkyStatus.setText("Game Over...");
                     exit.show();
                     Timer a = new Timer();
                     TimerTask b = new TimerTask() {
@@ -199,7 +177,7 @@ public class MapsActivity extends FragmentActivity {
 
     public double getDistanceBetweenMarkersInMetres(Marker mMarker1, Location toLocation) {
         double distance = SphericalUtil.computeDistanceBetween(mMarker1.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
-//        Toast.makeText(MapsActivity.this, "The ghost are after you come within " + distance + " metres !!!", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(MapsActivity.this, "The threadBlinky are after you come within " + distance + " metres !!!", Toast.LENGTH_SHORT).show();
         return distance;
     }
 
@@ -222,7 +200,7 @@ public class MapsActivity extends FragmentActivity {
     }
     private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
         CameraPosition camPos = new CameraPosition.Builder().target(Location).zoom(zoomLevel).tilt(tilt).build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        getmMap().animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
 
@@ -235,7 +213,7 @@ public class MapsActivity extends FragmentActivity {
                 .bearing(bearing)
                 .build();
 
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        getmMap().animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
 
@@ -268,13 +246,13 @@ public class MapsActivity extends FragmentActivity {
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance
-        if (mMap == null) {
+        if (getmMap() == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-                    .getMap();
+            setmMap(((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+                    .getMap());
 
             // Check if we were successful in obtaining the map.
-            if (mMap != null) {
+            if (getmMap() != null) {
                 setUpMap();
             }
         }
@@ -287,5 +265,20 @@ public class MapsActivity extends FragmentActivity {
         // Note : Mahidol.getCenter() return LatLng object
     }
 
+    public GoogleMap getmMap() {
+        return mMap;
+    }
+
+    public void setmMap(GoogleMap mMap) {
+        this.mMap = mMap;
+    }
+
+    public Marker getmBlinky() {
+        return mBlinky;
+    }
+
+    public void setmBlinky(Marker mBlinky) {
+        this.mBlinky = mBlinky;
+    }
 }
 
