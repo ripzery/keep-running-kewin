@@ -1,6 +1,8 @@
 package com.example.ripzery.projectx01;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.location.Location;
@@ -32,6 +34,8 @@ import com.google.maps.android.SphericalUtil;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import me.drakeet.materialdialog.MaterialDialog;
+
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -42,6 +46,7 @@ public class MapsActivity extends FragmentActivity {
     private ProgressDialog progress;
     private Thread threadBlinky;
     private Ghost blinky, pinky, inky, clyde; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
+    private MaterialDialog builder;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +68,7 @@ public class MapsActivity extends FragmentActivity {
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         blinky = new Ghost();
-        blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.nav));
+        blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.pacman));
         blinky.setName("Blinky");
         blinky.setSpeed(100);
 
@@ -113,10 +118,33 @@ public class MapsActivity extends FragmentActivity {
         getmMap().setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-                setCameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 20);
-                if (getmMap().getMyLocation() != null && getmBlinky() == null) {
+
+                if (getmMap().getMyLocation() != null && getmBlinky() == null && builder == null) {
+                    setCameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 20);
                     progress.dismiss();
-                    threadBlinky.run();
+
+                    builder = new MaterialDialog(MapsActivity.this);
+                    builder.setMessage("Are you ready?");
+                    builder.setTitle("Mission 1 start");
+                    builder.setPositiveButton("YES", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            builder.dismiss();
+                            final MaterialDialog builder2 = new MaterialDialog(MapsActivity.this);
+                            builder2.setMessage("Good luck");
+                            builder2.setTitle("Run for your life !!!");
+                            builder2.setPositiveButton("BEGIN", new View.OnClickListener() {
+
+                                @Override
+                                public void onClick(View v2) {
+                                    builder2.dismiss();
+                                    threadBlinky.run();
+                                }
+                            });
+                            builder2.show();
+                        }
+                    });
+                    builder.show();
                 }
             }
         });
@@ -188,8 +216,7 @@ public class MapsActivity extends FragmentActivity {
         double lonMin = bound.southwest.longitude;
         double lonRange = bound.northeast.longitude - lonMin;
         LatLng ghostLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
-        BitmapDescriptor bd = BitmapDescriptorFactory.fromResource(R.drawable.pacman);
-        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(bd);
+        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(blinky.getIcon()).flat(true);
         return ghostMarkerPosition;
     }
 
