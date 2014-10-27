@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:flatui="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context="com.example.ripzery.projectx01.MapsFragment">
 
 
     <LinearLayout
@@ -34,21 +34,16 @@
             android:text="Start"
             flatui:fl_blockButtonEffectHeight="2dp"
             flatui:fl_fontFamily="roboto"
-            flatui:fl_theme="@array/blood"
-
-            />
+            flatui:fl_theme="@array/blood" />
 
     </LinearLayout>
-
 
     <fragment
         android:id="@+id/map"
         class="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="12"
-        tools:context="com.example.ripzery.projectx01.MapsActivity"
-        tools:layout="@layout/activity_maps" />
+        android:layout_weight="12" />
 
 </LinearLayout>
 

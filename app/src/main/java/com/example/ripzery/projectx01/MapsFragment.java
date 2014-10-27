@@ -1,17 +1,19 @@
 package com.example.ripzery.projectx01;
 
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
@@ -22,7 +24,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -36,55 +37,86 @@ import java.util.TimerTask;
 
 import me.drakeet.materialdialog.MaterialDialog;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsFragment extends Fragment {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-    private LatLngBounds Mahidol = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
+    private LatLngBounds playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
     private TextView mBlinkyStatus;
     private FlatButton mRestart;
     private Marker mBlinky;
+    private View mRootView;
     private ProgressDialog progress;
     private Thread threadBlinky;
     private Ghost blinky, pinky, inky, clyde; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
     private MaterialDialog builder;
-    
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
 
+    public MapsFragment() {
+
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_maps, container, false);
+        mRootView = view;
         setUpMapIfNeeded();
-        initVar();
-        initListener();
+//        initVar();
+//        initListener();
+        return view;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        Fragment f = getFragmentManager().findFragmentById(R.id.map);
+        if (f != null)
+            getFragmentManager().beginTransaction().remove(f).commit();
+        mMap.clear();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                // app icon in action bar clicked; go home
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void initVar() {
-        mBlinkyStatus = (TextView) findViewById(R.id.tv1);
+        mBlinkyStatus = (TextView) mRootView.findViewById(R.id.tv1);
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
         getmMap().getUiSettings().setCompassEnabled(true);
         getmMap().getUiSettings().setRotateGesturesEnabled(true);
-        progress = new ProgressDialog(this);
-        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+        progress = new ProgressDialog(getActivity());
+        progress = ProgressDialog.show(getActivity(), "Loading", "Wait while loading map...");
 
         blinky = new Ghost();
         blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.pacman));
         blinky.setName("Blinky");
-        blinky.setSpeed(100);
+        blinky.setSpeed(10);
 
-        final Typeface tf = Typeface.createFromAsset(getAssets(), "font/Roboto-Regular.ttf");
+        final Typeface tf = Typeface.createFromAsset(getActivity().getAssets(), "font/Roboto-Regular.ttf");
         mBlinkyStatus.setTypeface(tf);
 
         threadBlinky = new Thread(new Runnable() {
             @Override
             public void run() {
-                setmBlinky(getmMap().addMarker(getRandomMarker(Mahidol)));
+                setmBlinky(getmMap().addMarker(getRandomMarker(getPlayground())));
                 animateMarker(getmBlinky(), getmMap().getMyLocation(), false, blinky.getSpeed());
                 setCameraPosition(getmBlinky().getPosition(), 17, 20, (int) SphericalUtil.computeHeading(getmBlinky().getPosition(), new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude())));
             }
         });
 
-        mRestart = (FlatButton) findViewById(R.id.btnRestart);
+        mRestart = (FlatButton) mRootView.findViewById(R.id.btnRestart);
         mRestart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -100,7 +132,7 @@ public class MapsActivity extends FragmentActivity {
             @Override
             public void onCameraChange(CameraPosition cameraPosition) {
                 if (getmBlinky() == null) {
-                    Log.d("Hello", "Mahidol");
+                    Log.d("Hello", "playground");
                 }
             }
         });
@@ -109,7 +141,7 @@ public class MapsActivity extends FragmentActivity {
             @Override
             public void onMapLoaded() {
                 // Do something
-                setCameraPosition(Mahidol.getCenter(), 15, 20);
+                setCameraPosition(getPlayground().getCenter(), 15, 20);
                 progress.setMessage("Wait while getting your location");
             }
         });
@@ -123,14 +155,14 @@ public class MapsActivity extends FragmentActivity {
                     setCameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 20);
                     progress.dismiss();
 
-                    builder = new MaterialDialog(MapsActivity.this);
+                    builder = new MaterialDialog(getActivity());
                     builder.setMessage("Are you ready?");
                     builder.setTitle("Mission 1 start");
                     builder.setPositiveButton("YES", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             builder.dismiss();
-                            final MaterialDialog builder2 = new MaterialDialog(MapsActivity.this);
+                            final MaterialDialog builder2 = new MaterialDialog(getActivity());
                             builder2.setMessage("Good luck");
                             builder2.setTitle("Run for your life !!!");
                             builder2.setPositiveButton("BEGIN", new View.OnClickListener() {
@@ -144,6 +176,7 @@ public class MapsActivity extends FragmentActivity {
                             builder2.show();
                         }
                     });
+
                     builder.show();
                 }
             }
@@ -173,14 +206,14 @@ public class MapsActivity extends FragmentActivity {
                 double lat = t * toPosition.getLatitude() + (1 - t)
                         * startLatLng.latitude;
                 marker.setPosition(new LatLng(lat, lng));
-                mBlinkyStatus.setText("threadBlinky Status : Coming In " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres !");
+                mBlinkyStatus.setText("Blinky Status : Coming In " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres !");
 
                 if (t < 1.0) {
                     // Post again 96ms later.
                     mRestart.setEnabled(false);
                     handler.postDelayed(this, 96);
                 } else {
-                    Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
+                    Toast exit = Toast.makeText(getActivity(), "Try again keep it up !", Toast.LENGTH_LONG);
                     mRestart.setEnabled(true);
                     mBlinkyStatus.setText("Game Over...");
                     exit.show();
@@ -221,7 +254,7 @@ public class MapsActivity extends FragmentActivity {
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
 
     }
@@ -243,40 +276,19 @@ public class MapsActivity extends FragmentActivity {
         getmMap().animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
-
-//    public static final void setAppFont(ViewGroup mContainer, Typeface mFont) {
-//        if (mContainer == null || mFont == null) return;
-//
-//        final int mCount = mContainer.getChildCount();
-//
-//        // Loop through all of the children.
-//        for (int i = 0; i < mCount; ++i) {
-//            final View mChild = mContainer.getChildAt(i);
-//            if (mChild instanceof TextView) {
-//                // Set the font if it is a TextView.
-//                ((TextView) mChild).setTypeface(mFont);
-//            } else if (mChild instanceof ViewGroup) {
-//                // Recursively attempt another ViewGroup.
-//                setAppFont((ViewGroup) mChild, mFont);
-//            }
-//        }
-//    }
-
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
-        setUpMapIfNeeded();
-        // for the system's orientation sensor registered listeners
-//        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
-//                SensorManager.SENSOR_DELAY_GAME);
     }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance
         if (getmMap() == null) {
             // Try to obtain the map from the SupportMapFragment.
-            setmMap(((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-                    .getMap());
+
+            FragmentActivity test1 = getActivity();
+            Fragment test2 = test1.getSupportFragmentManager().findFragmentById(R.id.map);
+            setmMap((((SupportMapFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.map)).getMap()));
 
             // Check if we were successful in obtaining the map.
             if (getmMap() != null) {
@@ -287,9 +299,9 @@ public class MapsActivity extends FragmentActivity {
 
 
     private void setUpMap() {
-//        mTest = mMap.addMarker(new MarkerOptions().position(Mahidol.getCenter()).title("Marker"));
+//        mTest = mMap.addMarker(new MarkerOptions().position(playground.getCenter()).title("Marker"));
 
-        // Note : Mahidol.getCenter() return LatLng object
+        // Note : playground.getCenter() return LatLng object
     }
 
     public GoogleMap getmMap() {
@@ -306,6 +318,14 @@ public class MapsActivity extends FragmentActivity {
 
     public void setmBlinky(Marker mBlinky) {
         this.mBlinky = mBlinky;
+    }
+
+    public LatLngBounds getPlayground() {
+        return playground;
+    }
+
+    public void setPlayground(LatLngBounds playground) {
+        this.playground = playground;
     }
 }
 

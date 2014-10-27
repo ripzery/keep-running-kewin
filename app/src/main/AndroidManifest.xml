@@ -13,7 +13,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar.Fullscreen">
+        android:theme="@android:style/Theme.DeviceDefault.Light">
 
 
         <meta-data
@@ -31,7 +31,7 @@
 
 
         <activity
-            android:name=".MapsActivity"
+            android:name=".WelcomeScreenFragment"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
