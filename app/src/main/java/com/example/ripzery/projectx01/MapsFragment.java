@@ -1,6 +1,7 @@
 package com.example.ripzery.projectx01;
 
 import android.app.ProgressDialog;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.location.Location;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 import com.cengalabs.flatui.views.FlatButton;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -30,6 +32,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 
 import java.util.Timer;
@@ -47,6 +51,7 @@ public class MapsFragment extends Fragment {
     private View mRootView;
     private ProgressDialog progress;
     private Thread threadBlinky;
+    private LatLng currentPosition;
     private Ghost blinky, pinky, inky, clyde; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
     private MaterialDialog builder;
 
@@ -63,10 +68,11 @@ public class MapsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_maps, container, false);
+//        getActivity().setContentView(R.layout.fragment_maps);
         mRootView = view;
         setUpMapIfNeeded();
-//        initVar();
-//        initListener();
+        initVar();
+        initListener();
         return view;
     }
 
@@ -95,14 +101,15 @@ public class MapsFragment extends Fragment {
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
         getmMap().getUiSettings().setCompassEnabled(true);
+        getmMap().getUiSettings().setZoomGesturesEnabled(false);
         getmMap().getUiSettings().setRotateGesturesEnabled(true);
         progress = new ProgressDialog(getActivity());
         progress = ProgressDialog.show(getActivity(), "Loading", "Wait while loading map...");
 
         blinky = new Ghost();
-        blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.pacman));
+        blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
         blinky.setName("Blinky");
-        blinky.setSpeed(10);
+        blinky.setSpeed(100);
 
         final Typeface tf = Typeface.createFromAsset(getActivity().getAssets(), "font/Roboto-Regular.ttf");
         mBlinkyStatus.setTypeface(tf);
@@ -112,7 +119,10 @@ public class MapsFragment extends Fragment {
             public void run() {
                 setmBlinky(getmMap().addMarker(getRandomMarker(getPlayground())));
                 animateMarker(getmBlinky(), getmMap().getMyLocation(), false, blinky.getSpeed());
-                setCameraPosition(getmBlinky().getPosition(), 17, 20, (int) SphericalUtil.computeHeading(getmBlinky().getPosition(), new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude())));
+                LatLng currentLatLng = new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude());
+                PolylineOptions test = new PolylineOptions().add(currentLatLng).add(mBlinky.getPosition()).width(7).color(Color.RED);
+                Polyline test2 = getmMap().addPolyline(test);
+                setCameraPosition(currentLatLng, 18, 20, (int) SphericalUtil.computeHeading(getmBlinky().getPosition(), currentLatLng));
             }
         });
 
@@ -152,9 +162,9 @@ public class MapsFragment extends Fragment {
             public void onMyLocationChange(Location location) {
 
                 if (getmMap().getMyLocation() != null && getmBlinky() == null && builder == null) {
-                    setCameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 17, 20);
+                    setCameraPosition(new LatLng(location.getLatitude(), location.getLongitude()), 18, 20);
                     progress.dismiss();
-
+                    currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
                     builder = new MaterialDialog(getActivity());
                     builder.setMessage("Are you ready?");
                     builder.setTitle("Mission 1 start");
@@ -201,6 +211,11 @@ public class MapsFragment extends Fragment {
                 long elapsed = SystemClock.uptimeMillis() - start;
                 float t = interpolator.getInterpolation((float) elapsed
                         / duration);
+                if (currentPosition.latitude != toPosition.getLatitude() || currentPosition.longitude != toPosition.getLongitude()) {
+                    Log.d("Change Location to ", "" + toPosition.toString());
+                    toPosition.setLatitude(currentPosition.latitude);
+                    toPosition.setLongitude(currentPosition.longitude);
+                }
                 double lng = t * toPosition.getLongitude() + (1 - t)
                         * startLatLng.longitude;
                 double lat = t * toPosition.getLatitude() + (1 - t)
@@ -284,12 +299,7 @@ public class MapsFragment extends Fragment {
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance
         if (getmMap() == null) {
-            // Try to obtain the map from the SupportMapFragment.
-
-            FragmentActivity test1 = getActivity();
-            Fragment test2 = test1.getSupportFragmentManager().findFragmentById(R.id.map);
-            setmMap((((SupportMapFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.map)).getMap()));
-
+            setmMap((((MapFragment) getActivity().getFragmentManager().findFragmentById(R.id.map)).getMap()));
             // Check if we were successful in obtaining the map.
             if (getmMap() != null) {
                 setUpMap();
