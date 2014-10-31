@@ -1,5 +1,6 @@
 package com.example.ripzery.projectx01;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -21,7 +22,6 @@ public class WelcomeScreenActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome_screen);
-
         FlatButton btnCreatePlayground = (FlatButton) this.findViewById(R.id.btnCreatePlayground);
         FlatButton btnStartGame = (FlatButton) this.findViewById(R.id.btnStartGame);
 

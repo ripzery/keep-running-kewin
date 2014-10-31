@@ -1,6 +1,6 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:flatui="http://schemas.android.com/apk/res-auto"
+    xmlns:materialdesign="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,42 +8,54 @@
     tools:context="com.example.ripzery.projectx01.MapsActivity">
 
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#5677fc"
-        android:orientation="horizontal">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tv1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:gravity="center"
-            android:text="Ghost Status : UNKNOWN"
-            android:textColor="#ecf0f1" />
+        <fragment
+            android:id="@+id/map"
+            class="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="#009e9e9e"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="3"
+                android:gravity="center"
+                android:text="Incoming : UNKNOWN"
+                android:textColor="#00695c"
+                android:textSize="18sp" />
+
+            <LinearLayout
+                android:id="@+id/buttonFloatLayout"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_margin="8dp"
+                android:layout_weight="1">
+
+                <com.example.ripzery.projectx01.materialcomponent.ButtonFloat
+                    android:id="@+id/btnRestart"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#009688"
+                    android:text="Start"
+                    materialdesign:icon="@drawable/ic_action_new" />
+            </LinearLayout>
 
 
-        <com.cengalabs.flatui.views.FlatButton
-            android:id="@+id/btnRestart"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_margin="5dp"
-            android:layout_weight="1"
-            android:text="Start"
-            flatui:fl_blockButtonEffectHeight="2dp"
-            flatui:fl_fontFamily="roboto"
-            flatui:fl_theme="@array/blood" />
+        </LinearLayout>
 
-    </LinearLayout>
-
-    <fragment
-        android:id="@+id/map"
-        class="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="12" />
+    </FrameLayout>
 
 </LinearLayout>
 

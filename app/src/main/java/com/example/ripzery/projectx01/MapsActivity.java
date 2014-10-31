@@ -1,5 +1,6 @@
 package com.example.ripzery.projectx01;
 
+import android.app.ActionBar;
 import android.app.ProgressDialog;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -14,10 +15,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.cengalabs.flatui.views.FlatButton;
+import com.example.ripzery.projectx01.materialcomponent.ButtonFloat;
+import com.example.ripzery.projectx01.materialcomponent.ButtonRectangle;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -42,7 +46,8 @@ public class MapsActivity extends FragmentActivity {
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
     private TextView mBlinkyStatus;
-    private FlatButton mRestart;
+    private ButtonFloat mRestart;
+    private LinearLayout mFloatButtonLayout;
     private Marker mBlinky;
     private ProgressDialog progress;
     private Thread threadBlinky;
@@ -60,27 +65,23 @@ public class MapsActivity extends FragmentActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        ActionBar actionBar = getActionBar();
+        actionBar.setHomeButtonEnabled(true);
+        actionBar.setDisplayHomeAsUpEnabled(true);
         setUpMapIfNeeded();
         initVar();
         initListener();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void initVar() {
         mBlinkyStatus = (TextView) findViewById(R.id.tv1);
+        mFloatButtonLayout = (LinearLayout) findViewById(R.id.buttonFloatLayout);
+
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
-        getmMap().getUiSettings().setCompassEnabled(true);
+        getmMap().getUiSettings().setCompassEnabled(false);
         getmMap().getUiSettings().setZoomGesturesEnabled(false);
+        getmMap().getUiSettings().setZoomControlsEnabled(false);
         getmMap().getUiSettings().setRotateGesturesEnabled(true);
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
@@ -90,7 +91,8 @@ public class MapsActivity extends FragmentActivity {
         blinky.setName("Blinky");
         blinky.setSpeed(100);
 
-        final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/Roboto-Regular.ttf");
+
+        final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/RobotoCondensed-Bold.ttf");
         mBlinkyStatus.setTypeface(tf);
 
         threadBlinky = new Thread(new Runnable() {
@@ -105,7 +107,7 @@ public class MapsActivity extends FragmentActivity {
             }
         });
 
-        mRestart = (FlatButton) findViewById(R.id.btnRestart);
+        mRestart = (ButtonFloat) findViewById(R.id.btnRestart);
         mRestart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -167,7 +169,7 @@ public class MapsActivity extends FragmentActivity {
                     builder.show();
                 } else {
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-//                    setCameraPosition(mCurrentLatLng, 18, 20);
+                    setCameraPosition(mCurrentLatLng, 18, 20);
                 }
             }
         });
@@ -201,15 +203,17 @@ public class MapsActivity extends FragmentActivity {
                 double lat = t * toPosition.getLatitude() + (1 - t)
                         * startLatLng.latitude;
                 marker.setPosition(new LatLng(lat, lng));
-                mBlinkyStatus.setText("Blinky Status : Coming In " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres !");
+                mBlinkyStatus.setText("Ghost distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
 
                 if (t < 1.0) {
                     // Post again 96ms later.
-                    mRestart.setEnabled(false);
+                    if (mFloatButtonLayout.isShown())
+                        mFloatButtonLayout.setVisibility(View.GONE);
                     handler.postDelayed(this, 96);
                 } else {
                     Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
-                    mRestart.setEnabled(true);
+                    if (!mFloatButtonLayout.isShown())
+                        mFloatButtonLayout.setVisibility(View.VISIBLE);
                     mBlinkyStatus.setText("Game Over...");
                     exit.show();
                     Timer a = new Timer();
@@ -257,13 +261,16 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-//    @Override
-//    public void onDestroy(){
-//        super.onDestroy();
-//        android.os.Process.killProcess(android.os.Process.myPid());
-//        System.exit(1);
-//
-//    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                this.finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
         CameraPosition camPos = new CameraPosition.Builder()
@@ -303,7 +310,6 @@ public class MapsActivity extends FragmentActivity {
             }
         }
     }
-
 
     private void setUpMap() {
 //        mTest = mMap.addMarker(new MarkerOptions().position(playground.getCenter()).title("Marker"));
