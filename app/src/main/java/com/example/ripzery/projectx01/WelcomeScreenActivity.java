@@ -1,26 +1,26 @@
 package com.example.ripzery.projectx01;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentTransaction;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.LinearLayout;
 
 import com.cengalabs.flatui.views.FlatButton;
 
 /**
  * Created by visit on 10/26/14 AD.
  */
-public class WelcomeScreenFragment extends FragmentActivity {
+public class WelcomeScreenActivity extends Activity {
 
-    private MapsFragment mapsFragment;
+    private MapsActivity mapsActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.fragment_welcome_screen);
+        setContentView(R.layout.activity_welcome_screen);
 
         FlatButton btnCreatePlayground = (FlatButton) this.findViewById(R.id.btnCreatePlayground);
         FlatButton btnStartGame = (FlatButton) this.findViewById(R.id.btnStartGame);
@@ -34,15 +34,19 @@ public class WelcomeScreenFragment extends FragmentActivity {
         btnStartGame.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mapsFragment = new MapsFragment();
-                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.add(R.id.flMainFrame, mapsFragment);
-//                transaction.addToBackStack(null);
-                transaction.commit();
-                LinearLayout linearLayout = (LinearLayout) findViewById(R.id.fragmentWelcomeScreen);
-                linearLayout.setVisibility(View.GONE);
+//                mapsActivity = new MapsActivity();
+                Intent intent = new Intent(WelcomeScreenActivity.this, MapsActivity.class);
+                startActivity(intent);
             }
         });
+
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(1);
 
     }
 

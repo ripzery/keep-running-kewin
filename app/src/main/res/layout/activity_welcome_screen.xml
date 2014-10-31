@@ -3,15 +3,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:flatui="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".WelcomeScreenFragment">
-
-    <FrameLayout
-        android:id="@+id/flMainFrame"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
 
         <LinearLayout
             android:id="@+id/fragmentWelcomeScreen"
@@ -32,8 +27,8 @@
                 android:id="@+id/btnCreatePlayground"
                 android:layout_width="300dp"
                 android:layout_height="0dp"
-                android:layout_margin="5dp"
                 android:layout_gravity="center_horizontal"
+                android:layout_margin="5dp"
                 android:layout_weight="1"
                 android:text="Create Playground"
                 flatui:fl_blockButtonEffectHeight="2dp"
@@ -51,9 +46,9 @@
                 android:id="@+id/btnStartGame"
                 android:layout_width="300dp"
                 android:layout_height="0dp"
+                android:layout_gravity="center_horizontal"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
-                android:layout_gravity="center_horizontal"
                 android:text="Start Game"
                 flatui:fl_blockButtonEffectHeight="2dp"
                 flatui:fl_fontFamily="roboto"
@@ -66,8 +61,4 @@
 
             </View>
         </LinearLayout>
-
-
-    </FrameLayout>
-
 </LinearLayout>

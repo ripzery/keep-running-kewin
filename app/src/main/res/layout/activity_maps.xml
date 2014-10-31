@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.example.ripzery.projectx01.MapsFragment">
+    tools:context="com.example.ripzery.projectx01.MapsActivity">
 
 
     <LinearLayout
@@ -40,7 +40,7 @@
 
     <fragment
         android:id="@+id/map"
-        class="com.google.android.gms.maps.MapFragment"
+        class="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="12" />
