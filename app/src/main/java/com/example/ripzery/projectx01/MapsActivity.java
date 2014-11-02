@@ -15,13 +15,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.cengalabs.flatui.views.FlatButton;
-import com.example.ripzery.projectx01.materialcomponent.ButtonFloat;
-import com.example.ripzery.projectx01.materialcomponent.ButtonRectangle;
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -36,6 +35,8 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -45,16 +46,17 @@ public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
-    private TextView mBlinkyStatus;
-    private ButtonFloat mRestart;
-    private LinearLayout mFloatButtonLayout;
+    private FloatingActionButton mAdd;
     private Marker mBlinky;
     private ProgressDialog progress;
-    private Thread threadBlinky;
+    private Thread tGhost;
     private LatLng mCurrentLatLng;
     private Handler handler = new Handler();
     private Runnable runnable;
-    private Ghost blinky, pinky, inky, clyde; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
+    private ArrayList<String> listGhostName = new ArrayList<String>();
+    private ArrayList<Thread> listTGhost = new ArrayList<Thread>();
+    private ArrayList<TextView> listGhostStatus = new ArrayList<TextView>();
+    private Ghost mGhostBehavior; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
     private MaterialDialog builder, builder2;
 
     public MapsActivity() {
@@ -74,8 +76,18 @@ public class MapsActivity extends FragmentActivity {
     }
 
     private void initVar() {
-        mBlinkyStatus = (TextView) findViewById(R.id.tv1);
-        mFloatButtonLayout = (LinearLayout) findViewById(R.id.buttonFloatLayout);
+        TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
+        mGhost1Status = (TextView) findViewById(R.id.tv1);
+        mGhost2Status = (TextView) findViewById(R.id.tv2);
+        mGhost3Status = (TextView) findViewById(R.id.tv3);
+        mGhost4Status = (TextView) findViewById(R.id.tv4);
+        mGhost5Status = (TextView) findViewById(R.id.tv5);
+
+        listGhostStatus.add(mGhost1Status);
+        listGhostStatus.add(mGhost2Status);
+        listGhostStatus.add(mGhost3Status);
+        listGhostStatus.add(mGhost4Status);
+        listGhostStatus.add(mGhost5Status);
 
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
@@ -86,47 +98,64 @@ public class MapsActivity extends FragmentActivity {
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
-        blinky = new Ghost();
-        blinky.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        blinky.setName("Blinky");
-        blinky.setSpeed(100);
-
+        mGhostBehavior = new Ghost();
+        mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
+        mGhostBehavior.setSpeed(100);
 
         final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/RobotoCondensed-Bold.ttf");
-        mBlinkyStatus.setTypeface(tf);
+        mGhost1Status.setTypeface(tf);
+        mGhost2Status.setTypeface(tf);
+        mGhost3Status.setTypeface(tf);
+        mGhost4Status.setTypeface(tf);
+        mGhost5Status.setTypeface(tf);
 
-        threadBlinky = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                setmBlinky(getmMap().addMarker(getRandomMarker(getPlayground())));
-                animateMarker(getmBlinky(), getmMap().getMyLocation(), false, blinky.getSpeed());
-                LatLng currentLatLng = new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude());
-                PolylineOptions test = new PolylineOptions().add(currentLatLng).add(mBlinky.getPosition()).width(7).color(Color.RED);
-                Polyline test2 = getmMap().addPolyline(test);
-                setCameraPosition(currentLatLng, 18, 20, (int) SphericalUtil.computeHeading(getmBlinky().getPosition(), currentLatLng));
-            }
-        });
-
-        mRestart = (ButtonFloat) findViewById(R.id.btnRestart);
-        mRestart.setOnClickListener(new View.OnClickListener() {
+        addGhost(mGhostBehavior);
+        mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
+        mAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (getmBlinky() != null)
-                    getmBlinky().remove();
-                threadBlinky.run();
+                if (listTGhost.size() < 5) {
+                    addGhost(mGhostBehavior);
+                    Log.d("GhostName", mGhostBehavior.getName());
+                    listTGhost.get(listTGhost.size() - 1).run();
+                }
+                if (listTGhost.size() == 5) {
+                    mAdd.setVisibility(View.GONE);
+                }
             }
         });
     }
 
-    private void initListener() {
-        getmMap().setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+    private void addGhost(final Ghost ghost) {
+        String name = "Ghost";
+        for (int i = 1; i <= 5; i++) {
+            if (!listGhostName.contains(name + i)) {
+                ghost.setName(name + i);
+                listGhostName.add(name + i);
+                LinearLayout parentText = (LinearLayout) listGhostStatus.get(i - 1).getParent();
+                parentText.setVisibility(View.VISIBLE);
+                break;
+            }
+        }
+
+        final Marker mGhost = getmMap().addMarker(getRandomMarker(getPlayground()).title(ghost.getName()));
+
+        tGhost = new Thread(new Runnable() {
             @Override
-            public void onCameraChange(CameraPosition cameraPosition) {
-                if (getmBlinky() == null) {
-                    Log.d("Hello", "playground");
-                }
+            public void run() {
+                animateMarker(mGhost, getmMap().getMyLocation(), false, ghost.getSpeed());
+                LatLng currentLatLng = new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude());
+                PolylineOptions test = new PolylineOptions().add(currentLatLng).add(mGhost.getPosition()).width(7).color(Color.RED);
+                Polyline test2 = getmMap().addPolyline(test);
+                setCameraPosition(currentLatLng, 18, 20, (int) SphericalUtil.computeHeading(mGhost.getPosition(), currentLatLng));
             }
         });
+        tGhost.setName(ghost.getName());
+
+        listTGhost.add(tGhost);
+    }
+
+    private void initListener() {
 
         getmMap().setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
@@ -159,7 +188,7 @@ public class MapsActivity extends FragmentActivity {
                                 @Override
                                 public void onClick(View v2) {
                                     builder2.dismiss();
-                                    threadBlinky.run();
+                                    tGhost.run();
                                 }
                             });
                             builder2.show();
@@ -187,6 +216,7 @@ public class MapsActivity extends FragmentActivity {
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
         final long duration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 3600));
         final Interpolator interpolator = new LinearInterpolator();
+
         runnable = new Runnable() {
             @Override
             public void run() {
@@ -203,18 +233,45 @@ public class MapsActivity extends FragmentActivity {
                 double lat = t * toPosition.getLatitude() + (1 - t)
                         * startLatLng.latitude;
                 marker.setPosition(new LatLng(lat, lng));
-                mBlinkyStatus.setText("Ghost distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
+                if (marker.getTitle().equals("Ghost1")) {
+                    listGhostStatus.get(0).setText("Ghost1 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
+                } else if (marker.getTitle().equals("Ghost2")) {
+                    listGhostStatus.get(1).setText("Ghost2 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
+                } else if (marker.getTitle().equals("Ghost3")) {
+                    listGhostStatus.get(2).setText("Ghost3 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
+                } else if (marker.getTitle().equals("Ghost4")) {
+                    listGhostStatus.get(3).setText("Ghost4 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
+                } else {
+                    listGhostStatus.get(4).setText("Ghost5 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
+                }
 
                 if (t < 1.0) {
                     // Post again 96ms later.
-                    if (mFloatButtonLayout.isShown())
-                        mFloatButtonLayout.setVisibility(View.GONE);
                     handler.postDelayed(this, 96);
                 } else {
+
                     Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
-                    if (!mFloatButtonLayout.isShown())
-                        mFloatButtonLayout.setVisibility(View.VISIBLE);
-                    mBlinkyStatus.setText("Game Over...");
+
+                    LinearLayout parentText;
+                    if (!listTGhost.isEmpty() && !listGhostName.isEmpty()) {
+                        listTGhost.remove(0);
+                        listGhostName.remove(marker.getTitle());
+
+                    }
+                    if (marker.getTitle().equals("Ghost1")) {
+                        parentText = (LinearLayout) listGhostStatus.get(0).getParent();
+                    } else if (marker.getTitle().equals("Ghost2")) {
+                        parentText = (LinearLayout) listGhostStatus.get(1).getParent();
+                    } else if (marker.getTitle().equals("Ghost3")) {
+                        parentText = (LinearLayout) listGhostStatus.get(2).getParent();
+                    } else if (marker.getTitle().equals("Ghost4")) {
+                        parentText = (LinearLayout) listGhostStatus.get(3).getParent();
+                    } else {
+                        parentText = (LinearLayout) listGhostStatus.get(4).getParent();
+                    }
+                    if (!mAdd.isShown())
+                        mAdd.setVisibility(View.VISIBLE);
+                    parentText.setVisibility(View.GONE);
                     exit.show();
                     Timer a = new Timer();
                     TimerTask b = new TimerTask() {
@@ -238,7 +295,6 @@ public class MapsActivity extends FragmentActivity {
 
     public double getDistanceBetweenMarkersInMetres(Marker mMarker1, Location toLocation) {
         double distance = SphericalUtil.computeDistanceBetween(mMarker1.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
-//        Toast.makeText(MapsActivity.this, "The threadBlinky are after you come within " + distance + " metres !!!", Toast.LENGTH_SHORT).show();
         return distance;
     }
 
@@ -249,7 +305,7 @@ public class MapsActivity extends FragmentActivity {
         double lonMin = bound.southwest.longitude;
         double lonRange = bound.northeast.longitude - lonMin;
         LatLng ghostLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
-        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(blinky.getIcon()).flat(true);
+        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(mGhostBehavior.getIcon()).flat(true);
         return ghostMarkerPosition;
     }
 
