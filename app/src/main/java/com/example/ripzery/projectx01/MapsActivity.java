@@ -2,7 +2,6 @@ package com.example.ripzery.projectx01;
 
 import android.app.ActionBar;
 import android.app.ProgressDialog;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.location.Location;
@@ -15,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,21 +29,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import me.drakeet.materialdialog.MaterialDialog;
 
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-    private LatLngBounds playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
+    private LatLngBounds playground;
     private FloatingActionButton mAdd;
     private Marker mBlinky;
     private ProgressDialog progress;
@@ -95,12 +88,16 @@ public class MapsActivity extends FragmentActivity {
         getmMap().getUiSettings().setZoomGesturesEnabled(false);
         getmMap().getUiSettings().setZoomControlsEnabled(false);
         getmMap().getUiSettings().setRotateGesturesEnabled(true);
+        getmMap().getUiSettings().setScrollGesturesEnabled(false);
+
+        setPlayground(new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897)));
+
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(100);
+        mGhostBehavior.setSpeed(5);
 
         final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/RobotoCondensed-Bold.ttf");
         mGhost1Status.setTypeface(tf);
@@ -109,7 +106,6 @@ public class MapsActivity extends FragmentActivity {
         mGhost4Status.setTypeface(tf);
         mGhost5Status.setTypeface(tf);
 
-        addGhost(mGhostBehavior);
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
         mAdd.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -137,21 +133,19 @@ public class MapsActivity extends FragmentActivity {
                 break;
             }
         }
-
         final Marker mGhost = getmMap().addMarker(getRandomMarker(getPlayground()).title(ghost.getName()));
 
         tGhost = new Thread(new Runnable() {
             @Override
             public void run() {
-                animateMarker(mGhost, getmMap().getMyLocation(), false, ghost.getSpeed());
-                LatLng currentLatLng = new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude());
-                PolylineOptions test = new PolylineOptions().add(currentLatLng).add(mGhost.getPosition()).width(7).color(Color.RED);
-                Polyline test2 = getmMap().addPolyline(test);
-                setCameraPosition(currentLatLng, 18, 20, (int) SphericalUtil.computeHeading(mGhost.getPosition(), currentLatLng));
+                animateMarker(mGhost, getmMap().getMyLocation(), true, ghost.getSpeed());
+//                LatLng currentLatLng = new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude());
+//                PolylineOptions test = new PolylineOptions().add(currentLatLng).add(mGhost.getPosition()).width(7).color(Color.RED);
+//                Polyline test2 = getmMap().addPolyline(test);
+//                setCameraPosition(currentLatLng, 18, 20, (int) SphericalUtil.computeHeading(mGhost.getPosition(), currentLatLng));
             }
         });
         tGhost.setName(ghost.getName());
-
         listTGhost.add(tGhost);
     }
 
@@ -188,6 +182,8 @@ public class MapsActivity extends FragmentActivity {
                                 @Override
                                 public void onClick(View v2) {
                                     builder2.dismiss();
+                                    setPlayground(getmMap().getProjection().getVisibleRegion().latLngBounds);
+                                    addGhost(mGhostBehavior);
                                     tGhost.run();
                                 }
                             });
@@ -206,15 +202,15 @@ public class MapsActivity extends FragmentActivity {
 
     public void animateMarker(final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
-        //define default men speed is 10 KMPH
+        //define default men speed is 10 m/s
         // speed = distance/duration
-//        final Handler handler = new Handler();
+        final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
 
         Projection proj = getmMap().getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
-        final long duration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 3600));
+        final long duration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000));
         final Interpolator interpolator = new LinearInterpolator();
 
         runnable = new Runnable() {
@@ -256,7 +252,6 @@ public class MapsActivity extends FragmentActivity {
                     if (!listTGhost.isEmpty() && !listGhostName.isEmpty()) {
                         listTGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
-
                     }
                     if (marker.getTitle().equals("Ghost1")) {
                         parentText = (LinearLayout) listGhostStatus.get(0).getParent();
@@ -273,15 +268,15 @@ public class MapsActivity extends FragmentActivity {
                         mAdd.setVisibility(View.VISIBLE);
                     parentText.setVisibility(View.GONE);
                     exit.show();
-                    Timer a = new Timer();
-                    TimerTask b = new TimerTask() {
-                        @Override
-                        public void run() {
+//                    Timer a = new Timer();
+//                    TimerTask b = new TimerTask() {
+//                        @Override
+//                        public void run() {
 //                            android.os.Process.killProcess(android.os.Process.myPid());
 //                            System.exit(1);
-                        }
-                    };
-                    a.schedule(b, 1500);
+//                        }
+//                    };
+//                    a.schedule(b, 1500);
                     if (hideMarker) {
                         marker.setVisible(false);
                     } else {
@@ -383,10 +378,6 @@ public class MapsActivity extends FragmentActivity {
 
     public Marker getmBlinky() {
         return mBlinky;
-    }
-
-    public void setmBlinky(Marker mBlinky) {
-        this.mBlinky = mBlinky;
     }
 
     public LatLngBounds getPlayground() {
