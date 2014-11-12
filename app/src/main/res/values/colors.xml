@@ -5,10 +5,19 @@
     <color name="apptheme_accent">@android:color/white</color>
     <color name="background">#e5e5e5</color>
     <color name="half_black">#808080</color>
-    <color name="white">#fafafa</color>
     <color name="white_pressed">#f1f1f1</color>
     <color name="pink">#e91e63</color>
     <color name="pink_pressed">#ec407a</color>
     <color name="gradient_start">#50000000</color>
     <color name="gradient_light_start">#30000000</color>
+
+    <color name="main_background">#212121</color>
+    <color name="main_color">#b0120a</color>
+    <color name="main_color_press">#a8b0120a</color>
+    <color name="sub_color">#464646</color>
+    <color name="sub_color_press">#a8464646</color>
+    <color name="white">#99f1f1f1</color>
+
+    <color name="card_press">#ffffff</color>
+    <color name="card_unpress">#ffe7e7e7</color>
 </resources>

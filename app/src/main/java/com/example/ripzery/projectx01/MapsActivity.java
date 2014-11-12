@@ -1,6 +1,5 @@
 package com.example.ripzery.projectx01;
 
-import android.app.ActionBar;
 import android.app.ProgressDialog;
 import android.graphics.Point;
 import android.graphics.Typeface;
@@ -60,9 +59,9 @@ public class MapsActivity extends FragmentActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        ActionBar actionBar = getActionBar();
-        actionBar.setHomeButtonEnabled(true);
-        actionBar.setDisplayHomeAsUpEnabled(true);
+//        ActionBar actionBar = getActionBar();
+//        actionBar.setHomeButtonEnabled(true);
+//        actionBar.setDisplayHomeAsUpEnabled(true);
         setUpMapIfNeeded();
         initVar();
         initListener();
