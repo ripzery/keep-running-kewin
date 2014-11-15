@@ -18,6 +18,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -36,10 +38,11 @@ import me.drakeet.materialdialog.MaterialDialog;
 
 public class MapsActivity extends FragmentActivity {
 
+    TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
+    FusedLocationService fusedLocationService;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
     private FloatingActionButton mAdd;
-    private Marker mBlinky;
     private ProgressDialog progress;
     private Thread tGhost;
     private LatLng mCurrentLatLng;
@@ -50,6 +53,7 @@ public class MapsActivity extends FragmentActivity {
     private ArrayList<TextView> listGhostStatus = new ArrayList<TextView>();
     private Ghost mGhostBehavior; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
     private MaterialDialog builder, builder2;
+    private long previousUpdateTime, currentUpdateTime;
 
     public MapsActivity() {
 
@@ -68,18 +72,7 @@ public class MapsActivity extends FragmentActivity {
     }
 
     private void initVar() {
-        TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
         mGhost1Status = (TextView) findViewById(R.id.tv1);
-        mGhost2Status = (TextView) findViewById(R.id.tv2);
-        mGhost3Status = (TextView) findViewById(R.id.tv3);
-        mGhost4Status = (TextView) findViewById(R.id.tv4);
-        mGhost5Status = (TextView) findViewById(R.id.tv5);
-
-        listGhostStatus.add(mGhost1Status);
-        listGhostStatus.add(mGhost2Status);
-        listGhostStatus.add(mGhost3Status);
-        listGhostStatus.add(mGhost4Status);
-        listGhostStatus.add(mGhost5Status);
 
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
@@ -99,11 +92,6 @@ public class MapsActivity extends FragmentActivity {
         mGhostBehavior.setSpeed(5);
 
         final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/RobotoCondensed-Bold.ttf");
-        mGhost1Status.setTypeface(tf);
-        mGhost2Status.setTypeface(tf);
-        mGhost3Status.setTypeface(tf);
-        mGhost4Status.setTypeface(tf);
-        mGhost5Status.setTypeface(tf);
 
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
         mAdd.setOnClickListener(new View.OnClickListener() {
@@ -122,26 +110,21 @@ public class MapsActivity extends FragmentActivity {
     }
 
     private void addGhost(final Ghost ghost) {
+
         String name = "Ghost";
         for (int i = 1; i <= 5; i++) {
             if (!listGhostName.contains(name + i)) {
                 ghost.setName(name + i);
                 listGhostName.add(name + i);
-                LinearLayout parentText = (LinearLayout) listGhostStatus.get(i - 1).getParent();
-                parentText.setVisibility(View.VISIBLE);
                 break;
             }
         }
-        final Marker mGhost = getmMap().addMarker(getRandomMarker(getPlayground()).title(ghost.getName()));
 
+        final Marker mGhost = getmMap().addMarker(getRandomMarker(getPlayground()).title(ghost.getName()));
         tGhost = new Thread(new Runnable() {
             @Override
             public void run() {
                 animateMarker(mGhost, getmMap().getMyLocation(), true, ghost.getSpeed());
-//                LatLng currentLatLng = new LatLng(getmMap().getMyLocation().getLatitude(), getmMap().getMyLocation().getLongitude());
-//                PolylineOptions test = new PolylineOptions().add(currentLatLng).add(mGhost.getPosition()).width(7).color(Color.RED);
-//                Polyline test2 = getmMap().addPolyline(test);
-//                setCameraPosition(currentLatLng, 18, 20, (int) SphericalUtil.computeHeading(mGhost.getPosition(), currentLatLng));
             }
         });
         tGhost.setName(ghost.getName());
@@ -159,12 +142,15 @@ public class MapsActivity extends FragmentActivity {
             }
         });
 
+        previousUpdateTime = System.currentTimeMillis();
 
         getmMap().setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                if (getmMap().getMyLocation() != null && getmBlinky() == null && builder == null) {
+                currentUpdateTime = location.getTime();
+                mGhost1Status.setText("Speed : " + location.getSpeed() + " UpdateTime : " + ((currentUpdateTime - previousUpdateTime) / 1000.0));
+                if (getmMap().getMyLocation() != null && builder == null) {
                     progress.dismiss();
                     builder = new MaterialDialog(MapsActivity.this);
                     builder.setMessage("Are you ready?");
@@ -192,12 +178,15 @@ public class MapsActivity extends FragmentActivity {
                     setCameraPosition(mCurrentLatLng, 18, 20);
                     builder.show();
                 } else {
+//                   mGhost1Status.setText("Accuracy = "+location.getAccuracy());
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                     setCameraPosition(mCurrentLatLng, 18, 20);
                 }
+                previousUpdateTime = currentUpdateTime;
             }
         });
     }
+
 
     public void animateMarker(final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
@@ -228,17 +217,6 @@ public class MapsActivity extends FragmentActivity {
                 double lat = t * toPosition.getLatitude() + (1 - t)
                         * startLatLng.latitude;
                 marker.setPosition(new LatLng(lat, lng));
-                if (marker.getTitle().equals("Ghost1")) {
-                    listGhostStatus.get(0).setText("Ghost1 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
-                } else if (marker.getTitle().equals("Ghost2")) {
-                    listGhostStatus.get(1).setText("Ghost2 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
-                } else if (marker.getTitle().equals("Ghost3")) {
-                    listGhostStatus.get(2).setText("Ghost3 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
-                } else if (marker.getTitle().equals("Ghost4")) {
-                    listGhostStatus.get(3).setText("Ghost4 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
-                } else {
-                    listGhostStatus.get(4).setText("Ghost5 distance " + (int) getDistanceBetweenMarkersInMetres(marker, toPosition) + " metres");
-                }
 
                 if (t < 1.0) {
                     // Post again 96ms later.
@@ -252,20 +230,8 @@ public class MapsActivity extends FragmentActivity {
                         listTGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
                     }
-                    if (marker.getTitle().equals("Ghost1")) {
-                        parentText = (LinearLayout) listGhostStatus.get(0).getParent();
-                    } else if (marker.getTitle().equals("Ghost2")) {
-                        parentText = (LinearLayout) listGhostStatus.get(1).getParent();
-                    } else if (marker.getTitle().equals("Ghost3")) {
-                        parentText = (LinearLayout) listGhostStatus.get(2).getParent();
-                    } else if (marker.getTitle().equals("Ghost4")) {
-                        parentText = (LinearLayout) listGhostStatus.get(3).getParent();
-                    } else {
-                        parentText = (LinearLayout) listGhostStatus.get(4).getParent();
-                    }
                     if (!mAdd.isShown())
                         mAdd.setVisibility(View.VISIBLE);
-                    parentText.setVisibility(View.GONE);
                     exit.show();
 //                    Timer a = new Timer();
 //                    TimerTask b = new TimerTask() {
@@ -375,16 +341,22 @@ public class MapsActivity extends FragmentActivity {
         this.mMap = mMap;
     }
 
-    public Marker getmBlinky() {
-        return mBlinky;
-    }
-
     public LatLngBounds getPlayground() {
         return playground;
     }
 
     public void setPlayground(LatLngBounds playground) {
         this.playground = playground;
+    }
+
+    private boolean isGooglePlayServicesAvailable() {
+        int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+        if (ConnectionResult.SUCCESS == status) {
+            return true;
+        } else {
+            GooglePlayServicesUtil.getErrorDialog(status, this, 0).show();
+            return false;
+        }
     }
 }
 
