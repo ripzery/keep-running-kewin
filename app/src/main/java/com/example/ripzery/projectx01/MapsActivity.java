@@ -73,6 +73,7 @@ public class MapsActivity extends FragmentActivity {
 
     private void initVar() {
         mGhost1Status = (TextView) findViewById(R.id.tv1);
+        mGhost2Status = (TextView) findViewById(R.id.tv2);
 
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
@@ -89,9 +90,9 @@ public class MapsActivity extends FragmentActivity {
 
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(5);
+        mGhostBehavior.setSpeed(0.8);
 
-        final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/RobotoCondensed-Bold.ttf");
+        final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/Roboto-Regular.ttf");
 
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
         mAdd.setOnClickListener(new View.OnClickListener() {
@@ -149,7 +150,8 @@ public class MapsActivity extends FragmentActivity {
             public void onMyLocationChange(Location location) {
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                 currentUpdateTime = location.getTime();
-                mGhost1Status.setText("Speed : " + location.getSpeed() + " UpdateTime : " + ((currentUpdateTime - previousUpdateTime) / 1000.0));
+                mGhost1Status.setText("v : " + location.getSpeed() + " m/s " + "gps period : " + ((currentUpdateTime - previousUpdateTime) / 1000.0) + " s");
+                mGhost2Status.setText("acc : " + location.getAccuracy() + " m");
                 if (getmMap().getMyLocation() != null && builder == null) {
                     progress.dismiss();
                     builder = new MaterialDialog(MapsActivity.this);
@@ -160,8 +162,8 @@ public class MapsActivity extends FragmentActivity {
                         public void onClick(View v) {
                             builder.dismiss();
                             builder2 = new MaterialDialog(MapsActivity.this);
-                            builder2.setMessage("Good luck");
-                            builder2.setTitle("Run for your life !!!");
+                            builder2.setMessage("Go go go !!");
+                            builder2.setTitle("Fire in the hole!!!");
                             builder2.setPositiveButton("BEGIN", new View.OnClickListener() {
 
                                 @Override
@@ -190,7 +192,7 @@ public class MapsActivity extends FragmentActivity {
 
     public void animateMarker(final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
-        //define default men speed is 10 m/s
+        //define default user speed is 1.0 m/s
         // speed = distance/duration
         final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
@@ -198,19 +200,22 @@ public class MapsActivity extends FragmentActivity {
         Projection proj = getmMap().getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
-        final long duration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000));
+        final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000)); // duration can be change when user is moving
         final Interpolator interpolator = new LinearInterpolator();
 
         runnable = new Runnable() {
+            long adjustDuration = initDuration;
             @Override
             public void run() {
                 long elapsed = SystemClock.uptimeMillis() - start;
                 float t = interpolator.getInterpolation((float) elapsed
-                        / duration);
+                        / adjustDuration);
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
                     Log.d("Change Location to ", "" + toPosition.toString());
+                    adjustDuration = adjustDuration + ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng)));
                     toPosition.setLatitude(mCurrentLatLng.latitude);
                     toPosition.setLongitude(mCurrentLatLng.longitude);
+
                 }
                 double lng = t * toPosition.getLongitude() + (1 - t)
                         * startLatLng.longitude;
@@ -253,8 +258,13 @@ public class MapsActivity extends FragmentActivity {
         handler.post(runnable);
     }
 
-    public double getDistanceBetweenMarkersInMetres(Marker mMarker1, Location toLocation) {
-        double distance = SphericalUtil.computeDistanceBetween(mMarker1.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
+    public double getDistanceBetweenMarkersInMetres(Marker fromLocation, Location toLocation) {
+        double distance = SphericalUtil.computeDistanceBetween(fromLocation.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
+        return distance;
+    }
+
+    public double getDistanceBetweenMarkersInMetres(Location fromLocation, LatLng toLocation) {
+        double distance = SphericalUtil.computeDistanceBetween(new LatLng(fromLocation.getLatitude(), fromLocation.getLongitude()), toLocation);
         return distance;
     }
 
