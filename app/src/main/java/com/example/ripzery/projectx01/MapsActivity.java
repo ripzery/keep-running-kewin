@@ -45,7 +45,7 @@ public class MapsActivity extends FragmentActivity {
     private FloatingActionButton mAdd;
     private ProgressDialog progress;
     private Thread tGhost;
-    private LatLng mCurrentLatLng;
+    private LatLng mCurrentLatLng, mPreviousLatLng;
     private Handler handler = new Handler();
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
@@ -54,6 +54,7 @@ public class MapsActivity extends FragmentActivity {
     private Ghost mGhostBehavior; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
     private MaterialDialog builder, builder2;
     private long previousUpdateTime, currentUpdateTime;
+    private double distanceGoal = 1000.0;
 
     public MapsActivity() {
 
@@ -74,6 +75,7 @@ public class MapsActivity extends FragmentActivity {
     private void initVar() {
         mGhost1Status = (TextView) findViewById(R.id.tv1);
         mGhost2Status = (TextView) findViewById(R.id.tv2);
+        mGhost3Status = (TextView) findViewById(R.id.tv3);
 
         getmMap().setMyLocationEnabled(true);
         getmMap().getUiSettings().setMyLocationButtonEnabled(false);
@@ -91,6 +93,8 @@ public class MapsActivity extends FragmentActivity {
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
         mGhostBehavior.setSpeed(0.8);
+        mGhost3Status.setText(distanceGoal + " m");
+
 
         final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/Roboto-Regular.ttf");
 
@@ -149,6 +153,10 @@ public class MapsActivity extends FragmentActivity {
             @Override
             public void onMyLocationChange(Location location) {
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+                if (mPreviousLatLng == null) {
+                    mPreviousLatLng = mCurrentLatLng;
+                }
                 currentUpdateTime = location.getTime();
                 mGhost1Status.setText("v : " + location.getSpeed() + " m/s " + "gps period : " + ((currentUpdateTime - previousUpdateTime) / 1000.0) + " s");
                 mGhost2Status.setText("acc : " + location.getAccuracy() + " m");
@@ -180,11 +188,12 @@ public class MapsActivity extends FragmentActivity {
                     setCameraPosition(mCurrentLatLng, 18, 20);
                     builder.show();
                 } else {
-//                   mGhost1Status.setText("Accuracy = "+location.getAccuracy());
+                    mGhost3Status.setText((distanceGoal - (getDistanceBetweenMarkersInMetres(location, mPreviousLatLng))) + " m");
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                     setCameraPosition(mCurrentLatLng, 18, 20);
                 }
                 previousUpdateTime = currentUpdateTime;
+                mPreviousLatLng = mCurrentLatLng;
             }
         });
     }

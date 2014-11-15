@@ -61,6 +61,25 @@
 
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/layoutTv3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:background="#009e9e9e"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_horizontal"
+                    android:text="N/A"
+                    android:textColor="#00695c"
+                    android:textSize="18sp" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
         <RelativeLayout
