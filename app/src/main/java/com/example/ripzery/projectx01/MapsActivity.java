@@ -18,8 +18,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -77,15 +75,15 @@ public class MapsActivity extends FragmentActivity {
         mGhost2Status = (TextView) findViewById(R.id.tv2);
         mGhost3Status = (TextView) findViewById(R.id.tv3);
 
-        getmMap().setMyLocationEnabled(true);
-        getmMap().getUiSettings().setMyLocationButtonEnabled(false);
-        getmMap().getUiSettings().setCompassEnabled(false);
-        getmMap().getUiSettings().setZoomGesturesEnabled(false);
-        getmMap().getUiSettings().setZoomControlsEnabled(false);
-        getmMap().getUiSettings().setRotateGesturesEnabled(true);
-        getmMap().getUiSettings().setScrollGesturesEnabled(false);
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        mMap.getUiSettings().setCompassEnabled(false);
+        mMap.getUiSettings().setZoomGesturesEnabled(false);
+        mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setRotateGesturesEnabled(true);
+        mMap.getUiSettings().setScrollGesturesEnabled(false);
 
-        setPlayground(new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897)));
+        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
 
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
@@ -114,42 +112,20 @@ public class MapsActivity extends FragmentActivity {
         });
     }
 
-    private void addGhost(final Ghost ghost) {
-
-        String name = "Ghost";
-        for (int i = 1; i <= 5; i++) {
-            if (!listGhostName.contains(name + i)) {
-                ghost.setName(name + i);
-                listGhostName.add(name + i);
-                break;
-            }
-        }
-
-        final Marker mGhost = getmMap().addMarker(getRandomMarker(getPlayground()).title(ghost.getName()));
-        tGhost = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                animateMarker(mGhost, getmMap().getMyLocation(), true, ghost.getSpeed());
-            }
-        });
-        tGhost.setName(ghost.getName());
-        listTGhost.add(tGhost);
-    }
-
     private void initListener() {
 
-        getmMap().setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
                 // Do something
-                setCameraPosition(getPlayground().getCenter(), 15, 20);
+                setCameraPosition(playground.getCenter(), 15, 20);
                 progress.setMessage("Wait while getting your location");
             }
         });
 
         previousUpdateTime = System.currentTimeMillis();
 
-        getmMap().setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -160,7 +136,7 @@ public class MapsActivity extends FragmentActivity {
                 currentUpdateTime = location.getTime();
                 mGhost1Status.setText("v : " + location.getSpeed() + " m/s " + "gps period : " + ((currentUpdateTime - previousUpdateTime) / 1000.0) + " s");
                 mGhost2Status.setText("acc : " + location.getAccuracy() + " m");
-                if (getmMap().getMyLocation() != null && builder == null) {
+                if (mMap.getMyLocation() != null && builder == null) {
                     progress.dismiss();
                     builder = new MaterialDialog(MapsActivity.this);
                     builder.setMessage("Are you ready?");
@@ -177,7 +153,7 @@ public class MapsActivity extends FragmentActivity {
                                 @Override
                                 public void onClick(View v2) {
                                     builder2.dismiss();
-                                    setPlayground(getmMap().getProjection().getVisibleRegion().latLngBounds);
+                                    playground = mMap.getProjection().getVisibleRegion().latLngBounds;
                                     addGhost(mGhostBehavior);
                                     tGhost.run();
                                 }
@@ -188,7 +164,12 @@ public class MapsActivity extends FragmentActivity {
                     setCameraPosition(mCurrentLatLng, 18, 20);
                     builder.show();
                 } else {
-                    mGhost3Status.setText((distanceGoal - (getDistanceBetweenMarkersInMetres(location, mPreviousLatLng))) + " m");
+
+                    distanceGoal -= getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
+                    if (distanceGoal <= 0) {
+                        distanceGoal = 0;
+                    }
+                    mGhost3Status.setText(distanceGoal + " m");
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                     setCameraPosition(mCurrentLatLng, 18, 20);
                 }
@@ -198,6 +179,27 @@ public class MapsActivity extends FragmentActivity {
         });
     }
 
+    private void addGhost(final Ghost ghost) {
+
+        String name = "Ghost";
+        for (int i = 1; i <= 5; i++) {
+            if (!listGhostName.contains(name + i)) {
+                ghost.setName(name + i);
+                listGhostName.add(name + i);
+                break;
+            }
+        }
+
+        final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
+        tGhost = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
+            }
+        });
+        tGhost.setName(ghost.getName());
+        listTGhost.add(tGhost);
+    }
 
     public void animateMarker(final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
@@ -206,7 +208,7 @@ public class MapsActivity extends FragmentActivity {
         final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
 
-        Projection proj = getmMap().getProjection();
+        Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
         final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000)); // duration can be change when user is moving
@@ -288,13 +290,6 @@ public class MapsActivity extends FragmentActivity {
         return ghostMarkerPosition;
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (runnable != null) {
-            handler.removeCallbacks(runnable);
-        }
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -313,7 +308,7 @@ public class MapsActivity extends FragmentActivity {
                 .zoom(zoomLevel)
                 .tilt(tilt)
                 .build();
-        getmMap().animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
 
@@ -326,56 +321,31 @@ public class MapsActivity extends FragmentActivity {
                 .bearing(bearing)
                 .build();
 
-        getmMap().animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+    }
+
+
+
+    private void setUpMapIfNeeded() {
+        // Do a null check to confirm that we have not already instantiated the map. instance
+        if (mMap == null) {
+            mMap = (((SupportMapFragment) this.getSupportFragmentManager().findFragmentById(R.id.map)).getMap());
+            // Check if we were successful in obtaining the map.
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (runnable != null) {
+            handler.removeCallbacks(runnable);
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
 
-    }
-
-    private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map. instance
-        if (getmMap() == null) {
-            setmMap((((SupportMapFragment) this.getSupportFragmentManager().findFragmentById(R.id.map)).getMap()));
-            // Check if we were successful in obtaining the map.
-            if (getmMap() != null) {
-                setUpMap();
-            }
-        }
-    }
-
-    private void setUpMap() {
-//        mTest = mMap.addMarker(new MarkerOptions().position(playground.getCenter()).title("Marker"));
-
-        // Note : playground.getCenter() return LatLng object
-    }
-
-    public GoogleMap getmMap() {
-        return mMap;
-    }
-
-    public void setmMap(GoogleMap mMap) {
-        this.mMap = mMap;
-    }
-
-    public LatLngBounds getPlayground() {
-        return playground;
-    }
-
-    public void setPlayground(LatLngBounds playground) {
-        this.playground = playground;
-    }
-
-    private boolean isGooglePlayServicesAvailable() {
-        int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-        if (ConnectionResult.SUCCESS == status) {
-            return true;
-        } else {
-            GooglePlayServicesUtil.getErrorDialog(status, this, 0).show();
-            return false;
-        }
     }
 }
 
