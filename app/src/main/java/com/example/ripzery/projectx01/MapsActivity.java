@@ -2,7 +2,6 @@ package com.example.ripzery.projectx01;
 
 import android.app.ProgressDialog;
 import android.graphics.Point;
-import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -36,8 +35,7 @@ import me.drakeet.materialdialog.MaterialDialog;
 
 public class MapsActivity extends FragmentActivity {
 
-    TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
-    FusedLocationService fusedLocationService;
+    private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
     private FloatingActionButton mAdd;
@@ -48,15 +46,10 @@ public class MapsActivity extends FragmentActivity {
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Thread> listTGhost = new ArrayList<Thread>();
-    private ArrayList<TextView> listGhostStatus = new ArrayList<TextView>();
     private Ghost mGhostBehavior; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
     private MaterialDialog builder, builder2;
     private long previousUpdateTime, currentUpdateTime;
     private double distanceGoal = 1000.0;
-
-    public MapsActivity() {
-
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,6 +58,7 @@ public class MapsActivity extends FragmentActivity {
 //        ActionBar actionBar = getActionBar();
 //        actionBar.setHomeButtonEnabled(true);
 //        actionBar.setDisplayHomeAsUpEnabled(true);
+
         setUpMapIfNeeded();
         initVar();
         initListener();
@@ -90,11 +84,8 @@ public class MapsActivity extends FragmentActivity {
 
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(0.8);
+        mGhostBehavior.setSpeed(1);
         mGhost3Status.setText(distanceGoal + " m");
-
-
-        final Typeface tf = Typeface.createFromAsset(this.getAssets(), "font/Roboto-Regular.ttf");
 
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
         mAdd.setOnClickListener(new View.OnClickListener() {
@@ -137,6 +128,7 @@ public class MapsActivity extends FragmentActivity {
                 mGhost1Status.setText("v : " + location.getSpeed() + " m/s " + "gps period : " + ((currentUpdateTime - previousUpdateTime) / 1000.0) + " s");
                 mGhost2Status.setText("acc : " + location.getAccuracy() + " m");
                 if (mMap.getMyLocation() != null && builder == null) {
+
                     progress.dismiss();
                     builder = new MaterialDialog(MapsActivity.this);
                     builder.setMessage("Are you ready?");
@@ -145,24 +137,14 @@ public class MapsActivity extends FragmentActivity {
                         @Override
                         public void onClick(View v) {
                             builder.dismiss();
-                            builder2 = new MaterialDialog(MapsActivity.this);
-                            builder2.setMessage("Go go go !!");
-                            builder2.setTitle("Fire in the hole!!!");
-                            builder2.setPositiveButton("BEGIN", new View.OnClickListener() {
-
-                                @Override
-                                public void onClick(View v2) {
-                                    builder2.dismiss();
-                                    playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-                                    addGhost(mGhostBehavior);
-                                    tGhost.run();
-                                }
-                            });
-                            builder2.show();
+                            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
+                            addGhost(mGhostBehavior);
+                            tGhost.run();
                         }
                     });
                     setCameraPosition(mCurrentLatLng, 18, 20);
                     builder.show();
+
                 } else {
 
                     distanceGoal -= getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
@@ -171,10 +153,11 @@ public class MapsActivity extends FragmentActivity {
                     }
                     mGhost3Status.setText(distanceGoal + " m");
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    setCameraPosition(mCurrentLatLng, 18, 20);
+                    setCameraPosition(mCurrentLatLng, 18, 20, (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng));
+                    mPreviousLatLng = mCurrentLatLng;
                 }
+
                 previousUpdateTime = currentUpdateTime;
-                mPreviousLatLng = mCurrentLatLng;
             }
         });
     }
