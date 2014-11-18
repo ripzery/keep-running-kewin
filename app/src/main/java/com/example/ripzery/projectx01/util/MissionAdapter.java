@@ -2,6 +2,7 @@ package com.example.ripzery.projectx01.util;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,13 +38,17 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.ViewHold
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder viewHolder, int i) {
+    public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         viewHolder.mTextView.setText(missionDatas.get(i).getName());
         viewHolder.mThumbnail.setImageResource(missionDatas.get(i).getThumbnail());
         viewHolder.mThumbnail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(parentActivity, MapsActivity.class);
+                Bundle mDataBundle = new Bundle();
+                mDataBundle.putInt("mission", i);
+                mDataBundle.putParcelable("missionData", missionDatas.get(i));
+                intent.putExtras(mDataBundle);
                 parentActivity.startActivity(intent);
             }
         });

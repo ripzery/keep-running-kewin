@@ -65,6 +65,9 @@ public class MapsActivity extends FragmentActivity {
     }
 
     private void initVar() {
+        Bundle bundle = getIntent().getExtras();
+        bundle.getStr
+
         mGhost1Status = (TextView) findViewById(R.id.tv1);
         mGhost2Status = (TextView) findViewById(R.id.tv2);
         mGhost3Status = (TextView) findViewById(R.id.tv3);
@@ -126,7 +129,8 @@ public class MapsActivity extends FragmentActivity {
                 }
                 currentUpdateTime = location.getTime();
                 mGhost1Status.setText("v : " + location.getSpeed() + " m/s " + "gps period : " + ((currentUpdateTime - previousUpdateTime) / 1000.0) + " s");
-                mGhost2Status.setText("acc : " + location.getAccuracy() + " m");
+                mGhost2Status.setText(location.toString());
+
                 if (mMap.getMyLocation() != null && builder == null) {
 
                     progress.dismiss();
@@ -194,7 +198,7 @@ public class MapsActivity extends FragmentActivity {
         Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
-        final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000)); // duration can be change when user is moving
+        final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0)); // duration can be change when user is moving
         final Interpolator interpolator = new LinearInterpolator();
 
         runnable = new Runnable() {
@@ -206,7 +210,7 @@ public class MapsActivity extends FragmentActivity {
                         / adjustDuration);
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
                     Log.d("Change Location to ", "" + toPosition.toString());
-                    adjustDuration = adjustDuration + ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng)));
+                    adjustDuration = adjustDuration + ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
                     toPosition.setLatitude(mCurrentLatLng.latitude);
                     toPosition.setLongitude(mCurrentLatLng.longitude);
 
@@ -218,8 +222,8 @@ public class MapsActivity extends FragmentActivity {
                 marker.setPosition(new LatLng(lat, lng));
 
                 if (t < 1.0) {
-                    // Post again 96ms later.
-                    handler.postDelayed(this, 96);
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 16);
                 } else {
 
                     Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
@@ -268,11 +272,11 @@ public class MapsActivity extends FragmentActivity {
         double latRange = bound.northeast.latitude - latMin;
         double lonMin = bound.southwest.longitude;
         double lonRange = bound.northeast.longitude - lonMin;
+
         LatLng ghostLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
-        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(mGhostBehavior.getIcon()).flat(true);
+        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(mGhostBehavior.getIcon());
         return ghostMarkerPosition;
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -306,8 +310,6 @@ public class MapsActivity extends FragmentActivity {
 
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
-
-
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance

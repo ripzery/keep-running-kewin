@@ -12,7 +12,7 @@ public class MissionDetail {
     private ArrayList<MissionData> missionDatas = new ArrayList<MissionData>();
 
     public MissionDetail() {
-        missionDatas.add(new MissionData("Prelude", "", R.drawable.single_player_ic));
+        missionDatas.add(new MissionData("Tutorial", "", R.drawable.single_player_ic, 1000));
         missionDatas.add(new MissionData("Mission 1", "", R.drawable.single_player_ic));
         missionDatas.add(new MissionData("Mission 2", "", R.drawable.single_player_ic));
         missionDatas.add(new MissionData("Mission 3", "", R.drawable.single_player_ic));
