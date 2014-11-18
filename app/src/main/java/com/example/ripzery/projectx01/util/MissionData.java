@@ -7,6 +7,7 @@ import android.os.Parcelable;
  * Created by oakraw90 on 11/4/2014.
  */
 public class MissionData implements Parcelable {
+
     public static final Parcelable.Creator CREATOR = new Parcelable.Creator() {
         public MissionData createFromParcel(Parcel in) {
             return new MissionData(in);
@@ -34,7 +35,6 @@ public class MissionData implements Parcelable {
         this.distance = distance;
     }
 
-    // Parcelling part
     public MissionData(Parcel in) {
         String[] data = new String[2];
         in.readStringArray(data);

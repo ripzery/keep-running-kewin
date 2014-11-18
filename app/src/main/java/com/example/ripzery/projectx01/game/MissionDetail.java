@@ -13,14 +13,14 @@ public class MissionDetail {
 
     public MissionDetail() {
         missionDatas.add(new MissionData("Tutorial", "", R.drawable.single_player_ic, 1000));
-        missionDatas.add(new MissionData("Mission 1", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 2", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 3", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 4", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 5", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 6", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 7", "", R.drawable.single_player_ic));
-        missionDatas.add(new MissionData("Mission 8", "", R.drawable.single_player_ic));
+        missionDatas.add(new MissionData("Mission 1", "", R.drawable.single_player_ic, 1000));
+        missionDatas.add(new MissionData("Mission 2", "", R.drawable.single_player_ic, 1100));
+        missionDatas.add(new MissionData("Mission 3", "", R.drawable.single_player_ic, 1100));
+        missionDatas.add(new MissionData("Mission 4", "", R.drawable.single_player_ic, 1210));
+        missionDatas.add(new MissionData("Mission 5", "", R.drawable.single_player_ic, 1210));
+        missionDatas.add(new MissionData("Mission 6", "", R.drawable.single_player_ic, 1320));
+        missionDatas.add(new MissionData("Mission 7", "", R.drawable.single_player_ic, 1320));
+        missionDatas.add(new MissionData("Mission 8", "", R.drawable.single_player_ic, 1500));
     }
 
     public ArrayList<MissionData> getMissionDatas() {

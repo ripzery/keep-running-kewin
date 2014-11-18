@@ -46,7 +46,6 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.ViewHold
             public void onClick(View view) {
                 Intent intent = new Intent(parentActivity, MapsActivity.class);
                 Bundle mDataBundle = new Bundle();
-                mDataBundle.putInt("mission", i);
                 mDataBundle.putParcelable("missionData", missionDatas.get(i));
                 intent.putExtras(mDataBundle);
                 parentActivity.startActivity(intent);

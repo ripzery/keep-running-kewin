@@ -16,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.ripzery.projectx01.util.MissionData;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -66,7 +67,8 @@ public class MapsActivity extends FragmentActivity {
 
     private void initVar() {
         Bundle bundle = getIntent().getExtras();
-        bundle.getStr
+        MissionData missionData = (MissionData) bundle.getParcelable("missionData");
+        distanceGoal = missionData.getDistance();
 
         mGhost1Status = (TextView) findViewById(R.id.tv1);
         mGhost2Status = (TextView) findViewById(R.id.tv2);
@@ -166,27 +168,6 @@ public class MapsActivity extends FragmentActivity {
         });
     }
 
-    private void addGhost(final Ghost ghost) {
-
-        String name = "Ghost";
-        for (int i = 1; i <= 5; i++) {
-            if (!listGhostName.contains(name + i)) {
-                ghost.setName(name + i);
-                listGhostName.add(name + i);
-                break;
-            }
-        }
-
-        final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
-        tGhost = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
-            }
-        });
-        tGhost.setName(ghost.getName());
-        listTGhost.add(tGhost);
-    }
 
     public void animateMarker(final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
@@ -256,16 +237,28 @@ public class MapsActivity extends FragmentActivity {
         handler.post(runnable);
     }
 
-    public double getDistanceBetweenMarkersInMetres(Marker fromLocation, Location toLocation) {
-        double distance = SphericalUtil.computeDistanceBetween(fromLocation.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
-        return distance;
+
+    private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
+        CameraPosition camPos = new CameraPosition.Builder()
+                .target(Location)
+                .zoom(zoomLevel)
+                .tilt(tilt)
+                .build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
-    public double getDistanceBetweenMarkersInMetres(Location fromLocation, LatLng toLocation) {
-        double distance = SphericalUtil.computeDistanceBetween(new LatLng(fromLocation.getLatitude(), fromLocation.getLongitude()), toLocation);
-        return distance;
-    }
 
+    private void setCameraPosition(LatLng Location, int zoomLevel, int tilt, int bearing) {
+
+        CameraPosition camPos = new CameraPosition.Builder()
+                .target(Location)
+                .zoom(zoomLevel)
+                .tilt(tilt)
+                .bearing(bearing)
+                .build();
+
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+    }
 
     public MarkerOptions getRandomMarker(LatLngBounds bound) {
         double latMin = bound.southwest.latitude;
@@ -289,27 +282,39 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-    private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
-        CameraPosition camPos = new CameraPosition.Builder()
-                .target(Location)
-                .zoom(zoomLevel)
-                .tilt(tilt)
-                .build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+
+    private void addGhost(final Ghost ghost) {
+
+        String name = "Ghost";
+        for (int i = 1; i <= 5; i++) {
+            if (!listGhostName.contains(name + i)) {
+                ghost.setName(name + i);
+                listGhostName.add(name + i);
+                break;
+            }
+        }
+
+        final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
+        tGhost = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
+            }
+        });
+        tGhost.setName(ghost.getName());
+        listTGhost.add(tGhost);
     }
 
-
-    private void setCameraPosition(LatLng Location, int zoomLevel, int tilt, int bearing) {
-
-        CameraPosition camPos = new CameraPosition.Builder()
-                .target(Location)
-                .zoom(zoomLevel)
-                .tilt(tilt)
-                .bearing(bearing)
-                .build();
-
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+    public double getDistanceBetweenMarkersInMetres(Marker fromLocation, Location toLocation) {
+        double distance = SphericalUtil.computeDistanceBetween(fromLocation.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
+        return distance;
     }
+
+    public double getDistanceBetweenMarkersInMetres(Location fromLocation, LatLng toLocation) {
+        double distance = SphericalUtil.computeDistanceBetween(new LatLng(fromLocation.getLatitude(), fromLocation.getLongitude()), toLocation);
+        return distance;
+    }
+
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance
