@@ -28,6 +28,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class MapsActivity extends FragmentActivity {
 
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(1);
+        mGhostBehavior.setSpeed(3);
         mGhost3Status.setText(distanceGoal + " m");
 
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
@@ -148,7 +149,7 @@ public class MapsActivity extends FragmentActivity {
                             tGhost.run();
                         }
                     });
-                    setCameraPosition(mCurrentLatLng, 18, 20);
+                    setCameraPosition(mCurrentLatLng, 19, 20);
                     builder.show();
 
                 } else {
@@ -159,7 +160,7 @@ public class MapsActivity extends FragmentActivity {
                     }
                     mGhost3Status.setText(distanceGoal + " m");
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    setCameraPosition(mCurrentLatLng, 18, 20, (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng));
+                    setCameraPosition(mCurrentLatLng, 19, 20, (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng));
                     mPreviousLatLng = mCurrentLatLng;
                 }
 
@@ -174,39 +175,59 @@ public class MapsActivity extends FragmentActivity {
         //define default user speed is 1.0 m/s
         // speed = distance/duration
         final Handler handler = new Handler();
-        final long start = SystemClock.uptimeMillis();
+        marker.setTitle("Hi Kewin!");
 
+        final long start = SystemClock.uptimeMillis();
+        final LatLngInterpolator.Spherical spherical = new LatLngInterpolator.Spherical();
         Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
         final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0)); // duration can be change when user is moving
         final Interpolator interpolator = new LinearInterpolator();
 
+
         runnable = new Runnable() {
             long adjustDuration = initDuration;
+            PolylineOptions polylineOptions = new PolylineOptions();
             @Override
             public void run() {
                 long elapsed = SystemClock.uptimeMillis() - start;
                 float t = interpolator.getInterpolation((float) elapsed
                         / adjustDuration);
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
-                    Log.d("Change Location to ", "" + toPosition.toString());
-                    adjustDuration = adjustDuration + ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+                    
+                    if (getDistanceBetweenMarkersInMetres(marker, toPosition) > getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
+                        adjustDuration = adjustDuration - ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+                    } else {
+                        adjustDuration = adjustDuration + ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+                    }
                     toPosition.setLatitude(mCurrentLatLng.latitude);
                     toPosition.setLongitude(mCurrentLatLng.longitude);
+                }
+
+//                polylineOptions.add(marker.getPosition());
+                marker.setPosition(spherical.interpolate(t, startLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
+                marker.setAlpha(t);
+                if (t > 0.5 && t < 0.7) {
+                    if (!marker.isInfoWindowShown())
+                        marker.showInfoWindow();
 
                 }
-                double lng = t * toPosition.getLongitude() + (1 - t)
-                        * startLatLng.longitude;
-                double lat = t * toPosition.getLatitude() + (1 - t)
-                        * startLatLng.latitude;
-                marker.setPosition(new LatLng(lat, lng));
+                if (t > 0.7) {
+                    if (marker.isInfoWindowShown())
+                        marker.hideInfoWindow();
+                }
+//                double lng = t * toPosition.getLongitude() + (1 - t)
+//                        * startLatLng.longitude;
+//                double lat = t * toPosition.getLatitude() + (1 - t)
+//                        * startLatLng.latitude;
+//                marker.setPosition(new LatLng(lat, lng));
 
                 if (t < 1.0) {
                     // Post again 16ms later.
                     handler.postDelayed(this, 16);
                 } else {
-
+//                    mMap.addPolyline(polylineOptions);
                     Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
 
                     LinearLayout parentText;
@@ -315,6 +336,10 @@ public class MapsActivity extends FragmentActivity {
         return distance;
     }
 
+    public double getDistanceBetweenMarkersInMetres(LatLng fromLocation, LatLng toLocation) {
+        double distance = SphericalUtil.computeDistanceBetween(fromLocation, toLocation);
+        return distance;
+    }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance
