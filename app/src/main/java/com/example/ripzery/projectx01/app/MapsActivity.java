@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
@@ -62,6 +63,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private float[] accelerometerData = new float[3];
     private float[] magneticData = new float[3];
     private Marker myArrow;
+    private double oldAzimuth = 0;
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
     private boolean isLocatedSuccess = false;
@@ -154,20 +156,19 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
                 // ถ้ายังไม่มีการสร้าง Marker ลูกศรบอกตำแหน่งและทิศทางของผู้ใช้ให้ทำการสร้าง
-                if (myArrow == null)
+                // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
+                if (myArrow == null) {
+                    mPreviousLatLng = mCurrentLatLng;
                     myArrow = mMap.addMarker(new MarkerOptions()
                             .position(mCurrentLatLng)
                             .anchor((float) 0.5, (float) 0.5)
                             .flat(true)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                    setCameraPosition(mCurrentLatLng, 19, 20);
+                }
 
                 // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
 //                setCameraPosition(mCurrentLatLng, 19, 20);
-
-                // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
-                if (mPreviousLatLng == null) {
-                    mPreviousLatLng = mCurrentLatLng;
-                }
 
                 // รับค่าเวลาปัจจุบันที่พบตำแหน่งผู้ใช้ หน่วยเป็น millisec
                 currentUpdateTime = location.getTime();
@@ -179,8 +180,9 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
 
                     // อัพเดตระยะทางที่ต้องวิ่ง
-                    countDistanceToRotCam += DistanceCalculator.getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
-                    distanceGoal -= countDistanceToRotCam;
+                    double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
+                    countDistanceToRotCam += distance;
+                    distanceGoal -= distance;
                     if (distanceGoal <= 0) {
                         distanceGoal = 0;
                     }
@@ -196,8 +198,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
                     //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                     mPreviousLatLng = mCurrentLatLng;
-                } else {
-                    setCameraPosition(mCurrentLatLng, 19, 20);
                 }
                 previousUpdateTime = currentUpdateTime;
             }
@@ -433,8 +433,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        double oldAzimuth = 0;
-
         if (myArrow != null && listTGhost.size() > 0) {
             int sensorType = event.sensor.getType();
             if (sensorType == Sensor.TYPE_ACCELEROMETER) {
@@ -454,13 +452,14 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
 
                     if (Math.abs(azimut - oldAzimuth) >= THRESHOLD_ROT_ARROW) {
+                        Log.d("azimuth", "" + azimut);
                         myArrow.setRotation(azimut);
                         oldAzimuth = azimut;
                     }
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
                     if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
-                        setCameraPosition(mCurrentLatLng, 18, 20, azimut);
+                        setCameraPosition(mCurrentLatLng, 19, 20, azimut);
                         myArrow.setRotation(azimut);
                         countDistanceToRotCam = 0;
                     }
