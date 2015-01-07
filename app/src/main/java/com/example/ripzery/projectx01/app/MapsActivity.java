@@ -52,7 +52,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Thread> listTGhost = new ArrayList<Thread>();
-    private Ghost mGhostBehavior; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
+    private Ghost mGhostBehavior;
     private AlertDialog.Builder builder, builder2;
     private long previousUpdateTime, currentUpdateTime;
     private Sensor accelerometerSensor;
