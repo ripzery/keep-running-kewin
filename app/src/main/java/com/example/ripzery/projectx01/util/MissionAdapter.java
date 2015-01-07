@@ -10,8 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.example.ripzery.projectx01.MapsActivity;
 import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.app.MapsActivity;
 
 import java.util.ArrayList;
 

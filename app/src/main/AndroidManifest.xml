@@ -44,7 +44,7 @@
             android:name=".app.CampaignActivity"
             android:label="@string/title_activity_campaign"></activity>
         <activity
-            android:name=".MapsActivity"
+            android:name=".app.MapsActivity"
             android:icon="@drawable/ic_launcher"
             android:label="@string/app_name">
             <intent-filter>

@@ -1,4 +1,4 @@
-package com.example.ripzery.projectx01;
+package com.example.ripzery.projectx01.app;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -13,14 +13,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.model.Ghost;
+import com.example.ripzery.projectx01.util.DistanceCalculator;
+import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -33,15 +35,12 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.maps.android.SphericalUtil;
 
 import java.util.ArrayList;
 
 public class MapsActivity extends FragmentActivity implements SensorEventListener {
 
-    float[] mGravity;
     SensorManager sensorManager;
-    float[] mGeomagnetic;
     private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
@@ -59,21 +58,22 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
     private float[] accelerometerData = new float[3];
-    ;
     private float[] magneticData = new float[3];
-    private int adjustHeading;
     private Marker myArrow;
     private double distanceGoal = 1000.0;
-    private float[] mRotationMatrix;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        //setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
         setUpMapIfNeeded();
+
         initVar();
         initListener();
     }
@@ -97,23 +97,29 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mMap.getUiSettings().setRotateGesturesEnabled(true);
         mMap.getUiSettings().setScrollGesturesEnabled(true);
 
-        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
+        //กำหนดขอบเขตการเล่น
+//        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
 
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
+        //กำหนด property ของ Ghost
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
         mGhostBehavior.setSpeed(2);
         mGhost3Status.setText(distanceGoal + " m");
 
+        // กำหนด Listener ของปุ่ม Add เพิ่มผี
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
         mAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                /*
+                 * ถ้ามีผีเท่ากับ 5 ตัวแล้วจะซ่อนปุ่ม Add
+                 * ถ้าน้อยกว่าจะเพิ่มผีลงไป
+                 */
                 if (listTGhost.size() < 5) {
                     addGhost(mGhostBehavior);
-                    Log.d("GhostName", mGhostBehavior.getName());
                     listTGhost.get(listTGhost.size() - 1).run();
                 }
                 if (listTGhost.size() == 5) {
@@ -125,6 +131,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
     private void initListener() {
 
+        // เมื่อแผนที่โหลดเสร็จเรียบร้อยให้เปลี่ยนข้อความ progress จาก Wait while loading map... เป็น Wait while getting your location
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
@@ -132,70 +139,80 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
             }
         });
 
+        // กำหนดค่าเริ่มต้นของ UpdateTime ไว้เป็นเวลาปัจจุบัน
         previousUpdateTime = System.currentTimeMillis();
 
+        // กำหนด event เมื่อ Gps พบตำแหน่งของผู้ใช้
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
+
+                //รับค่าพิกัดปัจจุบัน
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+                // ถ้ายังไม่มีการสร้าง Marker ลูกศรบอกตำแหน่งและทิศทางของผู้ใช้ให้ทำการสร้าง
                 if (myArrow == null)
                     myArrow = mMap.addMarker(new MarkerOptions()
                             .position(mCurrentLatLng)
                             .anchor((float) 0.5, (float) 0.5)
                             .flat(true)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+
+                // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
                 setCameraPosition(mCurrentLatLng, 19, 20);
+
+                // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                 if (mPreviousLatLng == null) {
                     mPreviousLatLng = mCurrentLatLng;
                 }
+
+                // รับค่าเวลาปัจจุบันที่พบตำแหน่งผู้ใช้ หน่วยเป็น millisec
                 currentUpdateTime = location.getTime();
+
+                // แสดงความเร็วและความแม่นยำ
                 mGhost1Status.setText("v : " + location.getSpeed());
                 mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 
-                if (mMap.getMyLocation() != null && builder == null) {
+                // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
+                if (builder == null) {
                     builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-//                            builder.dismiss();
+
+                            //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
                             playground = mMap.getProjection().getVisibleRegion().latLngBounds;
                             addGhost(mGhostBehavior);
                             tGhost.run();
                         }
                     });
+
+                    // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
                     progress.dismiss();
                     builder.setMessage("Are you ready?");
                     builder.setTitle("Mission 1 start");
                     builder.show();
 
-
-                } else {
+                } else { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
 
                     // อัพเดตระยะทางที่ต้องวิ่ง
-                    distanceGoal -= getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
+                    distanceGoal -= DistanceCalculator.getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
                     if (distanceGoal <= 0) {
                         distanceGoal = 0;
                     }
 
+                    // แสดงระยะทางที่เหลือ
                     mGhost3Status.setText(distanceGoal + " m");
 
-                    mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-
+                    // เลื่อนตำแหน่งของลูกษรใหม่
                     myArrow.setPosition(mCurrentLatLng);
 
-                    // อัพเดตทิศที่หัน
-//                    if((int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng) < 0){
-//                        adjustHeading = 180 + -1 * (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng);
-//                    }else{
-//                        adjustHeading = (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng);
-//                    }
-//                    if(Math.abs(adjustHeading - mMap.getCameraPosition().bearing) > 60){
-//                        setCameraPosition(mCurrentLatLng, 19, 20, adjustHeading);
-
-
+                    // กำหนดตำแหน่งของกล้องใหม่
                     setCameraPosition(mCurrentLatLng, 19, 20);
-//                    }
+
+                    //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                     mPreviousLatLng = mCurrentLatLng;
                 }
+
                 previousUpdateTime = currentUpdateTime;
             }
         });
@@ -205,51 +222,82 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     public void animateMarker(final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
         //define default user speed is 1.0 m/s
-        // speed = distance/duration
-        final Handler handler = new Handler();
-        marker.setTitle("Hi Kewin!");
+        // speed = distance/durationWait while getting your location
 
+        // กำหนด Handler ในการเคลื่อนตัวปีศาจ
+        final Handler handler = new Handler();
+//        marker.setTitle("Hi Kewin!");
+
+        // กำหนดเวลาเริ่มต้น
         final long start = SystemClock.uptimeMillis();
+
+        // ใช้การ animate แบบ Linear (v คงที่)
         final LatLngInterpolator.Linear spherical = new LatLngInterpolator.Linear();
+
+        // แปลงตำแหน่งของ marker จาก Location เป็น onScreen
         Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
-        final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0)); // duration can be change when user is moving
+
+        // กำหนดระยะเวลาที่จะ animate โดยขึ้นอยู่กับความเร็วของปีศาจนั้นๆ
+        final long initDuration = (long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0));
+
+        // สร้าง interpolator
         final Interpolator interpolator = new LinearInterpolator();
 
+        // สร้าง runnable สำหรับเลื่อตำแหน่งของปีศาจ
         runnable = new Runnable() {
+
+            // กำหนดค่าเริ่มต้นของ adjustDuration (จะต้องปรับค่านี้ถ้าผู้เล่นเคลื่อนที่) ให้เท่ากับค่าเริ่มต้น
             long adjustDuration = initDuration;
             PolylineOptions polylineOptions = new PolylineOptions();
             @Override
             public void run() {
 
+                // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
                 long elapsed = SystemClock.uptimeMillis() - start;
+
+                // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
-                    if (getDistanceBetweenMarkersInMetres(marker, toPosition) > getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
-                        adjustDuration = adjustDuration - ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
-                    } else {
-                        adjustDuration = adjustDuration + ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+
+                    // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
+                    if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
+
+                        adjustDuration = adjustDuration - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+
+                    } else { // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่ามากขึ้น
+
+                        adjustDuration = adjustDuration + ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
                     }
+
+                    // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
                     toPosition.setLatitude(mCurrentLatLng.latitude);
                     toPosition.setLongitude(mCurrentLatLng.longitude);
                 }
+
+                // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
                 mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
+
+                // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
                 float t = interpolator.getInterpolation((float) elapsed
                         / adjustDuration);
                 marker.setPosition(spherical.interpolate(t, startLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
                 marker.setAlpha(t);
+
+                //ถ้าเลื่อนไม่ถึงผู้เล่นก็ให้เลื่อนต่อไปเรื่อยๆในทุกๆ 16 ms (จะได้ 60fps)
                 if (t < 1.0) {
                     handler.postDelayed(this, 16);
-                } else {
+                } else { // เลื่อนจนถึงผู้เล่รแล้ว
 //                    mMap.addPolyline(polylineOptions);
-                    Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
+//                    Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
+//                    exit.show();
                     if (!listTGhost.isEmpty() && !listGhostName.isEmpty()) {
                         listTGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
                     }
                     if (!mAdd.isShown())
                         mAdd.setVisibility(View.VISIBLE);
-                    exit.show();
+
 //                    Timer a = new Timer();
 //                    TimerTask b = new TimerTask() {
 //                        @Override
@@ -270,6 +318,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         handler.post(runnable);
     }
 
+    // เลื่อนตำแหน่งของกล้อง
     private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
         CameraPosition camPos = new CameraPosition.Builder()
                 .target(Location)
@@ -279,7 +328,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
-
+    // เลื่อนตำแหน่งของกล้องโดยตั้งค่า bearing ด้วย
     private void setCameraPosition(LatLng Location, int zoomLevel, int tilt, int bearing) {
 
         CameraPosition camPos = new CameraPosition.Builder()
@@ -292,6 +341,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
+    // สุ่ม marker ปีศาจ
     public MarkerOptions getRandomMarker(LatLngBounds bound) {
         double latMin = bound.southwest.latitude;
         double latRange = bound.northeast.latitude - latMin;
@@ -314,7 +364,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         }
     }
 
-
+    // เพิ่มปีศาจ
     private void addGhost(final Ghost ghost) {
 
         String name = "Ghost";
@@ -337,20 +387,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         listTGhost.add(tGhost);
     }
 
-    public double getDistanceBetweenMarkersInMetres(Marker fromLocation, Location toLocation) {
-        double distance = SphericalUtil.computeDistanceBetween(fromLocation.getPosition(), new LatLng(toLocation.getLatitude(), toLocation.getLongitude()));
-        return distance;
-    }
 
-    public double getDistanceBetweenMarkersInMetres(Location fromLocation, LatLng toLocation) {
-        double distance = SphericalUtil.computeDistanceBetween(new LatLng(fromLocation.getLatitude(), fromLocation.getLongitude()), toLocation);
-        return distance;
-    }
-
-    public double getDistanceBetweenMarkersInMetres(LatLng fromLocation, LatLng toLocation) {
-        double distance = SphericalUtil.computeDistanceBetween(fromLocation, toLocation);
-        return distance;
-    }
 
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance

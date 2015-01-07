@@ -1,4 +1,4 @@
-package com.example.ripzery.projectx01;
+package com.example.ripzery.projectx01.util;
 
 /**
  * Created by ripzery on 11/18/2014.

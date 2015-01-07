@@ -5,10 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.example.ripzery.projectx01.MapsActivity">
+    tools:context="com.example.ripzery.projectx01.app.MapsActivity">
 
 
-    <FrameLayout
+<FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 

@@ -1,4 +1,4 @@
-package com.example.ripzery.projectx01;
+package com.example.ripzery.projectx01.model;
 
 import com.google.android.gms.maps.model.BitmapDescriptor;
 
