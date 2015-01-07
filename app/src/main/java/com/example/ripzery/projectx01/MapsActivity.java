@@ -1,7 +1,13 @@
 package com.example.ripzery.projectx01;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.Point;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,11 +18,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.ripzery.projectx01.util.MissionData;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -33,10 +37,11 @@ import com.google.maps.android.SphericalUtil;
 
 import java.util.ArrayList;
 
-import me.drakeet.materialdialog.MaterialDialog;
+public class MapsActivity extends FragmentActivity implements SensorEventListener {
 
-public class MapsActivity extends FragmentActivity {
-
+    float[] mGravity;
+    SensorManager sensorManager;
+    float[] mGeomagnetic;
     private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
@@ -49,39 +54,48 @@ public class MapsActivity extends FragmentActivity {
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Thread> listTGhost = new ArrayList<Thread>();
     private Ghost mGhostBehavior; // These names is from the four ghosts in Pac-Man are Blinky, Pinky, Inky, and Clyde.
-    private MaterialDialog builder, builder2;
+    private AlertDialog.Builder builder, builder2;
     private long previousUpdateTime, currentUpdateTime;
+    private Sensor accelerometerSensor;
+    private Sensor magneticFieldSensor;
+    private float[] accelerometerData = new float[3];
+    ;
+    private float[] magneticData = new float[3];
+    private int adjustHeading;
+    private Marker myArrow;
     private double distanceGoal = 1000.0;
+    private float[] mRotationMatrix;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-//        ActionBar actionBar = getActionBar();
-//        actionBar.setHomeButtonEnabled(true);
-//        actionBar.setDisplayHomeAsUpEnabled(true);
-
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         setUpMapIfNeeded();
         initVar();
         initListener();
     }
 
     private void initVar() {
-        Bundle bundle = getIntent().getExtras();
-        MissionData missionData = (MissionData) bundle.getParcelable("missionData");
-        distanceGoal = missionData.getDistance();
+//        Bundle bundle = getIntent().getExtras();
+//        MissionData missionData = bundle.getParcelable("missionData");
+//        distanceGoal = missionData.getDistance();
+        distanceGoal = 1000;
 
         mGhost1Status = (TextView) findViewById(R.id.tv1);
         mGhost2Status = (TextView) findViewById(R.id.tv2);
         mGhost3Status = (TextView) findViewById(R.id.tv3);
+        mGhost4Status = (TextView) findViewById(R.id.tv4);
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        mMap.getUiSettings().setCompassEnabled(false);
-        mMap.getUiSettings().setZoomGesturesEnabled(false);
-        mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setZoomGesturesEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setRotateGesturesEnabled(true);
-        mMap.getUiSettings().setScrollGesturesEnabled(false);
+        mMap.getUiSettings().setScrollGesturesEnabled(true);
 
         playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
 
@@ -90,7 +104,7 @@ public class MapsActivity extends FragmentActivity {
 
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(3);
+        mGhostBehavior.setSpeed(2);
         mGhost3Status.setText(distanceGoal + " m");
 
         mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
@@ -114,8 +128,6 @@ public class MapsActivity extends FragmentActivity {
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
-                // Do something
-                setCameraPosition(playground.getCenter(), 15, 20);
                 progress.setMessage("Wait while getting your location");
             }
         });
@@ -126,44 +138,64 @@ public class MapsActivity extends FragmentActivity {
             @Override
             public void onMyLocationChange(Location location) {
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-
+                if (myArrow == null)
+                    myArrow = mMap.addMarker(new MarkerOptions()
+                            .position(mCurrentLatLng)
+                            .anchor((float) 0.5, (float) 0.5)
+                            .flat(true)
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                setCameraPosition(mCurrentLatLng, 19, 20);
                 if (mPreviousLatLng == null) {
                     mPreviousLatLng = mCurrentLatLng;
                 }
                 currentUpdateTime = location.getTime();
-                mGhost1Status.setText("v : " + location.getSpeed() + " m/s " + "gps period : " + ((currentUpdateTime - previousUpdateTime) / 1000.0) + " s");
-                mGhost2Status.setText(location.toString());
+                mGhost1Status.setText("v : " + location.getSpeed());
+                mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 
                 if (mMap.getMyLocation() != null && builder == null) {
-
-                    progress.dismiss();
-                    builder = new MaterialDialog(MapsActivity.this);
-                    builder.setMessage("Are you ready?");
-                    builder.setTitle("Mission 1 start");
-                    builder.setPositiveButton("YES", new View.OnClickListener() {
+                    builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(View v) {
-                            builder.dismiss();
+                        public void onClick(DialogInterface dialog, int which) {
+//                            builder.dismiss();
                             playground = mMap.getProjection().getVisibleRegion().latLngBounds;
                             addGhost(mGhostBehavior);
                             tGhost.run();
                         }
                     });
-                    setCameraPosition(mCurrentLatLng, 19, 20);
+                    progress.dismiss();
+                    builder.setMessage("Are you ready?");
+                    builder.setTitle("Mission 1 start");
                     builder.show();
+
 
                 } else {
 
+                    // อัพเดตระยะทางที่ต้องวิ่ง
                     distanceGoal -= getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
                     if (distanceGoal <= 0) {
                         distanceGoal = 0;
                     }
+
                     mGhost3Status.setText(distanceGoal + " m");
+
                     mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    setCameraPosition(mCurrentLatLng, 19, 20, (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng));
+
+                    myArrow.setPosition(mCurrentLatLng);
+
+                    // อัพเดตทิศที่หัน
+//                    if((int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng) < 0){
+//                        adjustHeading = 180 + -1 * (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng);
+//                    }else{
+//                        adjustHeading = (int) SphericalUtil.computeHeading(mPreviousLatLng, mCurrentLatLng);
+//                    }
+//                    if(Math.abs(adjustHeading - mMap.getCameraPosition().bearing) > 60){
+//                        setCameraPosition(mCurrentLatLng, 19, 20, adjustHeading);
+
+
+                    setCameraPosition(mCurrentLatLng, 19, 20);
+//                    }
                     mPreviousLatLng = mCurrentLatLng;
                 }
-
                 previousUpdateTime = currentUpdateTime;
             }
         });
@@ -178,24 +210,21 @@ public class MapsActivity extends FragmentActivity {
         marker.setTitle("Hi Kewin!");
 
         final long start = SystemClock.uptimeMillis();
-        final LatLngInterpolator.Spherical spherical = new LatLngInterpolator.Spherical();
+        final LatLngInterpolator.Linear spherical = new LatLngInterpolator.Linear();
         Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
         final long initDuration = (long) (getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0)); // duration can be change when user is moving
         final Interpolator interpolator = new LinearInterpolator();
 
-
         runnable = new Runnable() {
             long adjustDuration = initDuration;
             PolylineOptions polylineOptions = new PolylineOptions();
             @Override
             public void run() {
+
                 long elapsed = SystemClock.uptimeMillis() - start;
-                float t = interpolator.getInterpolation((float) elapsed
-                        / adjustDuration);
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
-                    
                     if (getDistanceBetweenMarkersInMetres(marker, toPosition) > getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
                         adjustDuration = adjustDuration - ((long) (getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
                     } else {
@@ -204,33 +233,16 @@ public class MapsActivity extends FragmentActivity {
                     toPosition.setLatitude(mCurrentLatLng.latitude);
                     toPosition.setLongitude(mCurrentLatLng.longitude);
                 }
-
-//                polylineOptions.add(marker.getPosition());
+                mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
+                float t = interpolator.getInterpolation((float) elapsed
+                        / adjustDuration);
                 marker.setPosition(spherical.interpolate(t, startLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
                 marker.setAlpha(t);
-                if (t > 0.5 && t < 0.7) {
-                    if (!marker.isInfoWindowShown())
-                        marker.showInfoWindow();
-
-                }
-                if (t > 0.7) {
-                    if (marker.isInfoWindowShown())
-                        marker.hideInfoWindow();
-                }
-//                double lng = t * toPosition.getLongitude() + (1 - t)
-//                        * startLatLng.longitude;
-//                double lat = t * toPosition.getLatitude() + (1 - t)
-//                        * startLatLng.latitude;
-//                marker.setPosition(new LatLng(lat, lng));
-
                 if (t < 1.0) {
-                    // Post again 16ms later.
                     handler.postDelayed(this, 16);
                 } else {
 //                    mMap.addPolyline(polylineOptions);
                     Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
-
-                    LinearLayout parentText;
                     if (!listTGhost.isEmpty() && !listGhostName.isEmpty()) {
                         listTGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
@@ -257,7 +269,6 @@ public class MapsActivity extends FragmentActivity {
         };
         handler.post(runnable);
     }
-
 
     private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
         CameraPosition camPos = new CameraPosition.Builder()
@@ -355,11 +366,46 @@ public class MapsActivity extends FragmentActivity {
         if (runnable != null) {
             handler.removeCallbacks(runnable);
         }
+        sensorManager.unregisterListener(this, accelerometerSensor);
+        sensorManager.unregisterListener(this, magneticFieldSensor);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        if (sensorManager != null) {
+            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
+            sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_UI);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (myArrow != null) {
+            int sensorType = event.sensor.getType();
+            if (sensorType == Sensor.TYPE_ACCELEROMETER) {
+                accelerometerData = event.values;
+            } else if (sensorType == Sensor.TYPE_MAGNETIC_FIELD) {
+                magneticData = event.values;
+            }
+
+            if (accelerometerData != null && magneticData != null) {
+                float R[] = new float[9];
+                float I[] = new float[9];
+                boolean success = SensorManager.getRotationMatrix(R, I, accelerometerData,
+                        magneticData);
+                if (success) {
+                    float orientation[] = new float[3];
+                    SensorManager.getOrientation(R, orientation);
+                    int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
+                    myArrow.setRotation(azimut);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
 }
