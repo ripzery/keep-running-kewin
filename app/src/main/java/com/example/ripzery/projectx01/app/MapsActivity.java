@@ -148,7 +148,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-
                 //รับค่าพิกัดปัจจุบัน
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
@@ -175,27 +174,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 mGhost1Status.setText("v : " + location.getSpeed());
                 mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 
-                // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
-                if (builder == null) {
-                    setCameraPosition(mCurrentLatLng, 19, 20);
-                    builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
-                            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-                            addGhost(mGhostBehavior);
-                            tGhost.run();
-                        }
-                    });
-
-                    // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
-                    progress.dismiss();
-                    builder.setMessage("Are you ready?");
-                    builder.setTitle("Mission 1 start");
-                    builder.show();
-
-                } else { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
+                if (builder != null) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
 
                     // อัพเดตระยะทางที่ต้องวิ่ง
                     countDistanceToRotCam += DistanceCalculator.getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
@@ -215,8 +194,9 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
                     //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                     mPreviousLatLng = mCurrentLatLng;
+                } else {
+                    setCameraPosition(mCurrentLatLng, 19, 20);
                 }
-
                 previousUpdateTime = currentUpdateTime;
             }
         });
@@ -329,7 +309,35 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 .zoom(zoomLevel)
                 .tilt(tilt)
                 .build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
+                if (builder == null) {
+                    builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
+                            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
+                            addGhost(mGhostBehavior);
+                            tGhost.run();
+                        }
+                    });
+
+                    // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
+                    progress.dismiss();
+                    builder.setMessage("Are you ready?");
+                    builder.setTitle("Mission 1 start");
+                    builder.show();
+                }
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+        });
     }
 
     // เลื่อนตำแหน่งของกล้องโดยตั้งค่า bearing ด้วย
@@ -439,6 +447,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     float orientation[] = new float[3];
                     SensorManager.getOrientation(R, orientation);
                     int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
+
+
                     myArrow.setRotation(azimut);
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
