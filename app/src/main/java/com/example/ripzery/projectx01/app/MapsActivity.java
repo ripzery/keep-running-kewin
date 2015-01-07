@@ -41,6 +41,7 @@ import java.util.ArrayList;
 public class MapsActivity extends FragmentActivity implements SensorEventListener {
 
     private static final double THRESHOLD_ROT_CAM = 20; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
+    private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     SensorManager sensorManager;
     private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -63,6 +64,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private Marker myArrow;
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
+    private boolean isLocatedSuccess = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -148,7 +150,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-
                 //รับค่าพิกัดปัจจุบัน
                 mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
@@ -175,27 +176,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 mGhost1Status.setText("v : " + location.getSpeed());
                 mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 
-                // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
-                if (builder == null) {
-                    setCameraPosition(mCurrentLatLng, 19, 20);
-                    builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
-                            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-                            addGhost(mGhostBehavior);
-                            tGhost.run();
-                        }
-                    });
-
-                    // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
-                    progress.dismiss();
-                    builder.setMessage("Are you ready?");
-                    builder.setTitle("Mission 1 start");
-                    builder.show();
-
-                } else { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
+                if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
 
                     // อัพเดตระยะทางที่ต้องวิ่ง
                     countDistanceToRotCam += DistanceCalculator.getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
@@ -215,8 +196,9 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
                     //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                     mPreviousLatLng = mCurrentLatLng;
+                } else {
+                    setCameraPosition(mCurrentLatLng, 19, 20);
                 }
-
                 previousUpdateTime = currentUpdateTime;
             }
         });
@@ -329,7 +311,36 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 .zoom(zoomLevel)
                 .tilt(tilt)
                 .build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
+                if (builder == null) {
+                    builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
+                            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
+                            addGhost(mGhostBehavior);
+                            tGhost.run();
+                            isLocatedSuccess = true;
+                        }
+                    });
+
+                    // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
+                    progress.dismiss();
+                    builder.setMessage("Are you ready?");
+                    builder.setTitle("Mission 1 start");
+                    builder.show();
+                }
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+        });
     }
 
     // เลื่อนตำแหน่งของกล้องโดยตั้งค่า bearing ด้วย
@@ -422,6 +433,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        double oldAzimuth = 0;
+
         if (myArrow != null && listTGhost.size() > 0) {
             int sensorType = event.sensor.getType();
             if (sensorType == Sensor.TYPE_ACCELEROMETER) {
@@ -439,11 +452,16 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     float orientation[] = new float[3];
                     SensorManager.getOrientation(R, orientation);
                     int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
-                    myArrow.setRotation(azimut);
+
+                    if (Math.abs(azimut - oldAzimuth) >= THRESHOLD_ROT_ARROW) {
+                        myArrow.setRotation(azimut);
+                        oldAzimuth = azimut;
+                    }
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
                     if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
                         setCameraPosition(mCurrentLatLng, 18, 20, azimut);
+                        myArrow.setRotation(azimut);
                         countDistanceToRotCam = 0;
                     }
 
