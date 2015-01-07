@@ -40,6 +40,7 @@ import java.util.ArrayList;
 
 public class MapsActivity extends FragmentActivity implements SensorEventListener {
 
+    private static final double THRESHOLD_ROT_CAM = 20; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     SensorManager sensorManager;
     private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -53,7 +54,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Thread> listTGhost = new ArrayList<Thread>();
     private Ghost mGhostBehavior;
-    private AlertDialog.Builder builder, builder2;
+    private AlertDialog.Builder builder;
     private long previousUpdateTime, currentUpdateTime;
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
@@ -61,6 +62,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private float[] magneticData = new float[3];
     private Marker myArrow;
     private double distanceGoal = 1000.0;
+    private double countDistanceToRotCam = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,7 +84,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 //        Bundle bundle = getIntent().getExtras();
 //        MissionData missionData = bundle.getParcelable("missionData");
 //        distanceGoal = missionData.getDistance();
-        distanceGoal = 1000;
+//        distanceGoal = 1000.0;
 
         mGhost1Status = (TextView) findViewById(R.id.tv1);
         mGhost2Status = (TextView) findViewById(R.id.tv2);
@@ -93,8 +95,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.getUiSettings().setCompassEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(true);
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setRotateGesturesEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(true);
 
         //กำหนดขอบเขตการเล่น
@@ -159,7 +161,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
 
                 // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
-                setCameraPosition(mCurrentLatLng, 19, 20);
+//                setCameraPosition(mCurrentLatLng, 19, 20);
 
                 // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                 if (mPreviousLatLng == null) {
@@ -175,6 +177,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
                 // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
                 if (builder == null) {
+                    setCameraPosition(mCurrentLatLng, 19, 20);
                     builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -195,7 +198,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 } else { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
 
                     // อัพเดตระยะทางที่ต้องวิ่ง
-                    distanceGoal -= DistanceCalculator.getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
+                    countDistanceToRotCam += DistanceCalculator.getDistanceBetweenMarkersInMetres(location, mPreviousLatLng);
+                    distanceGoal -= countDistanceToRotCam;
                     if (distanceGoal <= 0) {
                         distanceGoal = 0;
                     }
@@ -207,7 +211,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     myArrow.setPosition(mCurrentLatLng);
 
                     // กำหนดตำแหน่งของกล้องใหม่
-                    setCameraPosition(mCurrentLatLng, 19, 20);
+//                    setCameraPosition(mCurrentLatLng, 19, 20);
 
                     //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
                     mPreviousLatLng = mCurrentLatLng;
@@ -418,7 +422,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (myArrow != null) {
+        if (myArrow != null && listTGhost.size() > 0) {
             int sensorType = event.sensor.getType();
             if (sensorType == Sensor.TYPE_ACCELEROMETER) {
                 accelerometerData = event.values;
@@ -436,6 +440,13 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     SensorManager.getOrientation(R, orientation);
                     int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
                     myArrow.setRotation(azimut);
+
+                    // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
+                    if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
+                        setCameraPosition(mCurrentLatLng, 18, 20, azimut);
+                        countDistanceToRotCam = 0;
+                    }
+
                 }
             }
         }
