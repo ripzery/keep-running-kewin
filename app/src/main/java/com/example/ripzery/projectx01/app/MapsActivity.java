@@ -268,6 +268,13 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 float t = interpolator.getInterpolation((float) elapsed
                         / adjustDuration);
                 marker.setPosition(spherical.interpolate(t, startLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
+                Point ghostPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
+                Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+//                if(!marker.isInfoWindowShown()){
+//                    marker.showInfoWindow();
+//                }
+                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
+                marker.showInfoWindow();
                 marker.setAlpha(t);
 
                 //ถ้าเลื่อนไม่ถึงผู้เล่นก็ให้เลื่อนต่อไปเรื่อยๆในทุกๆ 16 ms (จะได้ 60fps)
@@ -463,7 +470,6 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                         myArrow.setRotation(azimut);
                         countDistanceToRotCam = 0;
                     }
-
                 }
             }
         }
