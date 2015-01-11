@@ -2,6 +2,7 @@ package com.example.ripzery.projectx01.app;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Point;
 import android.hardware.Sensor;
@@ -12,7 +13,12 @@ import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.support.v4.app.FragmentActivity;
+import android.os.Vibrator;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,7 +30,9 @@ import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.model.Ghost;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
+import com.example.ripzery.projectx01.util.TypefaceSpan;
 import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.github.pavlospt.CircleView;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -39,7 +47,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 
-public class MapsActivity extends FragmentActivity implements SensorEventListener {
+public class MapsActivity extends ActionBarActivity implements SensorEventListener {
 
     private static final double THRESHOLD_ROT_CAM = 20; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
@@ -54,7 +62,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private Handler handler = new Handler();
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
-    private ArrayList<Thread> listTGhost = new ArrayList<Thread>();
+    private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
     private Ghost mGhostBehavior;
     private AlertDialog.Builder builder;
     private long previousUpdateTime, currentUpdateTime;
@@ -67,11 +75,27 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
     private boolean isLocatedSuccess = false;
+    private ActionBar mActionBar;
+    private CircleView mCvDistanceStatus;
+    private CircleView mCvVelocityStatus;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.my_awesome_toolbar);
+        setSupportActionBar(toolbar);
+
+        mActionBar = getSupportActionBar();
+        mActionBar.setShowHideAnimationEnabled(true);
+        mActionBar.setElevation(5);
+        SpannableString mStringTitle = new SpannableString("Mission X");
+        mStringTitle.setSpan(new TypefaceSpan(this, "Roboto-Medium.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        mActionBar.setTitle(mStringTitle);
+        mActionBar.setHomeButtonEnabled(true);
+//        mActionBar.setBackgroundDrawable(null);
+        mActionBar.setDisplayHomeAsUpEnabled(true);
 
         //setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -89,6 +113,9 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 //        MissionData missionData = bundle.getParcelable("missionData");
 //        distanceGoal = missionData.getDistance();
 //        distanceGoal = 1000.0;
+
+        mCvDistanceStatus = (CircleView) findViewById(R.id.cvTextM);
+        mCvVelocityStatus = (CircleView) findViewById(R.id.cvTextV);
 
         mGhost1Status = (TextView) findViewById(R.id.tv1);
         mGhost2Status = (TextView) findViewById(R.id.tv2);
@@ -124,11 +151,10 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                  * ถ้ามีผีเท่ากับ 5 ตัวแล้วจะซ่อนปุ่ม Add
                  * ถ้าน้อยกว่าจะเพิ่มผีลงไป
                  */
-                if (listTGhost.size() < 5) {
+                if (listMGhost.size() < 5) {
                     addGhost(mGhostBehavior);
-                    listTGhost.get(listTGhost.size() - 1).run();
                 }
-                if (listTGhost.size() == 5) {
+                if (listMGhost.size() == 5) {
                     mAdd.setVisibility(View.GONE);
                 }
             }
@@ -164,7 +190,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                             .anchor((float) 0.5, (float) 0.5)
                             .flat(true)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
-                    setCameraPosition(mCurrentLatLng, 19, 20);
+                    setCameraPosition(mCurrentLatLng, 19, 80);
                 }
 
                 // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
@@ -176,6 +202,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 // แสดงความเร็วและความแม่นยำ
                 mGhost1Status.setText("v : " + location.getSpeed());
                 mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
+                mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
                 if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
 
@@ -189,6 +216,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
                     // แสดงระยะทางที่เหลือ
                     mGhost3Status.setText(distanceGoal + " m");
+                    mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
+
 
                     // เลื่อนตำแหน่งของลูกษรใหม่
                     myArrow.setPosition(mCurrentLatLng);
@@ -233,6 +262,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
         // สร้าง runnable สำหรับเลื่อตำแหน่งของปีศาจ
         runnable = new Runnable() {
+            // กำหนด flag ว่า marker ตัวนี้ได้แจ้งสั่นผู้ใช้เมื่อเข้าใกล้ไปแล้วหรือยัง
+            boolean isVibrate = false;
 
             // กำหนดค่าเริ่มต้นของ adjustDuration (จะต้องปรับค่านี้ถ้าผู้เล่นเคลื่อนที่) ให้เท่ากับค่าเริ่มต้น
             long adjustDuration = initDuration;
@@ -261,6 +292,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                     toPosition.setLongitude(mCurrentLatLng.longitude);
                 }
 
+
                 // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
                 mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
 
@@ -277,6 +309,13 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                 marker.showInfoWindow();
                 marker.setAlpha(t);
 
+                if (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition()) < 50 && !isVibrate) {
+                    Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
+                    // Vibrate for 500 milliseconds
+                    v.vibrate(500);
+                    isVibrate = true;
+                }
+
                 //ถ้าเลื่อนไม่ถึงผู้เล่นก็ให้เลื่อนต่อไปเรื่อยๆในทุกๆ 16 ms (จะได้ 60fps)
                 if (t < 1.0) {
                     handler.postDelayed(this, 16);
@@ -284,8 +323,8 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 //                    mMap.addPolyline(polylineOptions);
 //                    Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
 //                    exit.show();
-                    if (!listTGhost.isEmpty() && !listGhostName.isEmpty()) {
-                        listTGhost.remove(0);
+                    if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
+                        listMGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
                     }
                     if (!mAdd.isShown())
@@ -330,7 +369,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
                             //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
                             playground = mMap.getProjection().getVisibleRegion().latLngBounds;
                             addGhost(mGhostBehavior);
-                            tGhost.run();
+//                            tGhost.run();
                             isLocatedSuccess = true;
                         }
                     });
@@ -399,16 +438,15 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
         }
 
         final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
-        tGhost = new Thread(new Runnable() {
-            @Override
-            public void run() {
+//        tGhost = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
                 animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
-            }
-        });
-        tGhost.setName(ghost.getName());
-        listTGhost.add(tGhost);
+//            }
+//        });
+//        tGhost.setName(ghost.getName());
+        listMGhost.add(mGhost);
     }
-
 
 
     private void setUpMapIfNeeded() {
@@ -440,7 +478,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (myArrow != null && listTGhost.size() > 0) {
+        if (myArrow != null && listMGhost.size() > 0) {
             int sensorType = event.sensor.getType();
             if (sensorType == Sensor.TYPE_ACCELEROMETER) {
                 accelerometerData = event.values;
@@ -466,7 +504,7 @@ public class MapsActivity extends FragmentActivity implements SensorEventListene
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
                     if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
-                        setCameraPosition(mCurrentLatLng, 19, 20, azimut);
+                        setCameraPosition(mCurrentLatLng, 19, 80, azimut);
                         myArrow.setRotation(azimut);
                         countDistanceToRotCam = 0;
                     }
