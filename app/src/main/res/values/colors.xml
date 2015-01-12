@@ -20,4 +20,9 @@
 
     <color name="card_press">#ffffff</color>
     <color name="card_unpress">#ffe7e7e7</color>
+
+    <!--activity_maps-->
+    <color name="my_primary_color">#f44336</color>
+    <color name="my_darker_primary_color">#E53935</color>
+    <color name="my_primary_text">#FAFAFA</color>
 </resources>

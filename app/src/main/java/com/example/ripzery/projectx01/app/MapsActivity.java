@@ -33,6 +33,12 @@ import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.example.ripzery.projectx01.util.TypefaceSpan;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.pavlospt.CircleView;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -47,11 +53,14 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 
-public class MapsActivity extends ActionBarActivity implements SensorEventListener {
+public class MapsActivity extends ActionBarActivity implements SensorEventListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener, LocationListener {
 
     private static final double THRESHOLD_ROT_CAM = 20; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
+    private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     SensorManager sensorManager;
+    private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
@@ -78,6 +87,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private ActionBar mActionBar;
     private CircleView mCvDistanceStatus;
     private CircleView mCvVelocityStatus;
+    private Handler mHandler;
+    private Runnable keepGenerate;
+    private LocationClient locationClient;
+    private LocationRequest locationrequest;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -133,8 +146,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         //กำหนดขอบเขตการเล่น
 //        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
 
-        progress = new ProgressDialog(this);
-        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+//        progress = new ProgressDialog(this);
+//        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         //กำหนด property ของ Ghost
         mGhostBehavior = new Ghost();
@@ -167,7 +180,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
-                progress.setMessage("Wait while getting your location");
+//                progress.setMessage("Wait while getting your location");
+                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
+                if (response == ConnectionResult.SUCCESS) {
+                    locationClient = new LocationClient(MapsActivity.this, MapsActivity.this, MapsActivity.this);
+                    locationClient.connect();
+                }
             }
         });
 
@@ -175,62 +193,61 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         previousUpdateTime = System.currentTimeMillis();
 
         // กำหนด event เมื่อ Gps พบตำแหน่งของผู้ใช้
-        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
-            @Override
-            public void onMyLocationChange(Location location) {
-                //รับค่าพิกัดปัจจุบัน
-                mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-                // ถ้ายังไม่มีการสร้าง Marker ลูกศรบอกตำแหน่งและทิศทางของผู้ใช้ให้ทำการสร้าง
-                // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
-                if (myArrow == null) {
-                    mPreviousLatLng = mCurrentLatLng;
-                    myArrow = mMap.addMarker(new MarkerOptions()
-                            .position(mCurrentLatLng)
-                            .anchor((float) 0.5, (float) 0.5)
-                            .flat(true)
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
-                    setCameraPosition(mCurrentLatLng, 19, 80);
-                }
-
-                // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
-//                setCameraPosition(mCurrentLatLng, 19, 20);
-
-                // รับค่าเวลาปัจจุบันที่พบตำแหน่งผู้ใช้ หน่วยเป็น millisec
-                currentUpdateTime = location.getTime();
-
-                // แสดงความเร็วและความแม่นยำ
-                mGhost1Status.setText("v : " + location.getSpeed());
-                mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
-                mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
-
-                if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
-
-                    // อัพเดตระยะทางที่ต้องวิ่ง
-                    double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
-                    countDistanceToRotCam += distance;
-                    distanceGoal -= distance;
-                    if (distanceGoal <= 0) {
-                        distanceGoal = 0;
-                    }
-
-                    // แสดงระยะทางที่เหลือ
-                    mGhost3Status.setText(distanceGoal + " m");
-                    mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
-
-
-                    // เลื่อนตำแหน่งของลูกษรใหม่
-                    myArrow.setPosition(mCurrentLatLng);
-
-                    // กำหนดตำแหน่งของกล้องใหม่
-//                    setCameraPosition(mCurrentLatLng, 19, 20);
-
-                    //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
-                    mPreviousLatLng = mCurrentLatLng;
-                }
-                previousUpdateTime = currentUpdateTime;
-            }
-        });
+//        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+//            @Override
+//            public void onMyLocationChange(Location location) {
+//                //รับค่าพิกัดปัจจุบัน
+//                mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+//
+//                // ถ้ายังไม่มีการสร้าง Marker ลูกศรบอกตำแหน่งและทิศทางของผู้ใช้ให้ทำการสร้าง
+//                // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
+//                if (myArrow == null) {
+//                    mPreviousLatLng = mCurrentLatLng;
+//                    myArrow = mMap.addMarker(new MarkerOptions()
+//                            .position(mCurrentLatLng)
+//                            .anchor((float) 0.5, (float) 0.5)
+//                            .flat(true)
+//                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+////                    setCameraPosition(mCurrentLatLng, 19, 30);
+//                }
+//
+//                // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
+////                setCameraPosition(mCurrentLatLng, 19, 20);
+//                // รับค่าเวลาปัจจุบันที่พบตำแหน่งผู้ใช้ หน่วยเป็น millisec
+//                currentUpdateTime = location.getTime();
+//
+//                // แสดงความเร็วและความแม่นยำ
+//                mGhost1Status.setText("v : " + location.getSpeed());
+//                mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
+//                mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
+//
+//                if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
+//
+//                    // อัพเดตระยะทางที่ต้องวิ่ง
+//                    double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
+//                    countDistanceToRotCam += distance;
+//                    distanceGoal -= distance;
+//                    if (distanceGoal <= 0) {
+//                        distanceGoal = 0;
+//                    }
+//
+//                    // แสดงระยะทางที่เหลือ
+//                    mGhost3Status.setText(distanceGoal + " m");
+//                    mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
+//
+//
+//                    // เลื่อนตำแหน่งของลูกษรใหม่
+//                    myArrow.setPosition(mCurrentLatLng);
+//
+//                    // กำหนดตำแหน่งของกล้องใหม่
+////                    setCameraPosition(mCurrentLatLng, 19, 20);
+//
+//                    //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
+//                    mPreviousLatLng = mCurrentLatLng;
+//                }
+//                previousUpdateTime = currentUpdateTime;
+//            }
+//        });
     }
 
 
@@ -240,7 +257,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // speed = distance/durationWait while getting your location
 
         // กำหนด Handler ในการเคลื่อนตัวปีศาจ
-        final Handler handler = new Handler();
+        handler = new Handler();
 //        marker.setTitle("Hi Kewin!");
 
         // กำหนดเวลาเริ่มต้น
@@ -265,6 +282,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // กำหนด flag ว่า marker ตัวนี้ได้แจ้งสั่นผู้ใช้เมื่อเข้าใกล้ไปแล้วหรือยัง
             boolean isVibrate = false;
 
+            LatLng newStartLatLng = startLatLng;
+
+            //ปรับเวลาเริ่มต้นการเคลื่อนที่ marker ถ้าผู้ใช้เลื่อนตำแหน่ง
+            long adjustStartTime = start;
+
             // กำหนดค่าเริ่มต้นของ adjustDuration (จะต้องปรับค่านี้ถ้าผู้เล่นเคลื่อนที่) ให้เท่ากับค่าเริ่มต้น
             long adjustDuration = initDuration;
             PolylineOptions polylineOptions = new PolylineOptions();
@@ -272,7 +294,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void run() {
 
                 // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
-                long elapsed = SystemClock.uptimeMillis() - start;
+                long elapsed = SystemClock.uptimeMillis() - adjustStartTime;
 
                 // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
@@ -290,6 +312,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
                     toPosition.setLatitude(mCurrentLatLng.latitude);
                     toPosition.setLongitude(mCurrentLatLng.longitude);
+
+                    // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
+                    newStartLatLng = marker.getPosition();
+                    adjustStartTime = SystemClock.uptimeMillis();
+                    adjustDuration = adjustDuration - elapsed;
+                    elapsed = 0;
+//
+//                    Log.d("adjustDuration",""+adjustDuration);
+//                    Log.d("elapse",""+elapsed);
                 }
 
 
@@ -299,15 +330,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
                 float t = interpolator.getInterpolation((float) elapsed
                         / adjustDuration);
-                marker.setPosition(spherical.interpolate(t, startLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
-                Point ghostPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
-                Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
-//                if(!marker.isInfoWindowShown()){
-//                    marker.showInfoWindow();
-//                }
-                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
-                marker.showInfoWindow();
-                marker.setAlpha(t);
+//                Log.d("t",""+t);
+                marker.setPosition(spherical.interpolate(t, newStartLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
+//                Point ghostPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
+//                Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+//                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
+//                marker.showInfoWindow();
+//                marker.setAlpha(t);
 
                 if (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition()) < 50 && !isVibrate) {
                     Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
@@ -350,6 +379,28 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         handler.post(runnable);
     }
 
+    public void keepGeneratingGhost() {
+        mHandler = new Handler();
+        keepGenerate = new Runnable() {
+            @Override
+            public void run() {
+                int timeout;
+                if (listMGhost.size() < MAX_GHOST_AT_ONCE) {
+                    int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
+                    timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
+                    timeout = timeout * 1000; // convert to millisec
+                    addGhost(mGhostBehavior);
+                } else {
+                    timeout = 1000;
+                }
+                mHandler.postDelayed(this, timeout);
+            }
+        };
+        mHandler.postDelayed(keepGenerate, 30000);
+
+
+    }
+
     // เลื่อนตำแหน่งของกล้อง
     private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
         CameraPosition camPos = new CameraPosition.Builder()
@@ -369,13 +420,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                             //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
                             playground = mMap.getProjection().getVisibleRegion().latLngBounds;
                             addGhost(mGhostBehavior);
-//                            tGhost.run();
                             isLocatedSuccess = true;
+                            keepGeneratingGhost();
                         }
                     });
 
                     // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
-                    progress.dismiss();
+//                    progress.dismiss();
                     builder.setMessage("Are you ready?");
                     builder.setTitle("Mission 1 start");
                     builder.show();
@@ -428,6 +479,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     // เพิ่มปีศาจ
     private void addGhost(final Ghost ghost) {
 
+        //กำหนดชื่อให้ปีศาจแต่ละตัว
         String name = "Ghost";
         for (int i = 1; i <= 5; i++) {
             if (!listGhostName.contains(name + i)) {
@@ -438,30 +490,27 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
-//        tGhost = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-                animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
-//            }
-//        });
-//        tGhost.setName(ghost.getName());
+        animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
         listMGhost.add(mGhost);
     }
 
-
-    private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map. instance
-        if (mMap == null) {
-            mMap = (((SupportMapFragment) this.getSupportFragmentManager().findFragmentById(R.id.map)).getMap());
-            // Check if we were successful in obtaining the map.
+    // เรียกส่งตำแหน่ง(บนหน้าจอ ไม่ใช่ latlng)ปัจจุบันของปีศาจทุกตัวเป็น arraylist<Point>
+    public ArrayList<Point> getAllGhostPosition() {
+        ArrayList<Point> allGhostPoint = new ArrayList<>();
+        for (Marker m : listMGhost) {
+            Point ghostPoint = mMap.getProjection().toScreenLocation(m.getPosition());
+            Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+            allGhostPoint.add(new Point(ghostPoint.x - userPoint.x, userPoint.y - ghostPoint.y));
         }
+        return allGhostPoint;
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (runnable != null) {
+        if (runnable != null && keepGenerate != null) {
             handler.removeCallbacks(runnable);
+            mHandler.removeCallbacks(keepGenerate);
         }
         sensorManager.unregisterListener(this, accelerometerSensor);
         sensorManager.unregisterListener(this, magneticFieldSensor);
@@ -504,7 +553,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
                     if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
-                        setCameraPosition(mCurrentLatLng, 19, 80, azimut);
+                        setCameraPosition(mCurrentLatLng, 19, 0, azimut);
+//                        CameraPosition cameraPosition = CameraPosition.builder().target(mCurrentLatLng).bearing(azimut).build();
+//                        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        myArrow.setPosition(mCurrentLatLng);
                         myArrow.setRotation(azimut);
                         countDistanceToRotCam = 0;
                     }
@@ -516,6 +568,80 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    private void setUpMapIfNeeded() {
+        // Do a null check to confirm that we have not already instantiated the map. instance
+        if (mMap == null) {
+            mMap = (((SupportMapFragment) this.getSupportFragmentManager().findFragmentById(R.id.map)).getMap());
+            // Check if we were successful in obtaining the map.
+        }
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Log.d("status", "connected");
+//        setCameraPosition(new LatLng(locationClient.getLastLocation().getLatitude(), locationClient.getLastLocation().getLongitude()), 18, 60);
+        mCurrentLatLng = new LatLng(locationClient.getLastLocation().getLatitude(), locationClient.getLastLocation().getLongitude());
+        if (myArrow == null) {
+            mPreviousLatLng = mCurrentLatLng;
+            myArrow = mMap.addMarker(new MarkerOptions()
+                    .position(mCurrentLatLng)
+                    .anchor((float) 0.5, (float) 0.5)
+                    .flat(true)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+            setCameraPosition(mCurrentLatLng, 18, 0);
+        }
+        locationrequest = LocationRequest.create();
+        locationrequest.setInterval(100);
+        locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationClient.requestLocationUpdates(locationrequest, this);
+    }
+
+    @Override
+    public void onDisconnected() {
+        Log.d("status", "disconnected");
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.d("status", "onConnectionFailed");
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        currentUpdateTime = location.getTime();
+
+        // แสดงความเร็วและความแม่นยำ
+        mGhost1Status.setText("v : " + location.getSpeed());
+        mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
+        mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
+
+        if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
+            mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+            // อัพเดตระยะทางที่ต้องวิ่ง
+            double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
+            countDistanceToRotCam += distance;
+            distanceGoal -= distance;
+            if (distanceGoal <= 0) {
+                distanceGoal = 0;
+            }
+
+            // แสดงระยะทางที่เหลือ
+            mGhost3Status.setText(distanceGoal + " m");
+            mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
+
+            // เลื่อนตำแหน่งของลูกษรใหม่
+            myArrow.setPosition(mCurrentLatLng);
+
+            // กำหนดตำแหน่งของกล้องใหม่
+            setCameraPosition(mCurrentLatLng, 18, 0);
+
+            //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
+            mPreviousLatLng = mCurrentLatLng;
+        }
+        previousUpdateTime = currentUpdateTime;
     }
 }
 

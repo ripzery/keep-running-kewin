@@ -1,5 +1,6 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,16 +8,63 @@
     android:orientation="vertical"
     tools:context="com.example.ripzery.projectx01.app.MapsActivity">
 
-
-<FrameLayout
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/my_awesome_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:background="@color/my_primary_color"
+        android:minHeight="56dp"
+        app:theme="@style/KeepRunningKewinThemeToolbar" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent">
 
         <fragment
             android:id="@+id/map"
             class="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/cvTextM"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_alignParentRight="true"
+                android:layout_margin="16dp"
+                app:backgroundColorValue="#00f44336"
+                app:fillColor="#66f44336"
+                app:strokeColorValue="#00f44336"
+                app:strokeWidthSize="0"
+                app:subtitleSize="9dp"
+                app:subtitleText=""
+                app:titleColor="@color/my_primary_text"
+                app:titleSize="16sp"
+                app:titleText="DIS" />
+
+            <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/cvTextV"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_margin="16dp"
+                android:layout_toLeftOf="@+id/cvTextM"
+                android:visibility="gone"
+                app:backgroundColorValue="#00f44336"
+                app:fillColor="#66f44336"
+                app:strokeColorValue="#00f44336"
+                app:strokeWidthSize="0"
+                app:subtitleSize="9dp"
+                app:subtitleText=""
+                app:titleColor="@color/my_primary_text"
+                app:titleSize="16sp"
+                app:titleText="SPD" />
+
+        </RelativeLayout>
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -29,9 +77,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:background="#009e9e9e"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-                <TextView
+            <TextView
                     android:id="@+id/tv1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -67,11 +116,12 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:background="#009e9e9e"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:visibility="gone">
 
                 <TextView
                     android:id="@+id/tv3"
-                android:layout_width="match_parent"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center_horizontal"
                     android:text="N/A"
@@ -86,9 +136,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:background="#009e9e9e"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-                <TextView
+            <TextView
                     android:id="@+id/tv4"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -104,7 +155,8 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom">
+            android:layout_gravity="bottom"
+            android:visibility="gone">
 
             <com.getbase.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnAdd"
@@ -112,8 +164,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:elevation="4dp"
-                fab:fab_colorNormal="@color/apptheme_primary"
-                fab:fab_colorPressed="@color/apptheme_primary_dark"
+                fab:fab_colorNormal="@color/my_primary_color"
+                fab:fab_colorPressed="@color/my_darker_primary_color"
                 fab:fab_icon="@drawable/ic_action_new" />
         </RelativeLayout>
 
