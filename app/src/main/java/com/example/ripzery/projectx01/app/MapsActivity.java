@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.model.Ghost;
@@ -32,6 +33,7 @@ import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.example.ripzery.projectx01.util.TypefaceSpan;
 import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -53,9 +55,11 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 
+//import android.location.LocationListener;
+
 public class MapsActivity extends ActionBarActivity implements SensorEventListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener, LocationListener {
 
-    private static final double THRESHOLD_ROT_CAM = 20; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
+    private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     SensorManager sensorManager;
@@ -64,7 +68,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
-    private FloatingActionButton mAdd;
+    private FloatingActionsMenu mBag;
     private ProgressDialog progress;
     private Thread tGhost;
     private LatLng mCurrentLatLng, mPreviousLatLng;
@@ -91,6 +95,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Runnable keepGenerate;
     private LocationClient locationClient;
     private LocationRequest locationrequest;
+    private int currentBearing = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -146,32 +151,45 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         //กำหนดขอบเขตการเล่น
 //        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
 
-//        progress = new ProgressDialog(this);
-//        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+        progress = new ProgressDialog(this);
+        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         //กำหนด property ของ Ghost
         mGhostBehavior = new Ghost();
         mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(2);
+        mGhostBehavior.setSpeed(3);
         mGhost3Status.setText(distanceGoal + " m");
 
         // กำหนด Listener ของปุ่ม Add เพิ่มผี
-        mAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
-        mAdd.setOnClickListener(new View.OnClickListener() {
+        mBag = (FloatingActionsMenu) findViewById(R.id.btnBag);
+
+        FloatingActionButton actionC = new FloatingActionButton(getBaseContext());
+        actionC.setTitle("Hide/Show Action C");
+        actionC.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                /*
-                 * ถ้ามีผีเท่ากับ 5 ตัวแล้วจะซ่อนปุ่ม Add
-                 * ถ้าน้อยกว่าจะเพิ่มผีลงไป
-                 */
-                if (listMGhost.size() < 5) {
-                    addGhost(mGhostBehavior);
-                }
-                if (listMGhost.size() == 5) {
-                    mAdd.setVisibility(View.GONE);
-                }
+            public void onClick(View v) {
+                Toast.makeText(MapsActivity.this, "ClickC", Toast.LENGTH_SHORT).show();
             }
         });
+        FloatingActionButton actionD = new FloatingActionButton(getBaseContext());
+        actionD.setTitle("Hide/Show Action B");
+        actionD.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MapsActivity.this, "ClickB", Toast.LENGTH_SHORT).show();
+            }
+        });
+        FloatingActionButton actionE = new FloatingActionButton(getBaseContext());
+        actionE.setTitle("Hide/Show Action A");
+        actionE.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MapsActivity.this, "ClickA", Toast.LENGTH_SHORT).show();
+            }
+        });
+        mBag.addButton(actionC);
+        mBag.addButton(actionD);
+        mBag.addButton(actionE);
     }
 
     private void initListener() {
@@ -180,7 +198,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
-//                progress.setMessage("Wait while getting your location");
+                progress.setMessage("Waiting for GPS ...");
                 int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
                 if (response == ConnectionResult.SUCCESS) {
                     locationClient = new LocationClient(MapsActivity.this, MapsActivity.this, MapsActivity.this);
@@ -192,62 +210,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // กำหนดค่าเริ่มต้นของ UpdateTime ไว้เป็นเวลาปัจจุบัน
         previousUpdateTime = System.currentTimeMillis();
 
-        // กำหนด event เมื่อ Gps พบตำแหน่งของผู้ใช้
-//        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
-//            @Override
-//            public void onMyLocationChange(Location location) {
-//                //รับค่าพิกัดปัจจุบัน
-//                mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-//
-//                // ถ้ายังไม่มีการสร้าง Marker ลูกศรบอกตำแหน่งและทิศทางของผู้ใช้ให้ทำการสร้าง
-//                // ถ้าเจอตำแหน่งผู้ใช้ครั้งแรกให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
-//                if (myArrow == null) {
-//                    mPreviousLatLng = mCurrentLatLng;
-//                    myArrow = mMap.addMarker(new MarkerOptions()
-//                            .position(mCurrentLatLng)
-//                            .anchor((float) 0.5, (float) 0.5)
-//                            .flat(true)
-//                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
-////                    setCameraPosition(mCurrentLatLng, 19, 30);
-//                }
-//
-//                // เลื่อนกล้องให้มาที่ตำแหน่งของผู้ใช้
-////                setCameraPosition(mCurrentLatLng, 19, 20);
-//                // รับค่าเวลาปัจจุบันที่พบตำแหน่งผู้ใช้ หน่วยเป็น millisec
-//                currentUpdateTime = location.getTime();
-//
-//                // แสดงความเร็วและความแม่นยำ
-//                mGhost1Status.setText("v : " + location.getSpeed());
-//                mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
-//                mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
-//
-//                if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
-//
-//                    // อัพเดตระยะทางที่ต้องวิ่ง
-//                    double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
-//                    countDistanceToRotCam += distance;
-//                    distanceGoal -= distance;
-//                    if (distanceGoal <= 0) {
-//                        distanceGoal = 0;
-//                    }
-//
-//                    // แสดงระยะทางที่เหลือ
-//                    mGhost3Status.setText(distanceGoal + " m");
-//                    mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
-//
-//
-//                    // เลื่อนตำแหน่งของลูกษรใหม่
-//                    myArrow.setPosition(mCurrentLatLng);
-//
-//                    // กำหนดตำแหน่งของกล้องใหม่
-////                    setCameraPosition(mCurrentLatLng, 19, 20);
-//
-//                    //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
-//                    mPreviousLatLng = mCurrentLatLng;
-//                }
-//                previousUpdateTime = currentUpdateTime;
-//            }
-//        });
     }
 
 
@@ -290,6 +252,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // กำหนดค่าเริ่มต้นของ adjustDuration (จะต้องปรับค่านี้ถ้าผู้เล่นเคลื่อนที่) ให้เท่ากับค่าเริ่มต้น
             long adjustDuration = initDuration;
             PolylineOptions polylineOptions = new PolylineOptions();
+
             @Override
             public void run() {
 
@@ -349,25 +312,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 if (t < 1.0) {
                     handler.postDelayed(this, 16);
                 } else { // เลื่อนจนถึงผู้เล่รแล้ว
-//                    mMap.addPolyline(polylineOptions);
-//                    Toast exit = Toast.makeText(MapsActivity.this, "Try again keep it up !", Toast.LENGTH_LONG);
-//                    exit.show();
                     if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
                         listMGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
                     }
-                    if (!mAdd.isShown())
-                        mAdd.setVisibility(View.VISIBLE);
 
-//                    Timer a = new Timer();
-//                    TimerTask b = new TimerTask() {
-//                        @Override
-//                        public void run() {
-//                            android.os.Process.killProcess(android.os.Process.myPid());
-//                            System.exit(1);
-//                        }
-//                    };
-//                    a.schedule(b, 1500);
                     if (hideMarker) {
                         marker.setVisible(false);
                     } else {
@@ -411,28 +360,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
-                // ถ้ายังไม่มีการสร้าง AlertDialog ให้ทำการสร้าง
                 if (builder == null) {
-                    builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
-                            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-                            addGhost(mGhostBehavior);
-                            isLocatedSuccess = true;
-                            keepGeneratingGhost();
-                        }
-                    });
-
-                    // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
-//                    progress.dismiss();
-                    builder.setMessage("Are you ready?");
-                    builder.setTitle("Mission 1 start");
-                    builder.show();
+                    locationrequest = LocationRequest.create();
+                    locationrequest.setInterval(100);
+                    locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                    locationClient.requestLocationUpdates(locationrequest, MapsActivity.this);
                 }
             }
-
             @Override
             public void onCancel() {
 
@@ -469,7 +403,22 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                this.finish();
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+//                        locationClient.removeLocationUpdates(MapsActivity.this);
+                        MapsActivity.this.finish();
+                    }
+                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                dialog.setTitle("Stop playing?");
+                dialog.setMessage("Your current progress won't saved");
+                dialog.show();
+
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -490,7 +439,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
-        animateMarker(mGhost, mMap.getMyLocation(), true, ghost.getSpeed());
+        animateMarker(mGhost, locationClient.getLastLocation(), true, ghost.getSpeed());
         listMGhost.add(mGhost);
     }
 
@@ -546,16 +495,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
 
                     if (Math.abs(azimut - oldAzimuth) >= THRESHOLD_ROT_ARROW) {
-                        Log.d("azimuth", "" + azimut);
+//                        Log.d("azimuth", "" + azimut);
                         myArrow.setRotation(azimut);
                         oldAzimuth = azimut;
                     }
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
                     if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
-                        setCameraPosition(mCurrentLatLng, 19, 0, azimut);
-//                        CameraPosition cameraPosition = CameraPosition.builder().target(mCurrentLatLng).bearing(azimut).build();
-//                        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        setCameraPosition(mCurrentLatLng, 18, 0, azimut);
+                        currentBearing = azimut;
                         myArrow.setPosition(mCurrentLatLng);
                         myArrow.setRotation(azimut);
                         countDistanceToRotCam = 0;
@@ -563,6 +511,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 }
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+//                locationClient.removeLocationUpdates(MapsActivity.this);
+                MapsActivity.super.onBackPressed();
+            }
+        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        dialog.setTitle("Stop playing?");
+        dialog.setMessage("Your current progress won't saved");
+        dialog.show();
     }
 
     @Override
@@ -585,17 +553,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mCurrentLatLng = new LatLng(locationClient.getLastLocation().getLatitude(), locationClient.getLastLocation().getLongitude());
         if (myArrow == null) {
             mPreviousLatLng = mCurrentLatLng;
+            setCameraPosition(mCurrentLatLng, 18, 0);
             myArrow = mMap.addMarker(new MarkerOptions()
                     .position(mCurrentLatLng)
                     .anchor((float) 0.5, (float) 0.5)
                     .flat(true)
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
-            setCameraPosition(mCurrentLatLng, 18, 0);
+
         }
-        locationrequest = LocationRequest.create();
-        locationrequest.setInterval(100);
-        locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationClient.requestLocationUpdates(locationrequest, this);
     }
 
     @Override
@@ -617,30 +582,49 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
         mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
-        if (isLocatedSuccess) { // ถ้าไม่ใช่การพบตำแหน่งผู้ใช้ครั้งแรก
-            mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+        if (progress.isShowing() && builder == null) {
+            builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
 
-            // อัพเดตระยะทางที่ต้องวิ่ง
-            double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
-            countDistanceToRotCam += distance;
-            distanceGoal -= distance;
-            if (distanceGoal <= 0) {
-                distanceGoal = 0;
-            }
+                    //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
+                    playground = mMap.getProjection().getVisibleRegion().latLngBounds;
+                    addGhost(mGhostBehavior);
+                    keepGeneratingGhost();
+                }
+            });
 
-            // แสดงระยะทางที่เหลือ
-            mGhost3Status.setText(distanceGoal + " m");
-            mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
-
-            // เลื่อนตำแหน่งของลูกษรใหม่
-            myArrow.setPosition(mCurrentLatLng);
-
-            // กำหนดตำแหน่งของกล้องใหม่
-            setCameraPosition(mCurrentLatLng, 18, 0);
-
-            //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน
-            mPreviousLatLng = mCurrentLatLng;
+            // ให้ ProgressDialog หายไปและแสดง AlertDialog แทน
+            progress.dismiss();
+            builder.setMessage("Are you ready?");
+            builder.setTitle("Mission 1 start");
+            builder.show();
         }
+
+
+        mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+        // อัพเดตระยะทางที่ต้องวิ่ง
+        double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
+        countDistanceToRotCam += distance;
+        distanceGoal -= distance;
+        if (distanceGoal <= 0) {
+            distanceGoal = 0;
+        }
+
+        // แสดงระยะทางที่เหลือ
+        mGhost3Status.setText(distanceGoal + " m");
+        mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
+
+        // เลื่อนตำแหน่งของลูกษรใหม่
+        myArrow.setPosition(mCurrentLatLng);
+
+        // กำหนดตำแหน่งของกล้องใหม่
+        setCameraPosition(mCurrentLatLng, 18, 0, currentBearing);
+
+        //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
+        mPreviousLatLng = mCurrentLatLng;
+
         previousUpdateTime = currentUpdateTime;
     }
 }
