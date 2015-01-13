@@ -36,11 +36,12 @@ import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
@@ -54,10 +55,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 //import android.location.LocationListener;
 
-public class MapsActivity extends ActionBarActivity implements SensorEventListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener, LocationListener {
+public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
@@ -96,6 +98,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private LocationClient locationClient;
     private LocationRequest locationrequest;
     private int currentBearing = 0;
+    private GoogleApiClient mGoogleApiClient;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -147,6 +151,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(true);
+
 
         //กำหนดขอบเขตการเล่น
 //        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
@@ -201,8 +206,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 progress.setMessage("Waiting for GPS ...");
                 int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
                 if (response == ConnectionResult.SUCCESS) {
-                    locationClient = new LocationClient(MapsActivity.this, MapsActivity.this, MapsActivity.this);
-                    locationClient.connect();
+                    mGoogleApiClient = new GoogleApiClient.Builder(MapsActivity.this)
+                            .addApi(LocationServices.API)
+                            .addConnectionCallbacks(MapsActivity.this)
+                            .addOnConnectionFailedListener(MapsActivity.this)
+                            .build();
+                    mGoogleApiClient.connect();
                 }
             }
         });
@@ -364,7 +373,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     locationrequest = LocationRequest.create();
                     locationrequest.setInterval(100);
                     locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-                    locationClient.requestLocationUpdates(locationrequest, MapsActivity.this);
+                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
                 }
             }
             @Override
@@ -439,7 +448,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
-        animateMarker(mGhost, locationClient.getLastLocation(), true, ghost.getSpeed());
+        Location location = new Location("Start");
+        location.setLatitude(mCurrentLatLng.latitude);
+        location.setLongitude(mCurrentLatLng.longitude);
+        location.setTime(new Date().getTime());
+        animateMarker(mGhost, location, true, ghost.getSpeed());
         listMGhost.add(mGhost);
     }
 
@@ -549,23 +562,47 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onConnected(Bundle bundle) {
         Log.d("status", "connected");
-//        setCameraPosition(new LatLng(locationClient.getLastLocation().getLatitude(), locationClient.getLastLocation().getLongitude()), 18, 60);
-        mCurrentLatLng = new LatLng(locationClient.getLastLocation().getLatitude(), locationClient.getLastLocation().getLongitude());
-        if (myArrow == null) {
-            mPreviousLatLng = mCurrentLatLng;
-            setCameraPosition(mCurrentLatLng, 18, 0);
-            myArrow = mMap.addMarker(new MarkerOptions()
-                    .position(mCurrentLatLng)
-                    .anchor((float) 0.5, (float) 0.5)
-                    .flat(true)
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+        if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null) {
+            locationrequest = LocationRequest.create();
+            locationrequest.setNumUpdates(1);
+            locationrequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+            locationrequest.setExpirationDuration(10000);
 
+            LocationListener firstGetLocation = new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    if (myArrow == null) {
+                        mPreviousLatLng = mCurrentLatLng;
+                        setCameraPosition(mCurrentLatLng, 18, 0);
+                        myArrow = mMap.addMarker(new MarkerOptions()
+                                .position(mCurrentLatLng)
+                                .anchor((float) 0.5, (float) 0.5)
+                                .flat(true)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+
+                    }
+                }
+            };
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, firstGetLocation);
+        } else {
+            mCurrentLatLng = new LatLng(LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient).getLongitude());
+            if (myArrow == null) {
+                mPreviousLatLng = mCurrentLatLng;
+                setCameraPosition(mCurrentLatLng, 18, 0);
+                myArrow = mMap.addMarker(new MarkerOptions()
+                        .position(mCurrentLatLng)
+                        .anchor((float) 0.5, (float) 0.5)
+                        .flat(true)
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+
+            }
         }
     }
 
     @Override
-    public void onDisconnected() {
-        Log.d("status", "disconnected");
+    public void onConnectionSuspended(int i) {
+
     }
 
     @Override
