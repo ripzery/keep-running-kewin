@@ -566,7 +566,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             locationrequest = LocationRequest.create();
             locationrequest.setNumUpdates(1);
             locationrequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-            locationrequest.setExpirationDuration(10000);
+            locationrequest.setExpirationDuration(30000);
 
             LocationListener firstGetLocation = new LocationListener() {
                 @Override
