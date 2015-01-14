@@ -4,16 +4,20 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.location.LocationManager;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
@@ -54,6 +58,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -63,6 +68,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
+    private static final double THRESHOLD_ACC = 20; // กำหนด Accuracy ที่ยอมรับได้
+    private static final int DATA_ENABLED_REQ = 1;
+    private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     SensorManager sensorManager;
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
@@ -102,6 +110,61 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        AlertDialog.Builder setting_mobile_data = new AlertDialog.Builder(this)
+                .setTitle("Mobile data is not enabled yet")
+                .setMessage("Go to setting again")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivityForResult(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS), DATA_ENABLED_REQ);
+                    }
+                });
+
+        AlertDialog.Builder setting_location = new AlertDialog.Builder(this)
+                .setTitle("Set location mode to high accuracy")
+                .setMessage("Go to setting again")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivityForResult(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), LOCATION_ENABLED_REQ);
+                    }
+                });
+
+        // if recieve from data_enabled request
+        if (requestCode == DATA_ENABLED_REQ) {
+
+            if (!isNetworkConnected()) {
+                // Mobile data isn't enable yet.
+                Log.d("Mobile data status : ", "disabled");
+                setting_mobile_data.show();
+            } else if (!isLocationEnabled()) {
+                setting_location.show();
+            } else {
+                setUpMapIfNeeded();
+                initVar();
+                initListener();
+            }
+        } else if (requestCode == LOCATION_ENABLED_REQ) {
+            if (!isLocationEnabled()) {
+                //Location is not enable yet.
+
+                Log.d("Location status : ", "disabled");
+                setting_location.show();
+            } else if (!isNetworkConnected()) {
+                setting_mobile_data.show();
+            } else {
+                setUpMapIfNeeded();
+                initVar();
+                initListener();
+            }
+        }
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
@@ -124,10 +187,38 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        setUpMapIfNeeded();
+        if (!isNetworkConnected()) {
+            AlertDialog.Builder setting = new AlertDialog.Builder(this)
+                    .setTitle("Mobile data is disabled")
+                    .setMessage("Go to setting")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            startActivityForResult(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS), DATA_ENABLED_REQ);
+                        }
+                    });
+            setting.show();
+        } else if (!isLocationEnabled()) {
+            AlertDialog.Builder setting = new AlertDialog.Builder(this)
+                    .setTitle("Set location mode to high accuracy")
+                    .setMessage("Go to setting")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            startActivityForResult(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), LOCATION_ENABLED_REQ);
+                        }
+                    });
+            setting.show();
+        }
 
-        initVar();
-        initListener();
+        if (isLocationEnabled() && isNetworkConnected()) {
+            setUpMapIfNeeded();
+            initVar();
+            initListener();
+        }
+
     }
 
     private void initVar() {
@@ -371,7 +462,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void onFinish() {
                 if (builder == null) {
                     locationrequest = LocationRequest.create();
-                    locationrequest.setInterval(100);
+                    locationrequest.setInterval(1000);
                     locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
                     LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
                 }
@@ -487,6 +578,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
     }
 
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(
+                    mGoogleApiClient, this);
+            mGoogleApiClient.disconnect();
+        }
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (myArrow != null && listMGhost.size() > 0) {
@@ -532,7 +634,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-//                locationClient.removeLocationUpdates(MapsActivity.this);
                 MapsActivity.super.onBackPressed();
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -565,6 +666,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null) {
             locationrequest = LocationRequest.create();
             locationrequest.setNumUpdates(1);
+
             locationrequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
             locationrequest.setExpirationDuration(30000);
 
@@ -663,6 +765,38 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mPreviousLatLng = mCurrentLatLng;
 
         previousUpdateTime = currentUpdateTime;
+    }
+
+    public boolean isAccuracyAcceptable(double acc) {
+        if (acc < THRESHOLD_ACC) {
+            //acceptable
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isNetworkConnected() {
+
+        boolean mobileDataEnabled; // Assume disabled
+        ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        try {
+            Class cmClass = Class.forName(cm.getClass().getName());
+            Method method = cmClass.getDeclaredMethod("getMobileDataEnabled");
+            method.setAccessible(true); // Make the method callable
+            // get the setting for "mobile data"
+            mobileDataEnabled = (Boolean) method.invoke(cm);
+        } catch (Exception e) {
+            return false;
+        }
+        return mobileDataEnabled;
+    }
+
+    public boolean isLocationEnabled() {
+        LocationManager manager = (LocationManager) MapsActivity.this.getSystemService(Context.LOCATION_SERVICE);
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            return false;
+        } else return true;
+
     }
 }
 
