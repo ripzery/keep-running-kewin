@@ -116,6 +116,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .setTitle("Mobile data is not enabled yet")
                 .setMessage("Go to setting again")
                 .setCancelable(false)
+                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MapsActivity.this.finish();
+                    }
+                })
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -127,6 +133,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .setTitle("Set location mode to high accuracy")
                 .setMessage("Go to setting again")
                 .setCancelable(false)
+                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MapsActivity.this.finish();
+                    }
+                })
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -192,6 +204,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     .setTitle("Mobile data is disabled")
                     .setMessage("Go to setting")
                     .setCancelable(false)
+                    .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            MapsActivity.this.finish();
+                        }
+                    })
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
@@ -204,6 +222,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     .setTitle("Set location mode to high accuracy")
                     .setMessage("Go to setting")
                     .setCancelable(false)
+                    .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            MapsActivity.this.finish();
+                        }
+                    })
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
@@ -663,26 +687,34 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onConnected(Bundle bundle) {
         Log.d("status", "connected");
-        if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null) {
+        if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null || true) {
             locationrequest = LocationRequest.create();
-            locationrequest.setNumUpdates(1);
+            locationrequest.setInterval(1000);
+            locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-            locationrequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-            locationrequest.setExpirationDuration(30000);
-
-            LocationListener firstGetLocation = new LocationListener() {
+            final LocationListener firstGetLocation = new LocationListener() {
+                int numberOfUpdate = 0;
                 @Override
                 public void onLocationChanged(Location location) {
-                    mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    if (myArrow == null) {
-                        mPreviousLatLng = mCurrentLatLng;
-                        setCameraPosition(mCurrentLatLng, 18, 0);
-                        myArrow = mMap.addMarker(new MarkerOptions()
-                                .position(mCurrentLatLng)
-                                .anchor((float) 0.5, (float) 0.5)
-                                .flat(true)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                    numberOfUpdate++;
+                    if (isAccuracyAcceptable(location.getAccuracy())) {
+                        mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        if (myArrow == null) {
+                            mPreviousLatLng = mCurrentLatLng;
+                            setCameraPosition(mCurrentLatLng, 18, 0);
+                            myArrow = mMap.addMarker(new MarkerOptions()
+                                    .position(mCurrentLatLng)
+                                    .anchor((float) 0.5, (float) 0.5)
+                                    .flat(true)
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
 
+                        }
+                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                    } else {
+                        progress.setMessage("Waiting for gps accuracy lower than " + THRESHOLD_ACC + " metres");
+                        if (numberOfUpdate > 5) {
+                            progress.setMessage("You may be have to go outside, fix your gps or buy a new phone ");
+                        }
                     }
                 }
             };
