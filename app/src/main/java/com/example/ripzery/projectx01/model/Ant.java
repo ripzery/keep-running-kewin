@@ -96,4 +96,16 @@ public class Ant implements Monster {
         this.y = xy.y;
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeDouble(this.x);
+        parcel.writeDouble(this.y);
+        parcel.writeInt(this.id);
+        parcel.writeString(this.type);
+    }
 }

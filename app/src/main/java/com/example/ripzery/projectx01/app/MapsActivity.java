@@ -15,7 +15,6 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.support.v7.app.ActionBar;
@@ -69,6 +68,7 @@ import de.greenrobot.event.EventBus;
 
 public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
+    public static final int AR_REQ = 123;
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     private static final double THRESHOLD_ACC = 100; // กำหนด Accuracy ที่ยอมรับได้
@@ -109,9 +109,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private LocationClient locationClient;
     private LocationRequest locationrequest;
     private ArrayList<Monster> allMonsters = new ArrayList<>();
+    private ArrayList<Runnable> allRunnableMonster = new ArrayList<>();
     private int currentBearing = 0;
     private GoogleApiClient mGoogleApiClient;
     private EventBus eventBus;
+    private int timeout = 30000;
 
 
     @Override
@@ -204,7 +206,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
+//        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
 
         if (!isNetworkConnected()) {
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
@@ -281,10 +283,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
-        //กำหนด property ของ Ant
-        mMonster = new Ant();
-        mMonster.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mMonster.setSpeed(3);
         mGhost3Status.setText(distanceGoal + " m");
 
 
@@ -348,15 +346,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     public void animateMarker(final Monster monster, final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
-        //define default user speed is 1.0 m/s
-        // speed = distance/durationWait while getting your location
-
-        // กำหนด Handler ในการเคลื่อนตัวปีศาจ
-        handler = new Handler();
-//        marker.setTitle("Hi Kewin!");
 
         // กำหนดเวลาเริ่มต้น
-        final long start = SystemClock.uptimeMillis();
+//        final long start = SystemClock.uptimeMillis();
 
         // ใช้การ animate แบบ Linear (v คงที่)
         final LatLngInterpolator.Linear spherical = new LatLngInterpolator.Linear();
@@ -375,13 +367,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         // สร้าง runnable สำหรับเลื่อตำแหน่งของปีศาจ
         runnable = new Runnable() {
+            // กำหนดเวลาวิ่งเริ่มต้น ซึ่งแต่ละตัวจะใช้เวลาวิ่งต่างกัน
+            int run_time = 1;
+
             // กำหนด flag ว่า marker ตัวนี้ได้แจ้งสั่นผู้ใช้เมื่อเข้าใกล้ไปแล้วหรือยัง
             boolean isVibrate = false;
 
             LatLng newStartLatLng = startLatLng;
 
             //ปรับเวลาเริ่มต้นการเคลื่อนที่ marker ถ้าผู้ใช้เลื่อนตำแหน่ง
-            long adjustStartTime = start;
+            long adjustStartTime = 0;
 
             // กำหนดค่าเริ่มต้นของ adjustDuration (จะต้องปรับค่านี้ถ้าผู้เล่นเคลื่อนที่) ให้เท่ากับค่าเริ่มต้น
             long adjustDuration = initDuration;
@@ -391,7 +386,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void run() {
 
                 // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
-                long elapsed = SystemClock.uptimeMillis() - adjustStartTime;
+                long elapsed = (run_time * 16) - adjustStartTime;
 
                 // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
                 if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
@@ -412,7 +407,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                     // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
                     newStartLatLng = marker.getPosition();
-                    adjustStartTime = SystemClock.uptimeMillis();
+                    adjustStartTime = run_time * 16;
                     adjustDuration = adjustDuration - elapsed;
                     elapsed = 0;
 //
@@ -434,7 +429,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                Log.d("id",""+monster.getId());
                 monster.setPoint(new Point(monsterPoint.x - userPoint.x, userPoint.y - monsterPoint.y));
                 monster.setLatLng(marker.getPosition());
-                eventBus.post(monster);
+
+//                Singleton.getInstance().setAllMonsters(allMonsters);
 //                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
 //                marker.showInfoWindow();
 //                marker.setAlpha(t);
@@ -449,12 +445,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 //ถ้าเลื่อนไม่ถึงผู้เล่นก็ให้เลื่อนต่อไปเรื่อยๆในทุกๆ 16 ms (จะได้ 60fps)
                 if (t < 1.0) {
                     handler.postDelayed(this, 16);
-                } else { // เลื่อนจนถึงผู้เล่รแล้ว
+                    run_time++;
+
+                } else { // เลื่อนจนถึงผู้เล่นแล้ว
                     if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
                         listMGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
                         allMonsters.remove(monster);
                         updateMonsterId();
+                        allRunnableMonster.remove(this);
                     }
 
                     if (hideMarker) {
@@ -465,6 +464,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 }
             }
         };
+        /*
+             สิ่งที่ต้องเก็บ adjustDuration,adjustStartTime,toPosition
+         */
+
+        allRunnableMonster.add(runnable);
+
         handler.post(runnable);
     }
 
@@ -473,11 +478,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         keepGenerate = new Runnable() {
             @Override
             public void run() {
-                int timeout;
+
                 if (listMGhost.size() < MAX_GHOST_AT_ONCE) {
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
+                    mMonster = new Ant();
+                    mMonster.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
+                    mMonster.setSpeed(3);
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;
@@ -586,7 +594,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         location.setTime(new Date().getTime());
         allMonsters.add(mMonster);
         updateMonsterId();
+
         Log.d("Monster Count", "" + allMonsters.size());
+        for (int i = 0; i < allMonsters.size(); i++) {
+            Log.d("id", allMonsters.get(i).getId() + "");
+        }
         animateMarker(allMonsters.get(allMonsters.size() - 1), mGhost, location, true, ghost.getSpeed());
         listMGhost.add(mGhost);
     }
@@ -607,6 +619,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         super.onPause();
         sensorManager.unregisterListener(this, accelerometerSensor);
         sensorManager.unregisterListener(this, magneticFieldSensor);
+        for (Runnable r : allRunnableMonster) {
+            handler.removeCallbacks(r);
+        }
+        if (keepGenerate != null)
+            mHandler.removeCallbacks(keepGenerate);
     }
 
     @Override
@@ -616,14 +633,25 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
             sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_UI);
         }
+
+        for (Runnable r : allRunnableMonster) {
+            handler.post(r);
+        }
+        Log.d("Timeout", timeout + "");
+        if (keepGenerate != null) {
+            mHandler.postDelayed(keepGenerate, timeout);
+        }
+
     }
 
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (runnable != null && keepGenerate != null) {
-            handler.removeCallbacks(runnable);
+        if (allRunnableMonster.size() > 0 && keepGenerate != null) {
+            for (Runnable r : allRunnableMonster) {
+                handler.removeCallbacks(r);
+            }
             mHandler.removeCallbacks(keepGenerate);
         }
         if (mGoogleApiClient != null) {
@@ -781,6 +809,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                     //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
                     playground = mMap.getProjection().getVisibleRegion().latLngBounds;
+                    mMonster = new Ant();
+                    mMonster.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
+                    mMonster.setSpeed(3);
                     addMonster(mMonster);
                     keepGeneratingGhost();
                 }
@@ -846,9 +877,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     public void updateMonsterId() {
         for (int i = 0; i < allMonsters.size(); i++) {
-
             allMonsters.get(i).setId(i);
-            Log.d("updateMonsterId", "" + allMonsters.get(i).getId());
+            Log.d("updateMonsterId1st", "" + allMonsters.get(i).getId());
         }
     }
 
@@ -862,7 +892,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     public void passAllMonster() {
         Intent i = new Intent(this, MainActivity2.class);
-        startActivity(i);
+        Singleton.getInstance().setAllMonsters(allMonsters);
+        startActivityForResult(i, AR_REQ);
+
     }
 
 }

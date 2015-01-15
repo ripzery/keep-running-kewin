@@ -1,6 +1,7 @@
 package com.example.ripzery.projectx01.interface_model;
 
 import android.graphics.Point;
+import android.os.Parcelable;
 
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.LatLng;
@@ -8,7 +9,7 @@ import com.google.android.gms.maps.model.LatLng;
 /**
  * Created by visit on 10/26/14 AD.
  */
-public interface Monster {
+public interface Monster extends Parcelable {
 //    private String type;
 //    private double speed;
 //    private BitmapDescriptor icon;
