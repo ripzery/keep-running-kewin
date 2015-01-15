@@ -32,7 +32,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.ripzery.projectx01.R;
-import com.example.ripzery.projectx01.model.Ghost;
+import com.example.ripzery.projectx01.interface_model.Monster;
+import com.example.ripzery.projectx01.model.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.example.ripzery.projectx01.util.TypefaceSpan;
@@ -62,13 +63,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
+import de.greenrobot.event.EventBus;
+
 //import android.location.LocationListener;
 
 public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
-    private static final double THRESHOLD_ACC = 20; // กำหนด Accuracy ที่ยอมรับได้
+    private static final double THRESHOLD_ACC = 100; // กำหนด Accuracy ที่ยอมรับได้
     private static final int DATA_ENABLED_REQ = 1;
     private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
@@ -86,7 +89,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
-    private Ghost mGhostBehavior;
+    private Ant mMonster;
     private AlertDialog.Builder builder;
     private long previousUpdateTime, currentUpdateTime;
     private Sensor accelerometerSensor;
@@ -105,8 +108,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Runnable keepGenerate;
     private LocationClient locationClient;
     private LocationRequest locationrequest;
+    private ArrayList<Monster> allMonsters = new ArrayList<>();
     private int currentBearing = 0;
     private GoogleApiClient mGoogleApiClient;
+    private EventBus eventBus;
 
 
     @Override
@@ -199,6 +204,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
+
         if (!isNetworkConnected()) {
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
                     .setTitle("Mobile data is disabled")
@@ -274,11 +281,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
-        //กำหนด property ของ Ghost
-        mGhostBehavior = new Ghost();
-        mGhostBehavior.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
-        mGhostBehavior.setSpeed(3);
+        //กำหนด property ของ Ant
+        mMonster = new Ant();
+        mMonster.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
+        mMonster.setSpeed(3);
         mGhost3Status.setText(distanceGoal + " m");
+
 
         // กำหนด Listener ของปุ่ม Add เพิ่มผี
         mBag = (FloatingActionsMenu) findViewById(R.id.btnBag);
@@ -304,7 +312,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         actionE.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(MapsActivity.this, "ClickA", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(MapsActivity.this, "ClickA", Toast.LENGTH_SHORT).show();
+                passAllMonster();
             }
         });
         mBag.addButton(actionC);
@@ -337,7 +346,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
 
-    public void animateMarker(final Marker marker, final Location toPosition,
+    public void animateMarker(final Monster monster, final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
         //define default user speed is 1.0 m/s
         // speed = distance/durationWait while getting your location
@@ -355,6 +364,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // แปลงตำแหน่งของ marker จาก Location เป็น onScreen
         Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
+        monster.setPoint(startPoint);
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
 
         // กำหนดระยะเวลาที่จะ animate โดยขึ้นอยู่กับความเร็วของปีศาจนั้นๆ
@@ -419,8 +429,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         / adjustDuration);
 //                Log.d("t",""+t);
                 marker.setPosition(spherical.interpolate(t, newStartLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
-//                Point ghostPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
-//                Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+                Point monsterPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
+                Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+//                Log.d("id",""+monster.getId());
+                monster.setPoint(new Point(monsterPoint.x - userPoint.x, userPoint.y - monsterPoint.y));
+                monster.setLatLng(marker.getPosition());
+                eventBus.post(monster);
 //                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
 //                marker.showInfoWindow();
 //                marker.setAlpha(t);
@@ -439,6 +453,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
                         listMGhost.remove(0);
                         listGhostName.remove(marker.getTitle());
+                        allMonsters.remove(monster);
+                        updateMonsterId();
                     }
 
                     if (hideMarker) {
@@ -462,7 +478,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
-                    addGhost(mGhostBehavior);
+                    addMonster(mMonster);
                 } else {
                     timeout = 1000;
                 }
@@ -512,14 +528,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     // สุ่ม marker ปีศาจ
-    public MarkerOptions getRandomMarker(LatLngBounds bound) {
+    public MarkerOptions getRandomMarker(LatLngBounds bound, Monster monster) {
         double latMin = bound.southwest.latitude;
         double latRange = bound.northeast.latitude - latMin;
         double lonMin = bound.southwest.longitude;
         double lonRange = bound.northeast.longitude - lonMin;
 
         LatLng ghostLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
-        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(mGhostBehavior.getIcon());
+        MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(monster.getIcon());
+        monster.setLatLng(ghostLatLng);
         return ghostMarkerPosition;
     }
 
@@ -550,45 +567,44 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     // เพิ่มปีศาจ
-    private void addGhost(final Ghost ghost) {
+    private void addMonster(final Monster ghost) {
 
         //กำหนดชื่อให้ปีศาจแต่ละตัว
         String name = "Ghost";
         for (int i = 1; i <= 5; i++) {
             if (!listGhostName.contains(name + i)) {
-                ghost.setName(name + i);
+                ghost.setType(name + i);
                 listGhostName.add(name + i);
                 break;
             }
         }
 
-        final Marker mGhost = mMap.addMarker(getRandomMarker(playground).title(ghost.getName()));
+        final Marker mGhost = mMap.addMarker(getRandomMarker(playground, mMonster).title(ghost.getType()));
         Location location = new Location("Start");
         location.setLatitude(mCurrentLatLng.latitude);
         location.setLongitude(mCurrentLatLng.longitude);
         location.setTime(new Date().getTime());
-        animateMarker(mGhost, location, true, ghost.getSpeed());
+        allMonsters.add(mMonster);
+        updateMonsterId();
+        Log.d("Monster Count", "" + allMonsters.size());
+        animateMarker(allMonsters.get(allMonsters.size() - 1), mGhost, location, true, ghost.getSpeed());
         listMGhost.add(mGhost);
     }
 
     // เรียกส่งตำแหน่ง(บนหน้าจอ ไม่ใช่ latlng)ปัจจุบันของปีศาจทุกตัวเป็น arraylist<Point>
-    public ArrayList<Point> getAllGhostPosition() {
-        ArrayList<Point> allGhostPoint = new ArrayList<>();
-        for (Marker m : listMGhost) {
-            Point ghostPoint = mMap.getProjection().toScreenLocation(m.getPosition());
-            Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
-            allGhostPoint.add(new Point(ghostPoint.x - userPoint.x, userPoint.y - ghostPoint.y));
-        }
-        return allGhostPoint;
-    }
+//    public ArrayList<Point> getAllGhostPosition() {
+//        ArrayList<Point> allGhostPoint = new ArrayList<>();
+//        for (Marker m : listMGhost) {
+//            Point ghostPoint = mMap.getProjection().toScreenLocation(m.getPosition());
+//            Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+//            allGhostPoint.add(new Point(ghostPoint.x - userPoint.x, userPoint.y - ghostPoint.y));
+//        }
+//        return allGhostPoint;
+//    }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (runnable != null && keepGenerate != null) {
-            handler.removeCallbacks(runnable);
-            mHandler.removeCallbacks(keepGenerate);
-        }
         sensorManager.unregisterListener(this, accelerometerSensor);
         sensorManager.unregisterListener(this, magneticFieldSensor);
     }
@@ -606,6 +622,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (runnable != null && keepGenerate != null) {
+            handler.removeCallbacks(runnable);
+            mHandler.removeCallbacks(keepGenerate);
+        }
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(
                     mGoogleApiClient, this);
@@ -712,8 +732,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
                     } else {
                         progress.setMessage("Waiting for gps accuracy lower than " + THRESHOLD_ACC + " metres");
+                        Log.d("numupdate", numberOfUpdate + "");
                         if (numberOfUpdate > 5) {
-                            progress.setMessage("You may be have to go outside, fix your gps or buy a new phone ");
+                            progress.setMessage("You may be have to go outside or fix your gps by using gps fix application");
                         }
                     }
                 }
@@ -760,7 +781,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                     //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
                     playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-                    addGhost(mGhostBehavior);
+                    addMonster(mMonster);
                     keepGeneratingGhost();
                 }
             });
@@ -823,6 +844,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         return mobileDataEnabled;
     }
 
+    public void updateMonsterId() {
+        for (int i = 0; i < allMonsters.size(); i++) {
+
+            allMonsters.get(i).setId(i);
+            Log.d("updateMonsterId", "" + allMonsters.get(i).getId());
+        }
+    }
+
     public boolean isLocationEnabled() {
         LocationManager manager = (LocationManager) MapsActivity.this.getSystemService(Context.LOCATION_SERVICE);
         if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -830,5 +859,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         } else return true;
 
     }
+
+    public void passAllMonster() {
+        Intent i = new Intent(this, MainActivity2.class);
+        startActivity(i);
+    }
+
 }
 

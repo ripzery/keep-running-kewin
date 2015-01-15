@@ -8,5 +8,6 @@
     <string name="title_activity_choose_player">ChoosePlayerActivity</string>
     <string name="title_activity_single_player">SinglePlayerActivity</string>
     <string name="title_activity_campaign">CampaignActivity</string>
+    <string name="title_activity_main_activity2">MainActivity2</string>
 
 </resources>
