@@ -42,7 +42,6 @@ import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -61,8 +60,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
-
-import de.greenrobot.event.EventBus;
 
 //import android.location.LocationListener;
 
@@ -83,7 +80,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private LatLngBounds playground;
     private FloatingActionsMenu mBag;
     private ProgressDialog progress;
-    private Thread tGhost;
     private LatLng mCurrentLatLng, mPreviousLatLng;
     private Handler handler = new Handler();
     private Runnable runnable;
@@ -100,19 +96,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private double oldAzimuth = 0;
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
-    private boolean isLocatedSuccess = false;
     private ActionBar mActionBar;
     private CircleView mCvDistanceStatus;
     private CircleView mCvVelocityStatus;
     private Handler mHandler;
     private Runnable keepGenerate;
-    private LocationClient locationClient;
+    private boolean isGameStart = false;
     private LocationRequest locationrequest;
     private ArrayList<Monster> allMonsters = new ArrayList<>();
     private ArrayList<Runnable> allRunnableMonster = new ArrayList<>();
     private int currentBearing = 0;
     private GoogleApiClient mGoogleApiClient;
-    private EventBus eventBus;
     private int timeout = 30000;
 
 
@@ -508,7 +502,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
-                if (builder == null) {
+                if (!isGameStart) {
                     locationrequest = LocationRequest.create();
                     locationrequest.setInterval(1000);
                     locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -735,7 +729,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onConnected(Bundle bundle) {
         Log.d("status", "connected");
-        if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null || true) {
+        if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null) {
             locationrequest = LocationRequest.create();
             locationrequest.setInterval(1000);
             locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -795,8 +789,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     @Override
     public void onLocationChanged(Location location) {
-        currentUpdateTime = location.getTime();
-
         // แสดงความเร็วและความแม่นยำ
         mGhost1Status.setText("v : " + location.getSpeed());
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
@@ -814,6 +806,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     mMonster.setSpeed(3);
                     addMonster(mMonster);
                     keepGeneratingGhost();
+                    isGameStart = true;
                 }
             });
 
@@ -824,31 +817,30 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             builder.show();
         }
 
-
         mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
-        // อัพเดตระยะทางที่ต้องวิ่ง
-        double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
-        countDistanceToRotCam += distance;
-        distanceGoal -= distance;
-        if (distanceGoal <= 0) {
-            distanceGoal = 0;
+        if (isGameStart) {
+            // อัพเดตระยะทางที่ต้องวิ่ง
+            double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
+            countDistanceToRotCam += distance;
+            distanceGoal -= distance;
+            if (distanceGoal <= 0) {
+                distanceGoal = 0;
+            }
+
+            // แสดงระยะทางที่เหลือ
+            mGhost3Status.setText(distanceGoal + " m");
+            mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
+
+            // เลื่อนตำแหน่งของลูกษรใหม่
+            myArrow.setPosition(mCurrentLatLng);
+
+            // กำหนดตำแหน่งของกล้องใหม่
+            setCameraPosition(mCurrentLatLng, 18, 0, currentBearing);
+
+            //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
+            mPreviousLatLng = mCurrentLatLng;
         }
-
-        // แสดงระยะทางที่เหลือ
-        mGhost3Status.setText(distanceGoal + " m");
-        mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
-
-        // เลื่อนตำแหน่งของลูกษรใหม่
-        myArrow.setPosition(mCurrentLatLng);
-
-        // กำหนดตำแหน่งของกล้องใหม่
-        setCameraPosition(mCurrentLatLng, 18, 0, currentBearing);
-
-        //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
-        mPreviousLatLng = mCurrentLatLng;
-
-        previousUpdateTime = currentUpdateTime;
     }
 
     public boolean isAccuracyAcceptable(double acc) {
