@@ -5,8 +5,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -30,16 +28,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.daimajia.easing.Glider;
-import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
-import com.example.ripzery.projectx01.fragment.ItemFragmentBottom;
-import com.example.ripzery.projectx01.fragment.ItemFragmentTop;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
@@ -47,8 +39,6 @@ import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.example.ripzery.projectx01.util.TypefaceSpan;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.pavlospt.CircleView;
-import com.github.pedrovgs.DraggableListener;
-import com.github.pedrovgs.DraggablePanel;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -66,16 +56,12 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.nineoldandroids.animation.Animator;
-import com.nineoldandroids.animation.AnimatorSet;
-import com.nineoldandroids.animation.ObjectAnimator;
 import com.squareup.picasso.Picasso;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
-import at.markushi.ui.RevealColorView;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
@@ -101,7 +87,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @InjectView(R.id.tv4)
     TextView mGhost4Status;
     @InjectView(R.id.btnBag)
-    ImageButton mBag;
+    ImageView mBag;
     @InjectView(R.id.cvTextM)
     CircleView mCvDistanceStatus;
     @InjectView(R.id.cvTextV)
@@ -141,12 +127,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private boolean gpsFix;
     private long locationTime = 0;
     private Toolbar toolbar;
-    private DraggablePanel draggablePanel;
-    private ItemFragmentTop itemFragmentTop;
-    private ItemFragmentBottom itemFragmentBottom;
-    private RevealColorView revealColorView;
-    private int backgroundColor;
-    private View selectedView;
 
 
     @Override
@@ -296,13 +276,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        distanceGoal = 1000.0;
         ButterKnife.inject(this);
 
-//        mCvDistanceStatus = (CircleView) findViewById(R.id.cvTextM);
-//        mCvVelocityStatus = (CircleView) findViewById(R.id.cvTextV);
-
-//        mGhost1Status = (TextView) findViewById(R.id.tv1);
-//        mGhost2Status = (TextView) findViewById(R.id.tv2);
-//        mGhost3Status = (TextView) findViewById(R.id.tv3);
-//        mGhost4Status = (TextView) findViewById(R.id.tv4);
+        Picasso.with(this)
+                .load(R.drawable.bag_flat_ic)
+                .resize(240, 240)
+                .centerCrop()
+                .into(mBag);
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -317,143 +295,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         mGhost3Status.setText(distanceGoal + " m");
-
-
-        revealColorView = (RevealColorView) findViewById(R.id.reveal);
-        backgroundColor = Color.parseColor("#00212121");
-        // กำหนด Listener ของปุ่ม Add เพิ่มผี
-//        mBag = (FloatingActionButton) findViewById(R.id.btnBag);
-        Picasso.with(this)
-                .load(R.drawable.bag_flat_ic)
-                .centerCrop()
-                .resize(256, 256)
-                .into(mBag);
-        mBag.setOnClickListener(new View.OnClickListener() {
-            float transX = 0;
-            float transY = 0;
-
-            @Override
-            public void onClick(final View view) {
-
-//                Animation anim = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.abc_fade_in)
-                AnimatorSet set = new AnimatorSet();
-                transX = view.getTranslationX();
-                transY = view.getTranslationY();
-                if (transX == -800.0f) {
-                    set.playTogether(
-                            Glider.glide(Skill.ExpoEaseIn, 600, ObjectAnimator.ofFloat(view, "translationY", transY, 0)),
-                            Glider.glide(Skill.CircEaseIn, 100, ObjectAnimator.ofFloat(view, "translationX", transX, 0))
-                    );
-                } else {
-                    set.playTogether(
-                            Glider.glide(Skill.CircEaseIn, 700, ObjectAnimator.ofFloat(view, "translationY", 0, -1350)),
-                            Glider.glide(Skill.ExpoEaseIn, 1200, ObjectAnimator.ofFloat(view, "translationX", 0, -800))
-                    );
-
-                }
-//                Log.d("test",transX+","+transY);
-//                view.setTranslationX(0);
-//                view.setTranslationY(0);
-                set.setDuration(700);
-                set.start();
-                set.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-                        if (selectedView == view)
-                            ((LinearLayout) findViewById(R.id.layoutItem)).setVisibility(View.GONE);
-                    }
-
-                    @Override
-                    public void onAnimationEnd(final Animator animation) {
-//                        view.setTranslationX(0);
-//                        view.setTranslationY(0);
-                        final int color = getColor(view);
-                        final Point p = getLocationInView(revealColorView, view);
-
-                        if (selectedView == view) {
-                            revealColorView.hide(p.x, p.y, backgroundColor, 0, 600, new android.animation.Animator.AnimatorListener() {
-                                @Override
-                                public void onAnimationStart(android.animation.Animator animator) {
-
-                                }
-
-                                @Override
-                                public void onAnimationEnd(android.animation.Animator animator) {
-
-                                }
-
-                                @Override
-                                public void onAnimationCancel(android.animation.Animator animator) {
-
-                                }
-
-                                @Override
-                                public void onAnimationRepeat(android.animation.Animator animator) {
-
-                                }
-                            });
-                            selectedView = null;
-                        } else {
-                            revealColorView.reveal(p.x, p.y, color, view.getHeight() / 2, 340, new android.animation.Animator.AnimatorListener() {
-                                @Override
-                                public void onAnimationStart(android.animation.Animator animator) {
-
-                                }
-
-                                @Override
-                                public void onAnimationEnd(android.animation.Animator animator) {
-                                    ((LinearLayout) findViewById(R.id.layoutItem)).setVisibility(View.VISIBLE);
-                                }
-
-                                @Override
-                                public void onAnimationCancel(android.animation.Animator animator) {
-
-                                }
-
-                                @Override
-                                public void onAnimationRepeat(android.animation.Animator animator) {
-
-                                }
-                            });
-                            selectedView = view;
-                        }
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-
-
-//
-
-            }
-        });
-
-
-
-        FloatingActionButton actionC = new FloatingActionButton(getBaseContext());
-        actionC.setTitle("Hide/Show Action C");
-        actionC.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MapsActivity.this, "ClickC", Toast.LENGTH_SHORT).show();
-            }
-        });
-        FloatingActionButton actionD = new FloatingActionButton(getBaseContext());
-        actionD.setTitle("Hide/Show Action B");
-        actionD.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MapsActivity.this, "ClickB", Toast.LENGTH_SHORT).show();
-            }
-        });
         FloatingActionButton actionE = new FloatingActionButton(getBaseContext());
         actionE.setTitle("Hide/Show Action A");
         actionE.setOnClickListener(new View.OnClickListener() {
@@ -466,77 +307,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        mBag.addButton(actionC);
 //        mBag.addButton(actionD);
 //        mBag.addButton(actionE);
-
-//        initializeFragment();
-//        initializeDraggablePanel();
-    }
-
-    private int getColor(View view) {
-        return Color.parseColor((String) view.getTag());
-    }
-
-    private Point getLocationInView(View src, View target) {
-        final int[] l0 = new int[2];
-        src.getLocationOnScreen(l0);
-
-        final int[] l1 = new int[2];
-        target.getLocationOnScreen(l1);
-
-        l1[0] = l1[0] - l0[0] + target.getWidth() / 2;
-        l1[1] = l1[1] - l0[1] + target.getHeight() / 2;
-
-        return new Point(l1[0], l1[1]);
-    }
-
-    private void initializeDraggablePanel() throws Resources.NotFoundException {
-//        draggablePanel = (DraggablePanel)findViewById(R.id.draggable_panel);
-        draggablePanel.setFragmentManager(getSupportFragmentManager());
-//        Handler handler = new Handler();
-//        handler.postDelayed(new Runnable() {
-//            @Override public void run() {
-//                draggablePanel.setVisibility(View.GONE);
-//                draggablePanel.closeToRight();
-//            }
-//        }, 10);
-        draggablePanel.setDraggableListener(new DraggableListener() {
-            @Override
-            public void onMaximized() {
-
-            }
-
-            @Override
-            public void onMinimized() {
-
-            }
-
-            @Override
-            public void onClosedToLeft() {
-
-            }
-
-            @Override
-            public void onClosedToRight() {
-
-            }
-        });
-        draggablePanel.setTopFragment(itemFragmentTop);
-        draggablePanel.setBottomFragment(itemFragmentBottom);
-        draggablePanel.setAlpha(0.7f);
-        draggablePanel.setTopViewHeight(400);
-        draggablePanel.initializeView();
-    }
-
-    private void initializeFragment() {
-        itemFragmentTop = new ItemFragmentTop();
-        itemFragmentBottom = new ItemFragmentBottom();
-    }
-
-    public void minimiseIt(View v) {
-//        if(draggablePanel.isMaximized()){
-//            draggablePanel.minimize();
-//        }else{
-//            draggablePanel.maximize();
-//        }
     }
 
     private void initListener() {

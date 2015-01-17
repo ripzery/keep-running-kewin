@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -6,206 +6,188 @@
     android:orientation="vertical"
     tools:context="com.example.ripzery.projectx01.app.MapsActivity">
 
-    <android.support.v7.widget.Toolbar
-        android:id="@+id/my_awesome_toolbar"
+    <com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:sothree="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/sliding_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/my_primary_color"
-        android:minHeight="56dp"
-        app:theme="@style/KeepRunningKewinThemeToolbar" />
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent">
-
-        <fragment
-            android:id="@+id/map"
-            class="com.google.android.gms.maps.SupportMapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/cvTextM"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_alignParentRight="true"
-                android:layout_margin="16dp"
-                app:backgroundColorValue="#00f44336"
-                app:fillColor="#66f44336"
-                app:strokeColorValue="#00f44336"
-                app:strokeWidthSize="0"
-                app:subtitleSize="9dp"
-                app:subtitleText=""
-                app:titleColor="@color/my_primary_text"
-                app:titleSize="16sp"
-                app:titleText="DIS" />
-
-            <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/cvTextV"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_margin="16dp"
-                android:layout_toLeftOf="@+id/cvTextM"
-                android:visibility="gone"
-                app:backgroundColorValue="#00f44336"
-                app:fillColor="#66f44336"
-                app:strokeColorValue="#00f44336"
-                app:strokeWidthSize="0"
-                app:subtitleSize="9dp"
-                app:subtitleText=""
-                app:titleColor="@color/my_primary_text"
-                app:titleSize="16sp"
-                app:titleText="SPD" />
-
-        </RelativeLayout>
-
+        android:layout_height="match_parent"
+        android:gravity="bottom"
+        sothree:panelHeight="48dp"
+        sothree:shadowHeight="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/layoutTv1"
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/my_awesome_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:background="#009e9e9e"
-                android:orientation="horizontal"
-                android:visibility="gone">
+                android:background="@color/my_primary_color"
+                android:minHeight="56dp"
+                app:theme="@style/KeepRunningKewinThemeToolbar" />
 
-                <TextView
-                    android:id="@+id/tv1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_horizontal"
-                    android:text="Accuracy = UNKNOWN"
-                    android:textColor="#00695c"
-                    android:textSize="18sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layoutTv2"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:background="#009e9e9e"
-                android:orientation="horizontal">
+                android:layout_height="fill_parent">
 
-                <TextView
-                    android:id="@+id/tv2"
+                <fragment
+                    android:id="@+id/map"
+                    class="com.google.android.gms.maps.SupportMapFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
+                        android:id="@+id/cvTextM"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_alignParentRight="true"
+                        android:layout_margin="16dp"
+                        app:backgroundColorValue="#00f44336"
+                        app:fillColor="#66f44336"
+                        app:strokeColorValue="#00f44336"
+                        app:strokeWidthSize="0"
+                        app:subtitleSize="9dp"
+                        app:subtitleText=""
+                        app:titleColor="@color/my_primary_text"
+                        app:titleSize="16sp"
+                        app:titleText="DIS" />
+
+                    <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
+                        android:id="@+id/cvTextV"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_margin="16dp"
+                        android:layout_toLeftOf="@+id/cvTextM"
+                        android:visibility="gone"
+                        app:backgroundColorValue="#00f44336"
+                        app:fillColor="#66f44336"
+                        app:strokeColorValue="#00f44336"
+                        app:strokeWidthSize="0"
+                        app:subtitleSize="9dp"
+                        app:subtitleText=""
+                        app:titleColor="@color/my_primary_text"
+                        app:titleSize="16sp"
+                        app:titleText="SPD" />
+
+                </RelativeLayout>
+
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:gravity="center_horizontal"
-                    android:text="Speed/Update = UNKNOWN"
-                    android:textColor="#00695c"
-                    android:textSize="18sp" />
+                    android:orientation="vertical">
 
-            </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutTv1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp"
+                        android:background="#009e9e9e"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
 
-            <LinearLayout
-                android:id="@+id/layoutTv3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:background="#009e9e9e"
-                android:orientation="horizontal"
-                android:visibility="gone">
+                        <TextView
+                            android:id="@+id/tv1"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_horizontal"
+                            android:text="Accuracy = UNKNOWN"
+                            android:textColor="#00695c"
+                            android:textSize="18sp" />
 
-                <TextView
-                    android:id="@+id/tv3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_horizontal"
-                    android:text="N/A"
-                    android:textColor="#00695c"
-                    android:textSize="18sp" />
+                    </LinearLayout>
 
-            </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutTv2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp"
+                        android:background="#009e9e9e"
+                        android:orientation="horizontal">
 
-            <LinearLayout
-                android:id="@+id/layoutTv4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:background="#009e9e9e"
-                android:orientation="horizontal"
-                android:visibility="gone">
+                        <TextView
+                            android:id="@+id/tv2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_horizontal"
+                            android:text="Speed/Update = UNKNOWN"
+                            android:textColor="#00695c"
+                            android:textSize="18sp" />
 
-                <TextView
-                    android:id="@+id/tv4"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_horizontal"
-                    android:text="N/A"
-                    android:textColor="#00695c"
-                    android:textSize="18sp" />
+                    </LinearLayout>
 
-            </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutTv3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp"
+                        android:background="#009e9e9e"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/tv3"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_horizontal"
+                            android:text="N/A"
+                            android:textColor="#00695c"
+                            android:textSize="18sp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutTv4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp"
+                        android:background="#009e9e9e"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/tv4"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_horizontal"
+                            android:text="N/A"
+                            android:textColor="#00695c"
+                            android:textSize="18sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </FrameLayout>
 
         </LinearLayout>
 
-
-        <at.markushi.ui.RevealColorView
-            android:id="@+id/reveal"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"></at.markushi.ui.RevealColorView>
 
         <LinearLayout
-            android:id="@+id/layoutItem"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#00f44336"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:layout_height="match_parent"
+            android:background="@color/my_primary_color"
+            android:orientation="horizontal">
 
-            <ImageView
-                android:id="@+id/ivItem"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="24dp"
-                android:layout_weight="1"
-                android:src="@drawable/bag_flat_ic" />
-
-            <TextView
-                android:id="@+id/tvItem"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_weight="3"
-                android:paddingLeft="20dp"
-                android:text="My Bag"
-                android:textColor="@color/my_primary_text"
-                android:textSize="36sp" />
 
         </LinearLayout>
 
-        <ImageButton
-                android:id="@+id/btnBag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_marginLeft="240dp"
-            android:background="#00000000"
-            android:tag="#ffeb3b" />
-        <!--<com.github.pedrovgs.DraggablePanel-->
-        <!--android:id="@+id/draggable_panel"-->
-        <!--android:layout_width="fill_parent"-->
-        <!--android:layout_height="fill_parent"-->
-        <!--draggable_view:top_view_x_scale_factor="@dimen/x_scale_factor"-->
-        <!--draggable_view:top_view_y_scale_factor="@dimen/y_scale_factor"-->
-        <!--draggable_view:top_view_margin_right="@dimen/top_fragment_margin"-->
-        <!--draggable_view:top_view_margin_bottom="@dimen/top_fragment_margin"/>-->
+    </com.sothree.slidinguppanel.SlidingUpPanelLayout>
 
+    <ImageView
+        android:id="@+id/btnBag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="280dp" />
 
-    </FrameLayout>
-
-</LinearLayout>
+</FrameLayout>
 
 
 

@@ -61,8 +61,7 @@
         <item name="android:src">@drawable/ic_ab_overflow_compat</item>
     </style>
 
-    <style name="menu_labels_style">
-        <item name="android:background">@drawable/bag_flat_ic</item>
-        <item name="android:textColor">@color/white</item>
+    <style name="AppTheme">
+        <item name="android:windowActionBarOverlay">true</item>
     </style>
 </resources>
