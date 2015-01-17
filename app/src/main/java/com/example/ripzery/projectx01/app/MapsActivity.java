@@ -5,11 +5,14 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
@@ -27,18 +30,25 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.daimajia.easing.Glider;
+import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.fragment.ItemFragmentBottom;
+import com.example.ripzery.projectx01.fragment.ItemFragmentTop;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.example.ripzery.projectx01.util.TypefaceSpan;
 import com.getbase.floatingactionbutton.FloatingActionButton;
-import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.pavlospt.CircleView;
+import com.github.pedrovgs.DraggableListener;
+import com.github.pedrovgs.DraggablePanel;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -56,16 +66,25 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.AnimatorSet;
+import com.nineoldandroids.animation.ObjectAnimator;
+import com.squareup.picasso.Picasso;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
+import at.markushi.ui.RevealColorView;
+import butterknife.ButterKnife;
+import butterknife.InjectView;
+
 //import android.location.LocationListener;
 
-public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, GpsStatus.Listener {
 
     public static final int AR_REQ = 123;
+    private static final long DURATION_TO_FIX_LOST_MS = 10000;
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     private static final double THRESHOLD_ACC = 100; // กำหนด Accuracy ที่ยอมรับได้
@@ -73,12 +92,24 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     SensorManager sensorManager;
+    @InjectView(R.id.tv1)
+    TextView mGhost1Status;
+    @InjectView(R.id.tv2)
+    TextView mGhost2Status;
+    @InjectView(R.id.tv3)
+    TextView mGhost3Status;
+    @InjectView(R.id.tv4)
+    TextView mGhost4Status;
+    @InjectView(R.id.btnBag)
+    ImageButton mBag;
+    @InjectView(R.id.cvTextM)
+    CircleView mCvDistanceStatus;
+    @InjectView(R.id.cvTextV)
+    CircleView mCvVelocityStatus;
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private TextView mGhost1Status, mGhost2Status, mGhost3Status, mGhost4Status, mGhost5Status;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
-    private FloatingActionsMenu mBag;
     private ProgressDialog progress;
     private LatLng mCurrentLatLng, mPreviousLatLng;
     private Handler handler = new Handler();
@@ -97,8 +128,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
     private ActionBar mActionBar;
-    private CircleView mCvDistanceStatus;
-    private CircleView mCvVelocityStatus;
     private Handler mHandler;
     private Runnable keepGenerate;
     private boolean isGameStart = false;
@@ -108,6 +137,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int currentBearing = 0;
     private GoogleApiClient mGoogleApiClient;
     private int timeout = 30000;
+    private LocationManager locationManager;
+    private boolean gpsFix;
+    private long locationTime = 0;
+    private Toolbar toolbar;
+    private DraggablePanel draggablePanel;
+    private ItemFragmentTop itemFragmentTop;
+    private ItemFragmentBottom itemFragmentBottom;
+    private RevealColorView revealColorView;
+    private int backgroundColor;
+    private View selectedView;
 
 
     @Override
@@ -182,7 +221,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.my_awesome_toolbar);
+        toolbar = (Toolbar) findViewById(R.id.my_awesome_toolbar);
+//        toolbar.setLogo(R.drawable.ic_launcher);
+        toolbar.setSubtitle("Accuracy : Good!");
         setSupportActionBar(toolbar);
 
         mActionBar = getSupportActionBar();
@@ -243,7 +284,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (isLocationEnabled() && isNetworkConnected()) {
             setUpMapIfNeeded();
             initVar();
-            initListener();
+//            initListener();
         }
 
     }
@@ -253,35 +294,149 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        MissionData missionData = bundle.getParcelable("missionData");
 //        distanceGoal = missionData.getDistance();
 //        distanceGoal = 1000.0;
+        ButterKnife.inject(this);
 
-        mCvDistanceStatus = (CircleView) findViewById(R.id.cvTextM);
-        mCvVelocityStatus = (CircleView) findViewById(R.id.cvTextV);
+//        mCvDistanceStatus = (CircleView) findViewById(R.id.cvTextM);
+//        mCvVelocityStatus = (CircleView) findViewById(R.id.cvTextV);
 
-        mGhost1Status = (TextView) findViewById(R.id.tv1);
-        mGhost2Status = (TextView) findViewById(R.id.tv2);
-        mGhost3Status = (TextView) findViewById(R.id.tv3);
-        mGhost4Status = (TextView) findViewById(R.id.tv4);
+//        mGhost1Status = (TextView) findViewById(R.id.tv1);
+//        mGhost2Status = (TextView) findViewById(R.id.tv2);
+//        mGhost3Status = (TextView) findViewById(R.id.tv3);
+//        mGhost4Status = (TextView) findViewById(R.id.tv4);
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(false);
         mMap.getUiSettings().setZoomGesturesEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(true);
 
 
-        //กำหนดขอบเขตการเล่น
-//        playground = new LatLngBounds(new LatLng(13.787486, 100.316179), new LatLng(13.800875, 100.326897));
-
-        progress = new ProgressDialog(this);
-        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+//        progress = new ProgressDialog(this);
+//        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         mGhost3Status.setText(distanceGoal + " m");
 
 
+        revealColorView = (RevealColorView) findViewById(R.id.reveal);
+        backgroundColor = Color.parseColor("#00212121");
         // กำหนด Listener ของปุ่ม Add เพิ่มผี
-        mBag = (FloatingActionsMenu) findViewById(R.id.btnBag);
+//        mBag = (FloatingActionButton) findViewById(R.id.btnBag);
+        Picasso.with(this)
+                .load(R.drawable.bag_flat_ic)
+                .centerCrop()
+                .resize(256, 256)
+                .into(mBag);
+        mBag.setOnClickListener(new View.OnClickListener() {
+            float transX = 0;
+            float transY = 0;
+
+            @Override
+            public void onClick(final View view) {
+
+//                Animation anim = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.abc_fade_in)
+                AnimatorSet set = new AnimatorSet();
+                transX = view.getTranslationX();
+                transY = view.getTranslationY();
+                if (transX == -800.0f) {
+                    set.playTogether(
+                            Glider.glide(Skill.ExpoEaseIn, 600, ObjectAnimator.ofFloat(view, "translationY", transY, 0)),
+                            Glider.glide(Skill.CircEaseIn, 100, ObjectAnimator.ofFloat(view, "translationX", transX, 0))
+                    );
+                } else {
+                    set.playTogether(
+                            Glider.glide(Skill.CircEaseIn, 700, ObjectAnimator.ofFloat(view, "translationY", 0, -1350)),
+                            Glider.glide(Skill.ExpoEaseIn, 1200, ObjectAnimator.ofFloat(view, "translationX", 0, -800))
+                    );
+
+                }
+//                Log.d("test",transX+","+transY);
+//                view.setTranslationX(0);
+//                view.setTranslationY(0);
+                set.setDuration(700);
+                set.start();
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        if (selectedView == view)
+                            ((LinearLayout) findViewById(R.id.layoutItem)).setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(final Animator animation) {
+//                        view.setTranslationX(0);
+//                        view.setTranslationY(0);
+                        final int color = getColor(view);
+                        final Point p = getLocationInView(revealColorView, view);
+
+                        if (selectedView == view) {
+                            revealColorView.hide(p.x, p.y, backgroundColor, 0, 600, new android.animation.Animator.AnimatorListener() {
+                                @Override
+                                public void onAnimationStart(android.animation.Animator animator) {
+
+                                }
+
+                                @Override
+                                public void onAnimationEnd(android.animation.Animator animator) {
+
+                                }
+
+                                @Override
+                                public void onAnimationCancel(android.animation.Animator animator) {
+
+                                }
+
+                                @Override
+                                public void onAnimationRepeat(android.animation.Animator animator) {
+
+                                }
+                            });
+                            selectedView = null;
+                        } else {
+                            revealColorView.reveal(p.x, p.y, color, view.getHeight() / 2, 340, new android.animation.Animator.AnimatorListener() {
+                                @Override
+                                public void onAnimationStart(android.animation.Animator animator) {
+
+                                }
+
+                                @Override
+                                public void onAnimationEnd(android.animation.Animator animator) {
+                                    ((LinearLayout) findViewById(R.id.layoutItem)).setVisibility(View.VISIBLE);
+                                }
+
+                                @Override
+                                public void onAnimationCancel(android.animation.Animator animator) {
+
+                                }
+
+                                @Override
+                                public void onAnimationRepeat(android.animation.Animator animator) {
+
+                                }
+                            });
+                            selectedView = view;
+                        }
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+
+
+//
+
+            }
+        });
+
+
 
         FloatingActionButton actionC = new FloatingActionButton(getBaseContext());
         actionC.setTitle("Hide/Show Action C");
@@ -308,9 +463,80 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 passAllMonster();
             }
         });
-        mBag.addButton(actionC);
-        mBag.addButton(actionD);
-        mBag.addButton(actionE);
+//        mBag.addButton(actionC);
+//        mBag.addButton(actionD);
+//        mBag.addButton(actionE);
+
+//        initializeFragment();
+//        initializeDraggablePanel();
+    }
+
+    private int getColor(View view) {
+        return Color.parseColor((String) view.getTag());
+    }
+
+    private Point getLocationInView(View src, View target) {
+        final int[] l0 = new int[2];
+        src.getLocationOnScreen(l0);
+
+        final int[] l1 = new int[2];
+        target.getLocationOnScreen(l1);
+
+        l1[0] = l1[0] - l0[0] + target.getWidth() / 2;
+        l1[1] = l1[1] - l0[1] + target.getHeight() / 2;
+
+        return new Point(l1[0], l1[1]);
+    }
+
+    private void initializeDraggablePanel() throws Resources.NotFoundException {
+//        draggablePanel = (DraggablePanel)findViewById(R.id.draggable_panel);
+        draggablePanel.setFragmentManager(getSupportFragmentManager());
+//        Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override public void run() {
+//                draggablePanel.setVisibility(View.GONE);
+//                draggablePanel.closeToRight();
+//            }
+//        }, 10);
+        draggablePanel.setDraggableListener(new DraggableListener() {
+            @Override
+            public void onMaximized() {
+
+            }
+
+            @Override
+            public void onMinimized() {
+
+            }
+
+            @Override
+            public void onClosedToLeft() {
+
+            }
+
+            @Override
+            public void onClosedToRight() {
+
+            }
+        });
+        draggablePanel.setTopFragment(itemFragmentTop);
+        draggablePanel.setBottomFragment(itemFragmentBottom);
+        draggablePanel.setAlpha(0.7f);
+        draggablePanel.setTopViewHeight(400);
+        draggablePanel.initializeView();
+    }
+
+    private void initializeFragment() {
+        itemFragmentTop = new ItemFragmentTop();
+        itemFragmentBottom = new ItemFragmentBottom();
+    }
+
+    public void minimiseIt(View v) {
+//        if(draggablePanel.isMaximized()){
+//            draggablePanel.minimize();
+//        }else{
+//            draggablePanel.maximize();
+//        }
     }
 
     private void initListener() {
@@ -331,6 +557,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 }
             }
         });
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager.addGpsStatusListener(this);
 
         // กำหนดค่าเริ่มต้นของ UpdateTime ไว้เป็นเวลาปัจจุบัน
         previousUpdateTime = System.currentTimeMillis();
@@ -618,6 +847,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
         if (keepGenerate != null)
             mHandler.removeCallbacks(keepGenerate);
+        if (locationManager != null)
+            locationManager.removeGpsStatusListener(this);
     }
 
     @Override
@@ -626,6 +857,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (sensorManager != null) {
             sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
             sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_UI);
+        }
+
+        if (locationManager != null) {
+            locationManager.addGpsStatusListener(this);
         }
 
         for (Runnable r : allRunnableMonster) {
@@ -652,6 +887,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             LocationServices.FusedLocationApi.removeLocationUpdates(
                     mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
+        }
+
+        if (locationManager != null) {
+            locationManager.removeGpsStatusListener(this);
         }
     }
 
@@ -789,9 +1028,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     @Override
     public void onLocationChanged(Location location) {
+
+
         // แสดงความเร็วและความแม่นยำ
         mGhost1Status.setText("v : " + location.getSpeed());
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
+//        Log.d("Accuracy Grade", getGrade((int) location.getAccuracy()));
+        toolbar.setSubtitle("Accuracy : " + getGrade((int) location.getAccuracy()));
         mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
         if (progress.isShowing() && builder == null) {
@@ -820,6 +1063,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         if (isGameStart) {
+            locationTime = location.getTime();
             // อัพเดตระยะทางที่ต้องวิ่ง
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
             countDistanceToRotCam += distance;
@@ -889,5 +1133,48 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     }
 
+    @Override
+    public void onGpsStatusChanged(int changeType) {
+        if (locationManager != null) {
+            GpsStatus status = locationManager.getGpsStatus(null);
+            switch (changeType) {
+                case GpsStatus.GPS_EVENT_FIRST_FIX:
+                    gpsFix = true;
+                    break;
+                case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+                    // if it has been more then 10 seconds since the last update, consider the fix lost
+                    gpsFix = System.currentTimeMillis() - locationTime < DURATION_TO_FIX_LOST_MS;
+                    break;
+                case GpsStatus.GPS_EVENT_STARTED: // GPS turned on
+                    gpsFix = false;
+                    break;
+                case GpsStatus.GPS_EVENT_STOPPED: // GPS turned off
+                    gpsFix = false;
+                    break;
+                default:
+                    Log.w("..", "unknown GpsStatus event type. " + changeType);
+                    return;
+
+            }
+        }
+    }
+
+    private String getGrade(int acc) {
+
+        if (!isLocationEnabled()) {
+            return "Disabled";
+        } else if (!gpsFix) {
+            return "Waiting for Fix";
+        } else if (acc <= 5) {
+            return "Excellent";
+        } else if (acc <= 10) {
+            return "Good";
+        } else if (acc <= 30) {
+            return "Fair";
+        } else if (acc <= 100) {
+            return "Bad";
+        }
+        return "Unusable";
+    }
 }
 

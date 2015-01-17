@@ -1,6 +1,5 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:fab="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -151,21 +150,58 @@
 
         </LinearLayout>
 
-        <RelativeLayout
+
+        <at.markushi.ui.RevealColorView
+            android:id="@+id/reveal"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"></at.markushi.ui.RevealColorView>
+
+        <LinearLayout
+            android:id="@+id/layoutItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom">
+            android:background="#00f44336"
+            android:orientation="horizontal"
+            android:visibility="gone">
 
-            <com.getbase.floatingactionbutton.FloatingActionsMenu
+            <ImageView
+                android:id="@+id/ivItem"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="24dp"
+                android:layout_weight="1"
+                android:src="@drawable/bag_flat_ic" />
+
+            <TextView
+                android:id="@+id/tvItem"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="3"
+                android:paddingLeft="20dp"
+                android:text="My Bag"
+                android:textColor="@color/my_primary_text"
+                android:textSize="36sp" />
+
+        </LinearLayout>
+
+        <ImageButton
                 android:id="@+id/btnBag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:elevation="4dp"
-                fab:fab_addButtonColorNormal="@color/my_primary_text"
-                fab:fab_addButtonColorPressed="@color/white_pressed"
-                fab:fab_expandDirection="left" />
-        </RelativeLayout>
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="240dp"
+            android:background="#00000000"
+            android:tag="#ffeb3b" />
+        <!--<com.github.pedrovgs.DraggablePanel-->
+        <!--android:id="@+id/draggable_panel"-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="fill_parent"-->
+        <!--draggable_view:top_view_x_scale_factor="@dimen/x_scale_factor"-->
+        <!--draggable_view:top_view_y_scale_factor="@dimen/y_scale_factor"-->
+        <!--draggable_view:top_view_margin_right="@dimen/top_fragment_margin"-->
+        <!--draggable_view:top_view_margin_bottom="@dimen/top_fragment_margin"/>-->
+
 
     </FrameLayout>
 
