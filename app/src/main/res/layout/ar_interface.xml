@@ -76,7 +76,7 @@
                 android:orientation="vertical"
                 android:layout_gravity="center">
 
-                <com.oakraw.testmagnetic.custom.TextViewBullet
+                <com.example.ripzery.projectx01.ar.custom.TextViewBullet
                     android:id="@+id/bullet"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -85,7 +85,7 @@
                     android:textColor="@color/white"
                     android:layout_marginBottom="-5dp"
                     android:textSize="20sp"/>
-                <com.oakraw.testmagnetic.custom.TextViewBullet
+                <com.example.ripzery.projectx01.ar.custom.TextViewBullet
                     android:id="@+id/remain_bullet"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
