@@ -10,7 +10,7 @@ import android.widget.TextView;
  */
 public class TextViewBullet extends TextView {
 
-    public static final String font = "terminator.otf";
+    public static final String font = "fonts/terminator.otf";
 
     public TextViewBullet(Context context) {
         super(context);
