@@ -42,11 +42,10 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:actionBarStyle">@style/AppTheme_ActionBar</item>
         <item name="android:actionBarSize">@dimen/action_bar_height</item>
-        <item name="android:windowContentOverlay">@drawable/actionbar_shadow</item>
+        <item name="android:windowActionBarOverlay">true</item>
     </style>
 
     <style name="AppTheme_ActionBar" parent="android:Widget.Holo.ActionBar.Solid">
-        <item name="android:background">@color/apptheme_primary</item>
         <item name="android:icon">@drawable/ic_launcher</item>
         <item name="android:homeAsUpIndicator">@drawable/ic_ab_up_compat</item>
         <item name="android:titleTextStyle">@style/AppTheme_ActionBar_Title</item>
@@ -61,7 +60,4 @@
         <item name="android:src">@drawable/ic_ab_overflow_compat</item>
     </style>
 
-    <style name="AppTheme">
-        <item name="android:windowActionBarOverlay">true</item>
-    </style>
 </resources>

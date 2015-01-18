@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -23,14 +24,17 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.daimajia.easing.Glider;
+import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
@@ -56,12 +60,17 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.AnimatorSet;
+import com.nineoldandroids.animation.ObjectAnimator;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import com.squareup.picasso.Picasso;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
+import at.markushi.ui.RevealColorView;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
@@ -73,25 +82,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private static final long DURATION_TO_FIX_LOST_MS = 10000;
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
-    private static final double THRESHOLD_ACC = 100; // กำหนด Accuracy ที่ยอมรับได้
+    private static final double THRESHOLD_ACC = 30; // กำหนด Accuracy ที่ยอมรับได้
     private static final int DATA_ENABLED_REQ = 1;
     private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     SensorManager sensorManager;
     @InjectView(R.id.tv1)
-    TextView mGhost1Status;
-    @InjectView(R.id.tv2)
     TextView mGhost2Status;
-    @InjectView(R.id.tv3)
-    TextView mGhost3Status;
-    @InjectView(R.id.tv4)
-    TextView mGhost4Status;
     @InjectView(R.id.btnBag)
-    ImageView mBag;
+    ImageButton mBag;
     @InjectView(R.id.cvTextM)
     CircleView mCvDistanceStatus;
-    @InjectView(R.id.cvTextV)
-    CircleView mCvVelocityStatus;
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -127,6 +128,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private boolean gpsFix;
     private long locationTime = 0;
     private Toolbar toolbar;
+    private boolean isExpanded = false;
+    private RevealColorView revealColorView;
+    private View selectedView;
+    private int backgroundColor;
 
 
     @Override
@@ -207,7 +212,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         setSupportActionBar(toolbar);
 
         mActionBar = getSupportActionBar();
-        mActionBar.setShowHideAnimationEnabled(true);
         mActionBar.setElevation(5);
         SpannableString mStringTitle = new SpannableString("Mission X");
         mStringTitle.setSpan(new TypefaceSpan(this, "Roboto-Medium.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -264,7 +268,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (isLocationEnabled() && isNetworkConnected()) {
             setUpMapIfNeeded();
             initVar();
-//            initListener();
+            initListener();
         }
 
     }
@@ -278,7 +282,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         Picasso.with(this)
                 .load(R.drawable.bag_flat_ic)
-                .resize(240, 240)
+                .resize(154, 154)
                 .centerCrop()
                 .into(mBag);
 
@@ -291,10 +295,106 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.getUiSettings().setScrollGesturesEnabled(true);
 
 
-//        progress = new ProgressDialog(this);
-//        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+        progress = new ProgressDialog(this);
+        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
-        mGhost3Status.setText(distanceGoal + " m");
+        final DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
+        final float pHeight = displayMetrics.heightPixels;
+        final float pWidth = displayMetrics.widthPixels;
+
+        revealColorView = (RevealColorView) findViewById(R.id.reveal);
+        backgroundColor = Color.parseColor("#bdbdbd");
+
+        final SlidingUpPanelLayout itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        itemBagLayout.setAnchorPoint(0.4f);
+        itemBagLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
+            @Override
+            public void onPanelSlide(View view, float v) {
+//                Log.d("slide",""+v);
+            }
+
+            @Override
+            public void onPanelCollapsed(View view) {
+                isExpanded = false;
+                mBag.setVisibility(View.VISIBLE);
+//                RevealColorView test = ((RevealColorView)findViewById(R.id.reveal));
+//                test.setBackgroundColor(getResources().getColor(R.color.sliding_content));
+                final Point p = getLocationInView(revealColorView, mBag);
+                revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
+                mBag.setTranslationX(0);
+                mBag.setTranslationY(0);
+            }
+
+            @Override
+            public void onPanelExpanded(View view) {
+                isExpanded = true;
+                AnimatorSet set = new AnimatorSet();
+                set.playTogether(
+                        Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationY", 0, pHeight / 2 - 100)),
+                        Glider.glide(Skill.SineEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationX", 0, pWidth / 2 - 100))
+                );
+
+                set.setDuration(500);
+                set.start();
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        final int color = getColor(mBag);
+                        final Point p = getLocationInView(revealColorView, mBag);
+
+//                        if (selectedView == mBag) {
+//                            revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
+//                            selectedView = null;
+//                        } else {
+                        revealColorView.reveal(p.x, p.y, color, mBag.getHeight() / 2, 340, null);
+                        mBag.setVisibility(View.GONE);
+//                            selectedView = mBag;
+//                        }
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+            }
+
+            @Override
+            public void onPanelAnchored(View view) {
+
+            }
+
+            @Override
+            public void onPanelHidden(View view) {
+
+            }
+        });
+
+
+        mBag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (!isExpanded) {
+
+                } else {
+
+                }
+            }
+        });
+
+
+//        mGhost3Status.setText(distanceGoal + " m");
         FloatingActionButton actionE = new FloatingActionButton(getBaseContext());
         actionE.setTitle("Hide/Show Action A");
         actionE.setOnClickListener(new View.OnClickListener() {
@@ -307,6 +407,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        mBag.addButton(actionC);
 //        mBag.addButton(actionD);
 //        mBag.addButton(actionE);
+    }
+
+    private int getColor(View view) {
+        return Color.parseColor((String) view.getTag());
+    }
+
+    private Point getLocationInView(View src, View target) {
+        final int[] l0 = new int[2];
+        src.getLocationOnScreen(l0);
+
+        final int[] l1 = new int[2];
+        target.getLocationOnScreen(l1);
+
+        l1[0] = l1[0] - l0[0] + target.getWidth() / 2;
+        l1[1] = l1[1] - l0[1] + target.getHeight() / 2;
+
+        return new Point(l1[0], l1[1]);
     }
 
     private void initListener() {
@@ -410,7 +527,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
                 // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
-                mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
+//                mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
 
                 // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
                 float t = interpolator.getInterpolation((float) elapsed
@@ -801,11 +918,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
         // แสดงความเร็วและความแม่นยำ
-        mGhost1Status.setText("v : " + location.getSpeed());
+//        mGhost1Status.setText("v : " + location.getSpeed());
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 //        Log.d("Accuracy Grade", getGrade((int) location.getAccuracy()));
         toolbar.setSubtitle("Accuracy : " + getGrade((int) location.getAccuracy()));
-        mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
+//        mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
         if (progress.isShowing() && builder == null) {
             builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
@@ -843,7 +960,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
 
             // แสดงระยะทางที่เหลือ
-            mGhost3Status.setText(distanceGoal + " m");
+//            mGhost3Status.setText(distanceGoal + " m");
             mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
 
             // เลื่อนตำแหน่งของลูกษรใหม่

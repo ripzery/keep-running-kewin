@@ -11,8 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="bottom"
-        sothree:panelHeight="48dp"
-        sothree:shadowHeight="4dp">
+        sothree:fadeColor="@android:color/transparent"
+        sothree:overlay="true"
+        sothree:panelHeight="54dp"
+        sothree:shadowHeight="24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -29,7 +31,8 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="fill_parent">
+                android:layout_height="fill_parent"
+                android:fitsSystemWindows="true">
 
                 <fragment
                     android:id="@+id/map"
@@ -56,23 +59,6 @@
                         app:titleColor="@color/my_primary_text"
                         app:titleSize="16sp"
                         app:titleText="DIS" />
-
-                    <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
-                        android:id="@+id/cvTextV"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:layout_margin="16dp"
-                        android:layout_toLeftOf="@+id/cvTextM"
-                        android:visibility="gone"
-                        app:backgroundColorValue="#00f44336"
-                        app:fillColor="#66f44336"
-                        app:strokeColorValue="#00f44336"
-                        app:strokeWidthSize="0"
-                        app:subtitleSize="9dp"
-                        app:subtitleText=""
-                        app:titleColor="@color/my_primary_text"
-                        app:titleSize="16sp"
-                        app:titleText="SPD" />
 
                 </RelativeLayout>
 
@@ -101,91 +87,77 @@
                             android:textSize="18sp" />
 
                     </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/layoutTv2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="10dp"
-                        android:background="#009e9e9e"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tv2"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center_horizontal"
-                            android:text="Speed/Update = UNKNOWN"
-                            android:textColor="#00695c"
-                            android:textSize="18sp" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/layoutTv3"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="10dp"
-                        android:background="#009e9e9e"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/tv3"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center_horizontal"
-                            android:text="N/A"
-                            android:textColor="#00695c"
-                            android:textSize="18sp" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/layoutTv4"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="10dp"
-                        android:background="#009e9e9e"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/tv4"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center_horizontal"
-                            android:text="N/A"
-                            android:textColor="#00695c"
-                            android:textSize="18sp" />
-
-                    </LinearLayout>
-
                 </LinearLayout>
 
             </FrameLayout>
 
         </LinearLayout>
 
-
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/my_primary_color"
-            android:orientation="horizontal">
+            android:layout_height="match_parent">
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-        </LinearLayout>
+                <RelativeLayout
+                    android:id="@+id/sliding_layout_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@color/sliding_title"
+                    android:minHeight="56dp">
+
+                    <TextView
+                        android:id="@+id/tvItemCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_centerHorizontal="true"
+                        android:gravity="center"
+                        android:text="You have xxx items here"
+                        android:textSize="20sp" />
+
+                </RelativeLayout>
+
+                <FrameLayout
+                    android:id="@+id/sliding_layout_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_below="@+id/sliding_layout_title"
+                    android:background="@color/sliding_content">
+
+                    <at.markushi.ui.RevealColorView
+                        android:id="@+id/reveal"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/sliding_content" />
+
+                </FrameLayout>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_alignParentBottom="true"
+                    android:background="@color/sliding_title"
+                    android:minHeight="56dp">
+
+                </RelativeLayout>
+
+            </RelativeLayout>
+
+            <ImageButton
+                android:id="@+id/btnBag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:layout_marginLeft="10dp"
+                android:background="#00000000"
+                android:tag="#3F51B5" />
+
+        </FrameLayout>
+
 
     </com.sothree.slidinguppanel.SlidingUpPanelLayout>
-
-    <ImageView
-        android:id="@+id/btnBag"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="10dp"
-        android:layout_marginLeft="280dp" />
 
 </FrameLayout>
 
