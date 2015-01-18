@@ -132,6 +132,14 @@
                         android:layout_height="match_parent"
                         android:background="@color/sliding_content" />
 
+                    <GridView
+                        android:id="@+id/bag"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"/>
+
+
+                    />
+
                 </FrameLayout>
 
                 <RelativeLayout

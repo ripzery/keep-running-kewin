@@ -6,7 +6,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
-import com.oakraw.testmagnetic.MainActivity;
+import com.example.ripzery.projectx01.ar.MainActivity;
 
 import rajawali.Object3D;
 import rajawali.animation.Animation;

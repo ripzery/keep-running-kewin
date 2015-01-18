@@ -39,5 +39,6 @@ dependencies {
     compile 'de.greenrobot:eventbus:2.4.0'
     compile 'com.android.support:support-v4:21.0.0'
     compile 'com.android.support:appcompat-v7:21.0.0'
+    compile 'it.sephiroth.android.library.horizontallistview:hlistview:1.2.2'
     compile project(':rajawali')
 }

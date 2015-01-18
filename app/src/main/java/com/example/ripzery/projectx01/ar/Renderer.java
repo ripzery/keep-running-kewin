@@ -5,9 +5,11 @@ import android.graphics.Color;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
-import com.oakraw.testmagnetic.detail.KingKong;
-import com.oakraw.testmagnetic.detail.Me;
-import com.oakraw.testmagnetic.detail.Monster;
+
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.ar.detail.KingKong;
+import com.example.ripzery.projectx01.ar.detail.Me;
+import com.example.ripzery.projectx01.ar.detail.Monster;
 
 import java.util.ArrayList;
 

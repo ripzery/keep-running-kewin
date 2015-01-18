@@ -17,12 +17,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.oakraw.testmagnetic.adapter.WeaponAdapter;
-import com.oakraw.testmagnetic.detail.Me;
-import com.oakraw.testmagnetic.detail.weapon.Desert;
-import com.oakraw.testmagnetic.detail.weapon.Gun;
-import com.oakraw.testmagnetic.detail.weapon.Pistol;
-import com.oakraw.testmagnetic.util.CameraPreview;
+
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.ar.adapter.WeaponAdapter;
+import com.example.ripzery.projectx01.ar.detail.Me;
+import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
+import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
+import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
+import com.example.ripzery.projectx01.ar.util.CameraPreview;
 
 import java.util.ArrayList;
 import java.util.List;

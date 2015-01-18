@@ -2,7 +2,7 @@ package com.example.ripzery.projectx01.ar.detail;
 
 import android.content.Context;
 
-import com.oakraw.testmagnetic.R;
+import com.example.ripzery.projectx01.R;
 
 /**
  * Created by Rawipol on 1/9/15 AD.

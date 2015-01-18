@@ -12,4 +12,13 @@
     <color name="sliding_title2">#44f5f5f5</color>
     <color name="sliding_content">#BDBDBD</color>
 
+    <color name="trans_btn_unpress">#9f6f6f6f</color>
+    <color name="trans_btn_press">#9fd3d3d3</color>
+    <color name="stroke">#9fdddddd</color>
+    <color name="weapon_bg">#B71C1C</color>
+    <color name="white">#fff9f9f9</color>
+    <color name="light_light_sub">#a4c5df</color>
+    <color name="light_sub">#598bb2</color>
+    <color name="dark_sub">#364776</color>
+
 </resources>

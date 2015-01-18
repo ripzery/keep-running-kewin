@@ -30,6 +30,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -82,7 +83,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private static final long DURATION_TO_FIX_LOST_MS = 10000;
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
-    private static final double THRESHOLD_ACC = 30; // กำหนด Accuracy ที่ยอมรับได้
+    private static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
     private static final int DATA_ENABLED_REQ = 1;
     private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
@@ -407,6 +408,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        mBag.addButton(actionC);
 //        mBag.addButton(actionD);
 //        mBag.addButton(actionE);
+
+        //GridView gView = (GridView)findViewById(R.id.bag);
+        //gView.setAdapter(new );
     }
 
     private int getColor(View view) {
@@ -1014,9 +1018,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void passAllMonster() {
-        Intent i = new Intent(this, MainActivity2.class);
+       /* Intent i = new Intent(this, MainActivity2.class);
         Singleton.getInstance().setAllMonsters(allMonsters);
-        startActivityForResult(i, AR_REQ);
+        startActivityForResult(i, AR_REQ);*/
 
     }
 

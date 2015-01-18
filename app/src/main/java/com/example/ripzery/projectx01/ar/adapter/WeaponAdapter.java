@@ -8,9 +8,10 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.oakraw.testmagnetic.MainActivity;
-import com.oakraw.testmagnetic.R;
-import com.oakraw.testmagnetic.detail.weapon.Gun;
+
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.ar.MainActivity;
+import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 
 import java.util.ArrayList;
 

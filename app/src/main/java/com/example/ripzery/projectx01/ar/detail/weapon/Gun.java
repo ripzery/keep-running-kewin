@@ -4,8 +4,9 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.media.SoundPool;
 
-import com.oakraw.testmagnetic.MainActivity;
-import com.oakraw.testmagnetic.R;
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.ar.MainActivity;
+
 
 /**
  * Created by Rawipol on 1/11/15 AD.

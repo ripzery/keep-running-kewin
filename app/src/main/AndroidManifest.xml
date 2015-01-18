@@ -38,8 +38,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".app.MainActivity2"
-            android:label="@string/title_activity_main_activity2"></activity>
+            android:name=".ar.MainActivity"
+            android:label="ar"></activity>
     </application>
 
 </manifest>
