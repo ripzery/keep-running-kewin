@@ -133,12 +133,16 @@
                         android:background="@color/sliding_content" />
 
                     <GridView
-                        android:id="@+id/bag"
+                        android:id="@+id/gvBag"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"/>
+                        android:layout_height="match_parent"
+                        android:columnWidth="90dp"
+                        android:gravity="center"
+                        android:horizontalSpacing="10dp"
+                        android:numColumns="auto_fit"
+                        android:stretchMode="columnWidth"
+                        android:verticalSpacing="10dp" />
 
-
-                    />
 
                 </FrameLayout>
 

@@ -37,6 +37,7 @@ import android.widget.TextView;
 import com.daimajia.easing.Glider;
 import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.adapter.BagAdapter;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
@@ -106,7 +107,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
     private Ant mMonster;
     private AlertDialog.Builder builder;
-    private long previousUpdateTime, currentUpdateTime;
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
     private float[] accelerometerData = new float[3];
@@ -409,8 +409,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        mBag.addButton(actionD);
 //        mBag.addButton(actionE);
 
-        //GridView gView = (GridView)findViewById(R.id.bag);
-        //gView.setAdapter(new );
+        GridView gView = (GridView) findViewById(R.id.gvBag);
+        gView.setAdapter(new BagAdapter(this));
+
+       /* gView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Log.d("click","yes");
+                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+            }
+        });*/
     }
 
     private int getColor(View view) {
@@ -453,7 +461,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         locationManager.addGpsStatusListener(this);
 
         // กำหนดค่าเริ่มต้นของ UpdateTime ไว้เป็นเวลาปัจจุบัน
-        previousUpdateTime = System.currentTimeMillis();
+//        previousUpdateTime = System.currentTimeMillis();
 
     }
 
