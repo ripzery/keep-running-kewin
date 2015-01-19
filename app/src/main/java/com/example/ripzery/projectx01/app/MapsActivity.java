@@ -29,7 +29,6 @@ import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.ctrlplusz.anytextview.AnyTextView;
@@ -65,7 +64,6 @@ import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-import com.squareup.picasso.Picasso;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -92,7 +90,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @InjectView(R.id.tv1)
     TextView mGhost2Status;
     @InjectView(R.id.btnBag)
-    ImageButton mBag;
+    CircleButton mBag;
     @InjectView(R.id.cvTextM)
     CircleView mCvDistanceStatus;
     @InjectView(R.id.tvItemCount)
@@ -288,12 +286,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        distanceGoal = missionData.getDistance();
 //        distanceGoal = 1000.0;
         ButterKnife.inject(this);
-
-        Picasso.with(this)
-                .load(R.drawable.bag_flat_ic)
-                .resize(154, 154)
-                .centerCrop()
-                .into(mBag);
+//
+//        Picasso.with(this)
+//                .load(R.drawable.bag_flat_ic)
+//                .resize(64, 64)
+//                .centerCrop()
+//                .into(mBag);
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);

@@ -15,8 +15,8 @@
         android:gravity="bottom"
         sothree:fadeColor="@android:color/transparent"
         sothree:overlay="true"
-        sothree:panelHeight="54dp"
-        sothree:shadowHeight="24dp">
+        sothree:panelHeight="64dp"
+        sothree:shadowHeight="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -116,11 +116,11 @@
                 <RelativeLayout
                     android:id="@+id/sliding_layout_title"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="64dp"
                     android:background="@color/sliding_bar"
-                    android:minHeight="56dp">
+                    android:minHeight="64dp">
 
-                    <com.ctrlplusz.anytextview.AnyTextView
+                <com.ctrlplusz.anytextview.AnyTextView
                         android:id="@+id/tvItemCount"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
@@ -181,15 +181,17 @@
 
             </RelativeLayout>
 
-            <ImageButton
+            <at.markushi.ui.CircleButton
                 android:id="@+id/btnBag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="62dp"
+                android:layout_height="62dp"
                 android:layout_gravity="top"
                 android:layout_marginLeft="@dimen/row_left_right_margin"
                 android:layout_marginRight="@dimen/row_left_right_margin"
                 android:background="#00000000"
-                android:tag="#5E6FC7" />
+                android:src="@drawable/bag_flat_ic"
+                android:tag="#5E6FC7"
+                app:cb_color="@color/primary" />
 
         </FrameLayout>
 
