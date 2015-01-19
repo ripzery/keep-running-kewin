@@ -71,6 +71,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
+import at.markushi.ui.CircleButton;
 import at.markushi.ui.RevealColorView;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -96,6 +97,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     CircleView mCvDistanceStatus;
     @InjectView(R.id.tvItemCount)
     AnyTextView tvItemCount;
+    @InjectView(R.id.cbHome)
+    CircleButton cbHome;
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -409,6 +412,27 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         });
 
 
+        cbHome.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+//                        locationClient.removeLocationUpdates(MapsActivity.this);
+                        MapsActivity.this.finish();
+                    }
+                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                dialog.setTitle("Stop playing?");
+                dialog.setMessage("Your current progress won't saved");
+                dialog.show();
+            }
+        });
+
         mBag.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -692,21 +716,21 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-//                        locationClient.removeLocationUpdates(MapsActivity.this);
-                        MapsActivity.this.finish();
-                    }
-                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-                dialog.setTitle("Stop playing?");
-                dialog.setMessage("Your current progress won't saved");
-                dialog.show();
+//                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+////                        locationClient.removeLocationUpdates(MapsActivity.this);
+//                        MapsActivity.this.finish();
+//                    }
+//                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//
+//                    }
+//                });
+//                dialog.setTitle("Stop playing?");
+//                dialog.setMessage("Your current progress won't saved");
+//                dialog.show();
 
                 return true;
             default:

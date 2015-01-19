@@ -54,12 +54,12 @@
                         android:layout_alignParentRight="true"
                         android:layout_margin="16dp"
                         app:backgroundColorValue="#00f44336"
-                        app:fillColor="@color/primary_dark"
+                        app:fillColor="@color/circle_view"
                         app:strokeColorValue="#00f44336"
                         app:strokeWidthSize="0"
                         app:subtitleSize="9dp"
                         app:subtitleText=""
-                        app:titleColor="@color/icons"
+                        app:titleColor="@color/primary_text"
                         app:titleSize="16sp"
                         app:titleText="DIS" />
 
@@ -92,12 +92,14 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <com.getbase.floatingactionbutton.FloatingActionButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <at.markushi.ui.CircleButton
+                    android:id="@+id/cbHome"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
                     android:layout_marginLeft="@dimen/row_left_right_margin"
                     android:layout_marginTop="@dimen/row_left_right_margin"
-                    android:src="@drawable/home" />
+                    android:src="@drawable/home"
+                    app:cb_color="@color/circle_view" />
 
             </FrameLayout>
 
@@ -115,7 +117,7 @@
                     android:id="@+id/sliding_layout_title"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:background="@color/primary"
+                    android:background="@color/sliding_bar"
                     android:minHeight="56dp">
 
                     <com.ctrlplusz.anytextview.AnyTextView
@@ -125,7 +127,7 @@
                         android:layout_centerHorizontal="true"
                         android:gravity="center"
                         android:text="Accuracy : Unknown"
-                        android:textColor="@color/my_primary_text"
+                        android:textColor="@color/primary_text"
                         android:textSize="@dimen/medium_text_size"
                         foobar:typeface="Roboto-Light.ttf" />
 
@@ -145,9 +147,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="fill_parent"
                     android:layout_below="@+id/sliding_layout_title"
-                    android:background="@color/sliding_content">
+                    android:background="@color/sliding_bar">
 
-                    <at.markushi.ui.RevealColorView
+                <at.markushi.ui.RevealColorView
                         android:id="@+id/reveal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -172,7 +174,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_alignParentBottom="true"
-                    android:background="@color/primary"
+                    android:background="@color/sliding_bar"
                     android:minHeight="56dp">
 
                 </RelativeLayout>
