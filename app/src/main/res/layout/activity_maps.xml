@@ -1,10 +1,12 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:foobar="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.example.ripzery.projectx01.app.MapsActivity">
+
 
     <com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:sothree="http://schemas.android.com/apk/res-auto"
         android:id="@+id/sliding_layout"
@@ -21,18 +23,19 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <android.support.v7.widget.Toolbar
-                android:id="@+id/my_awesome_toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/my_primary_color"
-                android:minHeight="56dp"
-                app:theme="@style/KeepRunningKewinThemeToolbar" />
+            <!--<android.support.v7.widget.Toolbar-->
+            <!--android:id="@+id/my_awesome_toolbar"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:background="@color/primary"-->
+            <!--android:minHeight="56dp"-->
+            <!--app:theme="@style/KeepRunningKewinThemeToolbar" />-->
 
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="fill_parent"
                 android:fitsSystemWindows="true">
+
 
                 <fragment
                     android:id="@+id/map"
@@ -51,12 +54,12 @@
                         android:layout_alignParentRight="true"
                         android:layout_margin="16dp"
                         app:backgroundColorValue="#00f44336"
-                        app:fillColor="#66f44336"
+                        app:fillColor="@color/primary_dark"
                         app:strokeColorValue="#00f44336"
                         app:strokeWidthSize="0"
                         app:subtitleSize="9dp"
                         app:subtitleText=""
-                        app:titleColor="@color/my_primary_text"
+                        app:titleColor="@color/icons"
                         app:titleSize="16sp"
                         app:titleText="DIS" />
 
@@ -89,6 +92,13 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <com.getbase.floatingactionbutton.FloatingActionButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/row_left_right_margin"
+                    android:layout_marginTop="@dimen/row_left_right_margin"
+                    android:src="@drawable/home" />
+
             </FrameLayout>
 
         </LinearLayout>
@@ -105,17 +115,28 @@
                     android:id="@+id/sliding_layout_title"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:background="@color/sliding_title"
+                    android:background="@color/primary"
                     android:minHeight="56dp">
 
-                    <TextView
+                    <com.ctrlplusz.anytextview.AnyTextView
                         android:id="@+id/tvItemCount"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_centerHorizontal="true"
                         android:gravity="center"
-                        android:text="You have xxx items here"
-                        android:textSize="20sp" />
+                        android:text="Accuracy : Unknown"
+                        android:textColor="@color/my_primary_text"
+                        android:textSize="@dimen/medium_text_size"
+                        foobar:typeface="Roboto-Light.ttf" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginLeft="@dimen/row_left_right_margin"
+                        android:layout_marginRight="@dimen/row_left_right_margin"
+                        android:src="@drawable/chevron_down" />
 
                 </RelativeLayout>
 
@@ -141,7 +162,8 @@
                         android:horizontalSpacing="10dp"
                         android:numColumns="auto_fit"
                         android:stretchMode="columnWidth"
-                        android:verticalSpacing="10dp" />
+                        android:verticalSpacing="10dp"
+                        android:visibility="gone" />
 
 
                 </FrameLayout>
@@ -150,7 +172,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_alignParentBottom="true"
-                    android:background="@color/sliding_title"
+                    android:background="@color/primary"
                     android:minHeight="56dp">
 
                 </RelativeLayout>
@@ -162,9 +184,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top"
-                android:layout_marginLeft="10dp"
+                android:layout_marginLeft="@dimen/row_left_right_margin"
+                android:layout_marginRight="@dimen/row_left_right_margin"
                 android:background="#00000000"
-                android:tag="#3F51B5" />
+                android:tag="#5E6FC7" />
 
         </FrameLayout>
 

@@ -22,8 +22,6 @@ import android.provider.Settings;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Spannable;
-import android.text.SpannableString;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
@@ -34,15 +32,16 @@ import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.ctrlplusz.anytextview.AnyTextView;
 import com.daimajia.easing.Glider;
 import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.adapter.BagAdapter;
+import com.example.ripzery.projectx01.ar.MainActivity;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
-import com.example.ripzery.projectx01.util.TypefaceSpan;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
@@ -95,6 +94,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     ImageButton mBag;
     @InjectView(R.id.cvTextM)
     CircleView mCvDistanceStatus;
+    @InjectView(R.id.tvItemCount)
+    AnyTextView tvItemCount;
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -207,19 +208,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        toolbar = (Toolbar) findViewById(R.id.my_awesome_toolbar);
+//        toolbar = (Toolbar) findViewById(R.id.my_awesome_toolbar);
 //        toolbar.setLogo(R.drawable.ic_launcher);
-        toolbar.setSubtitle("Accuracy : Good!");
-        setSupportActionBar(toolbar);
 
-        mActionBar = getSupportActionBar();
-        mActionBar.setElevation(5);
-        SpannableString mStringTitle = new SpannableString("Mission X");
-        mStringTitle.setSpan(new TypefaceSpan(this, "Roboto-Medium.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mActionBar.setTitle(mStringTitle);
-        mActionBar.setHomeButtonEnabled(true);
+//        setSupportActionBar(toolbar);
+
+//        mActionBar = getSupportActionBar();
+//        mActionBar.setElevation(5);
+//        SpannableString mStringTitle = new SpannableString("MISSION X");
+//        mStringTitle.setSpan(new TypefaceSpan(this, "Roboto-Bold.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        mActionBar.setTitle(mStringTitle);
+//        SpannableString mStringSubTitle = new SpannableString("Accuracy : Unknown");
+//        mStringSubTitle.setSpan(new TypefaceSpan(this, "Roboto-LightItalic.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        toolbar.setSubtitle(mStringSubTitle);
+//        mActionBar.setHomeButtonEnabled(true);
+
 //        mActionBar.setBackgroundDrawable(null);
-        mActionBar.setDisplayHomeAsUpEnabled(true);
+//        mActionBar.setDisplayHomeAsUpEnabled(true);
 
         //setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -269,7 +274,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (isLocationEnabled() && isNetworkConnected()) {
             setUpMapIfNeeded();
             initVar();
-            initListener();
+//            initListener();
         }
 
     }
@@ -296,12 +301,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.getUiSettings().setScrollGesturesEnabled(true);
 
 
-        progress = new ProgressDialog(this);
-        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+//        progress = new ProgressDialog(this);
+//        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         final DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
         final float pHeight = displayMetrics.heightPixels;
         final float pWidth = displayMetrics.widthPixels;
+
+        final GridView gView = (GridView) findViewById(R.id.gvBag);
+        gView.setAdapter(new BagAdapter(this));
 
         revealColorView = (RevealColorView) findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
@@ -318,8 +326,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void onPanelCollapsed(View view) {
                 isExpanded = false;
                 mBag.setVisibility(View.VISIBLE);
-//                RevealColorView test = ((RevealColorView)findViewById(R.id.reveal));
-//                test.setBackgroundColor(getResources().getColor(R.color.sliding_content));
+                gView.setVisibility(View.GONE);
                 final Point p = getLocationInView(revealColorView, mBag);
                 revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
                 mBag.setTranslationX(0);
@@ -352,7 +359,27 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                            revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
 //                            selectedView = null;
 //                        } else {
-                        revealColorView.reveal(p.x, p.y, color, mBag.getHeight() / 2, 340, null);
+                        revealColorView.reveal(p.x, p.y, color, mBag.getHeight() / 2, 340, new android.animation.Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(android.animation.Animator animator) {
+
+                            }
+
+                            @Override
+                            public void onAnimationEnd(android.animation.Animator animator) {
+                                gView.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onAnimationCancel(android.animation.Animator animator) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(android.animation.Animator animator) {
+
+                            }
+                        });
                         mBag.setVisibility(View.GONE);
 //                            selectedView = mBag;
 //                        }
@@ -409,16 +436,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        mBag.addButton(actionD);
 //        mBag.addButton(actionE);
 
-        GridView gView = (GridView) findViewById(R.id.gvBag);
-        gView.setAdapter(new BagAdapter(this));
 
-       /* gView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Log.d("click","yes");
-                startActivity(new Intent(getApplicationContext(), MainActivity.class));
-            }
-        });*/
     }
 
     private int getColor(View view) {
@@ -933,7 +951,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        mGhost1Status.setText("v : " + location.getSpeed());
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 //        Log.d("Accuracy Grade", getGrade((int) location.getAccuracy()));
-        toolbar.setSubtitle("Accuracy : " + getGrade((int) location.getAccuracy()));
+//        toolbar.setSubtitle();
+        tvItemCount.setText("Accuracy : " + getGrade((int) location.getAccuracy()));
 //        mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
         if (progress.isShowing() && builder == null) {
@@ -1026,9 +1045,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void passAllMonster() {
-       /* Intent i = new Intent(this, MainActivity2.class);
+        Intent i = new Intent(this, MainActivity.class);
         Singleton.getInstance().setAllMonsters(allMonsters);
-        startActivityForResult(i, AR_REQ);*/
+        startActivity(i);
 
     }
 

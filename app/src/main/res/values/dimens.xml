@@ -8,4 +8,9 @@
     <item name="y_scale_factor" format="float" type="dimen">1</item>
     <dimen name="top_fragment_height">280dip</dimen>
     <dimen name="top_fragment_margin">20dip</dimen>
+
+    <!--activity-maps-->
+    <dimen name="row_left_right_margin">16dp</dimen>
+    <dimen name="medium_text_size">18sp</dimen>
+
 </resources>
