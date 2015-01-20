@@ -11,7 +11,7 @@ import com.example.ripzery.projectx01.R;
 /**
  * Created by Rawipol on 1/11/15 AD.
  */
-public abstract class Gun {
+public abstract class Gun implements Item {
     protected String name;
     protected int bullet = 0; // bullet in magazine
     protected int remain_bullet; //remain bullet
@@ -101,11 +101,11 @@ public abstract class Gun {
         return remain_bullet;
     }
 
-    public int getGun_img() {
+    public int get_img() {
         return gun_img;
     }
 
-    public int getGun_thumb() {
+    public int get_thumb() {
         return gun_thumb;
     }
 

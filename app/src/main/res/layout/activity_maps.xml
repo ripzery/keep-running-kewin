@@ -169,6 +169,7 @@
                         android:numColumns="auto_fit"
                         android:stretchMode="columnWidth"
                         android:verticalSpacing="10dp"
+                        android:layout_margin="10dp"
                         android:visibility="gone" />
 
 
@@ -195,7 +196,7 @@
                 android:layout_marginRight="@dimen/row_left_right_margin"
                 android:background="#00000000"
                 android:src="@drawable/bag_flat_ic"
-                android:tag="@color/reveal_tag"
+                android:tag="@color/dark_sub"
                 app:cb_color="@color/primary" />
 
         </FrameLayout>

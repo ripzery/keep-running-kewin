@@ -8,8 +8,8 @@ import java.util.ArrayList;
  * Created by visit on 1/15/15 AD.
  */
 public class Singleton {
-    public static Singleton mSing = new Singleton();
-    public static ArrayList<Monster> allMonsters;
+    private static Singleton mSing = new Singleton();
+    private static ArrayList<Monster> allMonsters;
 
     private Singleton() {
     }
@@ -22,5 +22,9 @@ public class Singleton {
     /* Other methods protected by singleton-ness */
     protected static void setAllMonsters(ArrayList<Monster> listMonsters) {
         allMonsters = listMonsters;
+    }
+
+    public static ArrayList<Monster> getAllMonsters() {
+        return allMonsters;
     }
 }

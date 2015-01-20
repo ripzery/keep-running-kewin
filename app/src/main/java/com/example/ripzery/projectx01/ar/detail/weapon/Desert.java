@@ -11,8 +11,8 @@ import com.example.ripzery.projectx01.R;
 public class Desert extends Gun {
     public Desert(Context mContext, int bullet) {
         super(mContext, "Desert Eagle", bullet, 7, 25f, 1200);
-        gun_img = R.drawable.desert_full;
-        gun_thumb = R.drawable.desert_thumb;
+        gun_img = R.drawable.desert_eagle;
+        gun_thumb = R.drawable.desert_eagle;
         setSound(R.raw.high_powered_pistol, R.raw.reload);
     }
 }

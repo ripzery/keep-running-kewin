@@ -9,7 +9,9 @@ import android.widget.ImageView;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
+import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
+import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 import com.example.ripzery.projectx01.custom.SquareImageButton;
 
 
@@ -18,21 +20,21 @@ import com.example.ripzery.projectx01.custom.SquareImageButton;
  */
 public class BagAdapter extends BaseAdapter {
     private final Handler handler1;
-    private final Desert gun;
+    //private final Desert gun;
     private MapsActivity mContext;
-    private Integer[] mThumbIds = {
+    /*private Integer[] mThumbIds = {
             R.drawable.desert_eagle, R.drawable.pistol, R.drawable.knife
-    };
+    };*/
 
     public BagAdapter(MapsActivity c) {
         mContext = c;
         handler1 = new Handler();
-        gun = new Desert(mContext, 40);
+        //gun = new Desert(mContext, 40);
     }
 
     @Override
     public int getCount() {
-        return mThumbIds.length;
+        return Me.guns.size();
     }
 
     @Override
@@ -46,25 +48,29 @@ public class BagAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
 
         SquareImageButton imageButton;
         if (convertView == null) {
             imageButton = new SquareImageButton(mContext);
             imageButton.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             imageButton.setPadding(8, 8, 8, 8);
-            imageButton.setBackgroundColor(mContext.getResources().getColor(R.color.transparent));
+            //imageButton.setBackgroundColor(mContext.getResources().getColor(R.color.transparent));
+            imageButton.setBackgroundResource(R.drawable.round_corner);
             imageButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
         } else {
             imageButton = (SquareImageButton) convertView;
         }
 
-        imageButton.setImageResource(mThumbIds[position]);
+
+        imageButton.setImageResource(Me.guns.get(position).get_thumb());
         imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Me.chosenGun = position;
                 ((MapsActivity) mContext).passAllMonster();
+
             }
         });
 

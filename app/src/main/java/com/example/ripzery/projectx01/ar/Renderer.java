@@ -111,13 +111,13 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
 
             }
 
-            final MainActivity activity = (MainActivity) mContext;
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    activity.initView();
-                }
-            });
+//            final MainActivity activity = (MainActivity) mContext;
+//            activity.runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    activity.initView();
+//                }
+//            });
 
 
 

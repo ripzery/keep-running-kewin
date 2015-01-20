@@ -69,13 +69,13 @@ public class MainActivity extends RajawaliVRActivity {
     private TextView bullet;
     private boolean isReload = false;
 
-    private ArrayList<Gun> guns;
     private Dialog dialog;
     private ImageView bloodFilter;
     private FrameLayout ar_interface;
     private ImageButton shootBtn;
     private ImageButton reloadBtn;
     private FrameLayout weaponSelector;
+    private ArrayList<Gun> guns;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -101,9 +101,14 @@ public class MainActivity extends RajawaliVRActivity {
 
        //addView();
         guns = new ArrayList<Gun>();
-        guns.add(new Pistol(this,60));
-        guns.add(new Desert(this,14));
+        for(int i=0; i<Me.items.size(); i++ ){
+            if(Me.items.get(i) instanceof Gun){
+                guns.add((Gun)Me.items.get(i));
+            }
+        }
 
+
+        initView();
 
     }
 
@@ -120,7 +125,7 @@ public class MainActivity extends RajawaliVRActivity {
 
         bloodFilter.setImageAlpha(0);
 
-        addView(guns.get(0));
+        addView(Me.guns.get(Me.chosenGun));
     }
 
     public void addView(Gun selected){
@@ -131,7 +136,7 @@ public class MainActivity extends RajawaliVRActivity {
         }
 
         this.selectedGun = selected;
-        selectedGunImg.setImageResource(selectedGun.getGun_thumb());
+        selectedGunImg.setImageResource(selectedGun.get_thumb());
         updateBullet();
 
         shootBtn.setOnTouchListener(new View.OnTouchListener() {
@@ -192,7 +197,9 @@ public class MainActivity extends RajawaliVRActivity {
                 dialog.setCancelable(true);
 
                 HListView hListView = (HListView)dialog.findViewById(R.id.hListView1);
-                hListView.setAdapter(new WeaponAdapter(MainActivity.this, guns));
+
+
+                hListView.setAdapter(new WeaponAdapter(MainActivity.this));
                 hListView.setSelector(R.drawable.round_corner_press);
 
                 WindowManager.LayoutParams lp = new WindowManager.LayoutParams();

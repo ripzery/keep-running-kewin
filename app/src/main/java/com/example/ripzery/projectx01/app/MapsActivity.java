@@ -37,6 +37,10 @@ import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.adapter.BagAdapter;
 import com.example.ripzery.projectx01.ar.MainActivity;
+import com.example.ripzery.projectx01.ar.detail.Me;
+import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
+import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
+import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
@@ -214,6 +218,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        //กำหนดค่าเริ่มต้นให้ item
+        Me.guns.add(new Desert(this,14));
+        Me.guns.add(new Pistol(this,60));
+        Me.guns.add(new Desert(this,60));
+
 
 //        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
 

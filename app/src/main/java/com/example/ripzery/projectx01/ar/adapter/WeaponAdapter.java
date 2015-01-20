@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.ar.MainActivity;
+import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 
 import java.util.ArrayList;
@@ -21,21 +22,19 @@ import java.util.ArrayList;
 public class WeaponAdapter extends BaseAdapter {
 
     private Context mContext;
-    private ArrayList<Gun> guns;
 
-    public WeaponAdapter(Context mContext, ArrayList<Gun> guns) {
+    public WeaponAdapter(Context mContext) {
         this.mContext = mContext;
-        this.guns = guns;
     }
 
     @Override
     public int getCount() {
-        return guns.size();
+        return Me.guns.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return guns.get(position);
+        return position;
     }
 
     @Override
@@ -53,12 +52,12 @@ public class WeaponAdapter extends BaseAdapter {
         convertView.findViewById(R.id.weapon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)mContext).addView(guns.get(position));
+                ((MainActivity)mContext).addView(Me.guns.get(position));
             }
         });
 
-        img.setImageResource(guns.get(position).getGun_img());
-        name.setText(guns.get(position).getName());
+        img.setImageResource(Me.guns.get(position).get_img());
+        name.setText(Me.guns.get(position).getName());
         return convertView;
     }
 }

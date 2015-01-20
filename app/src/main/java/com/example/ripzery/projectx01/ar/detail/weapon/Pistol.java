@@ -11,8 +11,8 @@ import com.example.ripzery.projectx01.R;
 public class Pistol extends Gun {
     public Pistol(Context mContext, int bullet) {
         super(mContext, "9mm", bullet, 12, 5f, 1000);
-        gun_img = R.drawable._9mm_full;
-        gun_thumb = R.drawable._9mm_thumb;
+        gun_img = R.drawable.pistol;
+        gun_thumb = R.drawable.pistol;
         setSound(R.raw.gun, R.raw.reload);
     }
 }
