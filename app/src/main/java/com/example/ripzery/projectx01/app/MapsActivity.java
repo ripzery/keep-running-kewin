@@ -135,6 +135,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private RevealColorView revealColorView;
     private View selectedView;
     private int backgroundColor;
+    private AnimatorSet set;
 
 
     @Override
@@ -209,24 +210,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-//        toolbar = (Toolbar) findViewById(R.id.my_awesome_toolbar);
-//        toolbar.setLogo(R.drawable.ic_launcher);
-
-//        setSupportActionBar(toolbar);
-
-//        mActionBar = getSupportActionBar();
-//        mActionBar.setElevation(5);
-//        SpannableString mStringTitle = new SpannableString("MISSION X");
-//        mStringTitle.setSpan(new TypefaceSpan(this, "Roboto-Bold.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-//        mActionBar.setTitle(mStringTitle);
-//        SpannableString mStringSubTitle = new SpannableString("Accuracy : Unknown");
-//        mStringSubTitle.setSpan(new TypefaceSpan(this, "Roboto-LightItalic.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-//        toolbar.setSubtitle(mStringSubTitle);
-//        mActionBar.setHomeButtonEnabled(true);
-
-//        mActionBar.setBackgroundDrawable(null);
-//        mActionBar.setDisplayHomeAsUpEnabled(true);
-
         //setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -286,6 +269,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        distanceGoal = missionData.getDistance();
 //        distanceGoal = 1000.0;
         ButterKnife.inject(this);
+
 //
 //        Picasso.with(this)
 //                .load(R.drawable.bag_flat_ic)
@@ -308,6 +292,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         final DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
         final float pHeight = displayMetrics.heightPixels;
         final float pWidth = displayMetrics.widthPixels;
+
+        set = new AnimatorSet();
+        set.playTogether(
+                Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationY", 0, pHeight / 2 - 100)),
+                Glider.glide(Skill.SineEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationX", 0, pWidth / 2 - 100))
+        );
+
+        set.setDuration(500);
 
         final GridView gView = (GridView) findViewById(R.id.gvBag);
         gView.setAdapter(new BagAdapter(this));
@@ -336,14 +328,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
             @Override
             public void onPanelExpanded(View view) {
-                isExpanded = true;
-                AnimatorSet set = new AnimatorSet();
-                set.playTogether(
-                        Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationY", 0, pHeight / 2 - 100)),
-                        Glider.glide(Skill.SineEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationX", 0, pWidth / 2 - 100))
-                );
 
-                set.setDuration(500);
+                isExpanded = true;
                 set.start();
                 set.addListener(new Animator.AnimatorListener() {
                     @Override

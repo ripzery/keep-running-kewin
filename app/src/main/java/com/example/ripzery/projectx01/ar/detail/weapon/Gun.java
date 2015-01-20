@@ -1,11 +1,11 @@
 package com.example.ripzery.projectx01.ar.detail.weapon;
 
+import android.app.Activity;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.SoundPool;
 
 import com.example.ripzery.projectx01.R;
-import com.example.ripzery.projectx01.ar.MainActivity;
 
 
 /**
@@ -21,40 +21,39 @@ public abstract class Gun {
     protected int gun_thumb;
     protected int reload_time;
     protected Context mContext;
-
+    float actVolume, maxVolume, volume;
+    AudioManager audioManager;
     private int soundShoot;
     private int soundReload;
     private SoundPool soundPool;
-    float actVolume, maxVolume, volume;
-    AudioManager audioManager;
     private int soundEmpty;
 
     public Gun(Context mContext, String name, int total_bullet, int max_bullet, float damage, int reload_time) {
         this.mContext = mContext;
         this.name = name;
         this.damage = damage;
-        this.max_bullet= max_bullet;
+        this.max_bullet = max_bullet;
         this.reload_time = reload_time;
         insertMagazine(total_bullet);
 
     }
 
-    public void insertMagazine(int total_bullet){
-        if(bullet == 0) {
+    public void insertMagazine(int total_bullet) {
+        if (bullet == 0) {
             if (total_bullet - max_bullet > 0) {
                 remain_bullet = total_bullet - max_bullet;
                 bullet = max_bullet;
             } else {
                 bullet = total_bullet;
             }
-        }else{
+        } else {
             remain_bullet += total_bullet;
         }
 
     }
 
-    public int shoot(int shooted){
-        if(bullet > 0){
+    public int shoot(int shooted) {
+        if (bullet > 0) {
             bullet -= shooted;
         }
         return bullet;
@@ -64,26 +63,26 @@ public abstract class Gun {
         return reload_time;
     }
 
-    public void reload(){
+    public void reload() {
         int bullet_may_remain = remain_bullet - (max_bullet - bullet);
-        if(bullet_may_remain < 0){
+        if (bullet_may_remain < 0) {
             bullet += remain_bullet;
             remain_bullet = 0;
-        }else{
+        } else {
             bullet = max_bullet;
             remain_bullet = bullet_may_remain;
         }
     }
 
 
-    protected void setSound(int shoot_sound, int reload_sound){
+    protected void setSound(int shoot_sound, int reload_sound) {
         audioManager = (AudioManager) mContext.getSystemService(mContext.AUDIO_SERVICE);
         actVolume = (float) audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         maxVolume = (float) audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         volume = actVolume / maxVolume;
 
         //Hardware buttons setting to adjust the media sound
-        ((MainActivity)mContext).setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        ((Activity) mContext).setVolumeControlStream(AudioManager.STREAM_MUSIC);
         soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
         soundShoot = soundPool.load(mContext, shoot_sound, 1);
         soundReload = soundPool.load(mContext, reload_sound, 2);
@@ -114,14 +113,15 @@ public abstract class Gun {
         return damage;
     }
 
-    public void playShootSound(){
+    public void playShootSound() {
         soundPool.play(soundShoot, volume, volume, 1, 0, 1f);
     }
 
-    public void playReloadSound(){
+    public void playReloadSound() {
         soundPool.play(soundReload, volume, volume, 1, 0, 1f);
     }
-    public void playEmptySound(){
+
+    public void playEmptySound() {
         soundPool.play(soundEmpty, volume, volume, 1, 0, 1f);
     }
 }

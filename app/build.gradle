@@ -38,6 +38,7 @@ dependencies {
     compile 'com.ctrlplusz.anytextview:library:1.2'
     compile 'com.pkmmte.view:circularimageview:1.1'
     compile 'com.android.support:support-v4:21.0.0'
+    compile 'com.daimajia.androidanimations:library:1.1.3@aar'
     compile 'com.android.support:appcompat-v7:21.0.0'
     compile 'it.sephiroth.android.library.horizontallistview:hlistview:1.2.2'
     compile project(':rajawali')

@@ -2,6 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:foobar="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/motherView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -19,6 +20,7 @@
         sothree:shadowHeight="8dp">
 
         <LinearLayout
+            android:id="@+id/test1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -106,10 +108,12 @@
         </LinearLayout>
 
         <FrameLayout
+            android:id="@+id/test"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
             <RelativeLayout
+                android:id="@+id/test2"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
@@ -186,11 +190,12 @@
                 android:layout_width="62dp"
                 android:layout_height="62dp"
                 android:layout_gravity="top"
+                android:layout_marginBottom="30dp"
                 android:layout_marginLeft="@dimen/row_left_right_margin"
                 android:layout_marginRight="@dimen/row_left_right_margin"
                 android:background="#00000000"
                 android:src="@drawable/bag_flat_ic"
-                android:tag="#5E6FC7"
+                android:tag="@color/reveal_tag"
                 app:cb_color="@color/primary" />
 
         </FrameLayout>
