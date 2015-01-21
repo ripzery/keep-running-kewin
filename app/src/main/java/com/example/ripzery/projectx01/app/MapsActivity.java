@@ -40,6 +40,7 @@ import com.example.ripzery.projectx01.ar.MainActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
 import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
+import com.example.ripzery.projectx01.ar.detail.weapon.Item;
 import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
@@ -224,6 +225,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         Me.guns.add(new Pistol(this,60));
         Me.guns.add(new Desert(this,60));
 
+        Me.items.add(new Pistol(this,0));
+
 
 //        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
 
@@ -268,7 +271,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (isLocationEnabled() && isNetworkConnected()) {
             setUpMapIfNeeded();
             initVar();
-//            initListener();
+            initListener();
         }
 
     }
@@ -296,8 +299,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.getUiSettings().setScrollGesturesEnabled(true);
 
 
-//        progress = new ProgressDialog(this);
-//        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+        progress = new ProgressDialog(this);
+        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
 
         final DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
         final float pHeight = displayMetrics.heightPixels;
@@ -812,6 +815,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.d("oakTag","onDestroy");
         if (allRunnableMonster.size() > 0 && keepGenerate != null) {
             for (Runnable r : allRunnableMonster) {
                 handler.removeCallbacks(r);
@@ -827,6 +831,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (locationManager != null) {
             locationManager.removeGpsStatusListener(this);
         }
+
+        Me.guns = new ArrayList<Gun>();
+        Me.items = new ArrayList<Item>();
     }
 
     @Override
@@ -1112,5 +1119,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
         return "Unusable";
     }
+
+
 }
 

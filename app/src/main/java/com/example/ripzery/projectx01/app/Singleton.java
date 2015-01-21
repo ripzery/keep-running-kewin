@@ -27,4 +27,6 @@ public class Singleton {
     public static ArrayList<Monster> getAllMonsters() {
         return allMonsters;
     }
+
+
 }

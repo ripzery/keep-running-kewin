@@ -3,6 +3,7 @@ package com.example.ripzery.projectx01.adapter;
 import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -34,7 +35,7 @@ public class BagAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return Me.guns.size();
+        return Me.guns.size() + Me.items.size();
     }
 
     @Override
@@ -50,6 +51,7 @@ public class BagAdapter extends BaseAdapter {
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
 
+
         SquareImageButton imageButton;
         if (convertView == null) {
             imageButton = new SquareImageButton(mContext);
@@ -63,18 +65,31 @@ public class BagAdapter extends BaseAdapter {
             imageButton = (SquareImageButton) convertView;
         }
 
+        if(position < Me.guns.size()) {
 
-        imageButton.setImageResource(Me.guns.get(position).get_thumb());
-        imageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Me.chosenGun = position;
-                ((MapsActivity) mContext).passAllMonster();
+            imageButton.setImageResource(Me.guns.get(position).get_thumb());
+            imageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Me.chosenGun = position;
+                    ((MapsActivity) mContext).passAllMonster();
 
-            }
-        });
+                }
+            });
+        }else{
+            imageButton.setImageResource(Me.items.get(position - Me.guns.size()).get_thumb());
+            imageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Me.items.add(new Desert(mContext,5));
+                    notifyDataSetChanged();
+                }
+            });
+        }
 
 
         return imageButton;
     }
+
+
 }

@@ -19,12 +19,14 @@ import android.widget.Toast;
 
 
 import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.app.Singleton;
 import com.example.ripzery.projectx01.ar.adapter.WeaponAdapter;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
 import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
 import com.example.ripzery.projectx01.ar.util.CameraPreview;
+import com.example.ripzery.projectx01.interface_model.Monster;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +99,12 @@ public class MainActivity extends RajawaliVRActivity {
         /*leftBtn = (ImageButton)findViewById(R.id.left_btn);
         leftBtn.setId(0);
         leftBtn.setOnTouchListener(this);*/
+
+        Singleton mon = Singleton.getInstance();
+        ArrayList<Monster> m = mon.getAllMonsters();
+        for(int i=0;i<m.size();i++){
+            Log.d("oakTag", m.get(i).getPoint().toString());
+        }
 
 
        //addView();
