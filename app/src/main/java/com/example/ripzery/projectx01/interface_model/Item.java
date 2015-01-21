@@ -8,8 +8,6 @@ import com.google.android.gms.maps.model.LatLng;
 public interface Item {
     public int getThumb();
 
-    public void setThumb(int id);
-
     public LatLng getLatLng();
 
     public void setLatLng(LatLng latLng);

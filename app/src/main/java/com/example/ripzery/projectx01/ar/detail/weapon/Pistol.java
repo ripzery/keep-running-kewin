@@ -26,11 +26,6 @@ public class Pistol extends Gun {
     }
 
     @Override
-    public void setThumb(int id) {
-        gun_thumb = id;
-    }
-
-    @Override
     public LatLng getLatLng() {
         return latLng;
     }

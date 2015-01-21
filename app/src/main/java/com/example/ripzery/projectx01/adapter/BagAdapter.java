@@ -3,7 +3,6 @@ package com.example.ripzery.projectx01.adapter;
 import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -12,7 +11,6 @@ import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
-import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 import com.example.ripzery.projectx01.custom.SquareImageButton;
 
 
@@ -77,7 +75,7 @@ public class BagAdapter extends BaseAdapter {
                 }
             });
         }else{
-            imageButton.setImageResource(Me.items.get(position - Me.guns.size()).get_thumb());
+            imageButton.setImageResource(Me.items.get(position - Me.guns.size()).getThumb());
             imageButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

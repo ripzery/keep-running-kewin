@@ -47,7 +47,6 @@ import com.example.ripzery.projectx01.model.item.ItemDistancex2;
 import com.example.ripzery.projectx01.model.monster.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
-import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -92,7 +91,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private static final int DATA_ENABLED_REQ = 1;
     private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
-    private final int MAX_ITEM_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
+    private final int MAX_ITEM_AT_ONCE = 3; // กำหนดจำนวนไอเทมสูงสุดในแผนที่
     SensorManager sensorManager;
     @InjectView(R.id.tv1)
     TextView mGhost2Status;
@@ -148,6 +147,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private View selectedView;
     private int backgroundColor;
     private AnimatorSet set;
+    private BagAdapter mBagAdapter;
 
 
     @Override
@@ -282,18 +282,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     private void initVar() {
-//        Bundle bundle = getIntent().getExtras();
-//        MissionData missionData = bundle.getParcelable("missionData");
-//        distanceGoal = missionData.getDistance();
-//        distanceGoal = 1000.0;
         ButterKnife.inject(this);
-
-//
-//        Picasso.with(this)
-//                .load(R.drawable.bag_flat_ic)
-//                .resize(64, 64)
-//                .centerCrop()
-//                .into(mBag);
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -319,8 +308,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         set.setDuration(500);
 
+        mBagAdapter = new BagAdapter(this);
         final GridView gView = (GridView) findViewById(R.id.gvBag);
-        gView.setAdapter(new BagAdapter(this));
+        gView.setAdapter(mBagAdapter);
 
         revealColorView = (RevealColorView) findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
@@ -446,23 +436,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 }
             }
         });
-
-
-//        mGhost3Status.setText(distanceGoal + " m");
-        FloatingActionButton actionE = new FloatingActionButton(getBaseContext());
-        actionE.setTitle("Hide/Show Action A");
-        actionE.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                Toast.makeText(MapsActivity.this, "ClickA", Toast.LENGTH_SHORT).show();
-                passAllMonster();
-            }
-        });
-//        mBag.addButton(actionC);
-//        mBag.addButton(actionD);
-//        mBag.addButton(actionE);
-
-
     }
 
     private int getColor(View view) {
@@ -498,6 +471,22 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                             .build();
                     mGoogleApiClient.connect();
                 }
+            }
+        });
+
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                if (marker.getTitle().equals("Distancex2") || marker.getTitle().equals("Distancex3")) {
+                    marker.remove();
+                    listItems.remove(marker);
+                    Me.items.add(itemDistancex2);
+                    allItems.remove(itemDistancex2);
+                    mBagAdapter.notifyDataSetChanged();
+                } else if (marker.getTitle().equals("Pistol") || marker.getTitle().equals("Desert")) {
+
+                }
+                return true;
             }
         });
 
@@ -673,7 +662,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     timeout = (int) ((Math.random() * range) + min_generate_item_timeout);
                     timeout = timeout * 1000; // convert to millisec
                     itemDistancex2 = new ItemDistancex2();
-                    itemDistancex2.setThumb(R.drawable.distancex2);
                     addItem(itemDistancex2);
                 } else {
                     timeout = 1000;

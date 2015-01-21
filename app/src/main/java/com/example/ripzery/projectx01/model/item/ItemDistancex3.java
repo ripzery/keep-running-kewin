@@ -8,17 +8,13 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public class ItemDistancex3 implements Item {
     public static final String type = "Distancex3";
+    //    public static final int id = R.drawable.distancex3;
     LatLng latLng;
     int id;
 
     @Override
     public int getThumb() {
         return id;
-    }
-
-    @Override
-    public void setThumb(int id) {
-        this.id = id;
     }
 
     @Override
