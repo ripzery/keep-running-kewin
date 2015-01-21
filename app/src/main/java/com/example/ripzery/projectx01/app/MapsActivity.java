@@ -41,8 +41,10 @@ import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
 import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
+import com.example.ripzery.projectx01.interface_model.Item;
 import com.example.ripzery.projectx01.interface_model.Monster;
-import com.example.ripzery.projectx01.model.Ant;
+import com.example.ripzery.projectx01.model.item.ItemDistancex2;
+import com.example.ripzery.projectx01.model.monster.Ant;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -90,6 +92,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private static final int DATA_ENABLED_REQ = 1;
     private static final int LOCATION_ENABLED_REQ = 2;
     private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
+    private final int MAX_ITEM_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     SensorManager sensorManager;
     @InjectView(R.id.tv1)
     TextView mGhost2Status;
