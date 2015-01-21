@@ -1,7 +1,7 @@
 package com.example.ripzery.projectx01.ar.detail;
 
 import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
-import com.example.ripzery.projectx01.ar.detail.weapon.Item;
+import com.example.ripzery.projectx01.interface_model.Item;
 
 import java.util.ArrayList;
 

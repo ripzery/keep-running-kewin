@@ -40,7 +40,6 @@ import com.example.ripzery.projectx01.ar.MainActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
 import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
-import com.example.ripzery.projectx01.ar.detail.weapon.Item;
 import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.Ant;
@@ -103,7 +102,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @InjectView(R.id.cbHome)
     CircleButton cbHome;
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
     private ProgressDialog progress;
@@ -112,7 +113,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
+    private ArrayList<Marker> listItems = new ArrayList<Marker>();
     private Ant mMonster;
+    private ItemDistancex2 itemDistancex2;
     private AlertDialog.Builder builder;
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
@@ -123,11 +126,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
     private ActionBar mActionBar;
-    private Handler mHandler;
-    private Runnable keepGenerate;
+    private Handler genGhostHandler, genItemHandler;
+    private Runnable keepGenerateGhost, keepGenerateItem;
     private boolean isGameStart = false;
     private LocationRequest locationrequest;
     private ArrayList<Monster> allMonsters = new ArrayList<>();
+    private ArrayList<Item> allItems = new ArrayList<>();
     private ArrayList<Runnable> allRunnableMonster = new ArrayList<>();
     private int currentBearing = 0;
     private GoogleApiClient mGoogleApiClient;
@@ -224,8 +228,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         Me.guns.add(new Desert(this,14));
         Me.guns.add(new Pistol(this,60));
         Me.guns.add(new Desert(this,60));
-
-        Me.items.add(new Pistol(this,0));
 
 
 //        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
@@ -635,8 +637,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void keepGeneratingGhost() {
-        mHandler = new Handler();
-        keepGenerate = new Runnable() {
+        genGhostHandler = new Handler();
+        keepGenerateGhost = new Runnable() {
             @Override
             public void run() {
 
@@ -651,11 +653,32 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 } else {
                     timeout = 1000;
                 }
-                mHandler.postDelayed(this, timeout);
+                genGhostHandler.postDelayed(this, timeout);
             }
         };
-        mHandler.postDelayed(keepGenerate, 30000);
+        genGhostHandler.postDelayed(keepGenerateGhost, 30000);
+    }
 
+    public void keepGeneratingItem() {
+        genItemHandler = new Handler();
+        keepGenerateItem = new Runnable() {
+            @Override
+            public void run() {
+
+                if (listItems.size() < MAX_ITEM_AT_ONCE) {
+                    int range = max_generate_item_timeout - min_generate_item_timeout + 1;
+                    timeout = (int) ((Math.random() * range) + min_generate_item_timeout);
+                    timeout = timeout * 1000; // convert to millisec
+                    itemDistancex2 = new ItemDistancex2();
+                    itemDistancex2.setThumb(R.drawable.distancex2);
+                    addItem(itemDistancex2);
+                } else {
+                    timeout = 1000;
+                }
+                genItemHandler.postDelayed(this, timeout);
+            }
+        };
+        genItemHandler.postDelayed(keepGenerateItem, 30000);
 
     }
 
@@ -696,7 +719,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
     }
 
-    // สุ่ม marker ปีศาจ
+    // สุ่ม marker monster
     public MarkerOptions getRandomMarker(LatLngBounds bound, Monster monster) {
         double latMin = bound.southwest.latitude;
         double latRange = bound.northeast.latitude - latMin;
@@ -707,6 +730,19 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         MarkerOptions ghostMarkerPosition = new MarkerOptions().position(ghostLatLng).icon(monster.getIcon());
         monster.setLatLng(ghostLatLng);
         return ghostMarkerPosition;
+    }
+
+    // สุ่ม marker item
+    public MarkerOptions getRandomMarker(LatLngBounds bound, Item item) {
+        double latMin = bound.southwest.latitude;
+        double latRange = bound.northeast.latitude - latMin;
+        double lonMin = bound.southwest.longitude;
+        double lonRange = bound.northeast.longitude - lonMin;
+
+        LatLng itemLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
+        MarkerOptions itemMarkerPosition = new MarkerOptions().position(itemLatLng).icon(BitmapDescriptorFactory.fromResource(item.getThumb()));
+        item.setLatLng(itemLatLng);
+        return itemMarkerPosition;
     }
 
     @Override
@@ -764,6 +800,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         listMGhost.add(mGhost);
     }
 
+    private void addItem(Item item) {
+        final Marker mItem = mMap.addMarker(getRandomMarker(playground, item).title(item.getType()));
+        listItems.add(mItem);
+    }
+
     // เรียกส่งตำแหน่ง(บนหน้าจอ ไม่ใช่ latlng)ปัจจุบันของปีศาจทุกตัวเป็น arraylist<Point>
 //    public ArrayList<Point> getAllGhostPosition() {
 //        ArrayList<Point> allGhostPoint = new ArrayList<>();
@@ -783,8 +824,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         for (Runnable r : allRunnableMonster) {
             handler.removeCallbacks(r);
         }
-        if (keepGenerate != null)
-            mHandler.removeCallbacks(keepGenerate);
+        if (keepGenerateGhost != null)
+            genGhostHandler.removeCallbacks(keepGenerateGhost);
         if (locationManager != null)
             locationManager.removeGpsStatusListener(this);
     }
@@ -805,8 +846,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             handler.post(r);
         }
         Log.d("Timeout", timeout + "");
-        if (keepGenerate != null) {
-            mHandler.postDelayed(keepGenerate, timeout);
+        if (keepGenerateGhost != null) {
+            genGhostHandler.postDelayed(keepGenerateGhost, timeout);
         }
 
     }
@@ -815,12 +856,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d("oakTag","onDestroy");
-        if (allRunnableMonster.size() > 0 && keepGenerate != null) {
+        if (allRunnableMonster.size() > 0 && keepGenerateGhost != null) {
             for (Runnable r : allRunnableMonster) {
                 handler.removeCallbacks(r);
             }
-            mHandler.removeCallbacks(keepGenerate);
+            genGhostHandler.removeCallbacks(keepGenerateGhost);
         }
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(
@@ -992,6 +1032,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     mMonster.setSpeed(3);
                     addMonster(mMonster);
                     keepGeneratingGhost();
+                    keepGeneratingItem();
                     isGameStart = true;
                 }
             });
@@ -1119,7 +1160,5 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
         return "Unusable";
     }
-
-
 }
 

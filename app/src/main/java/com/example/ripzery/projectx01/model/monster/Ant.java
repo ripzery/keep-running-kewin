@@ -1,7 +1,6 @@
-package com.example.ripzery.projectx01.model;
+package com.example.ripzery.projectx01.model.monster;
 
 import android.graphics.Point;
-import android.os.Parcel;
 
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -19,15 +18,6 @@ public class Ant implements Monster {
     private double latitude;
     private double longitude;
     private int x, y;
-
-    public Ant(Parcel in) {
-        type = in.readString();
-        speed = in.readDouble();
-        latitude = in.readDouble();
-        longitude = in.readDouble();
-        x = in.readInt();
-        y = in.readInt();
-    }
 
     public Ant() {
 
@@ -94,18 +84,5 @@ public class Ant implements Monster {
     public void setPoint(Point xy) {
         this.x = xy.x;
         this.y = xy.y;
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeDouble(this.x);
-        parcel.writeDouble(this.y);
-        parcel.writeInt(this.id);
-        parcel.writeString(this.type);
     }
 }
