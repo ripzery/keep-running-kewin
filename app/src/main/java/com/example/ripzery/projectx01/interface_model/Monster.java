@@ -9,9 +9,6 @@ import com.google.android.gms.maps.model.LatLng;
  * Created by visit on 10/26/14 AD.
  */
 public interface Monster {
-//    private String type;
-//    private double speed;
-//    private BitmapDescriptor icon;
 
     int getId();
 
@@ -32,6 +29,10 @@ public interface Monster {
     LatLng getLatLng();
 
     void setLatLng(LatLng latlng);
+
+    int getHp();
+
+    int getAttackPower();
 
     Point getPoint();
 

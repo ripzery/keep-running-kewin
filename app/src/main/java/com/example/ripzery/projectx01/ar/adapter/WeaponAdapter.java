@@ -8,13 +8,9 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.ar.MainActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
-import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
-
-import java.util.ArrayList;
 
 /**
  * Created by Rawipol on 1/12/15 AD.
@@ -47,12 +43,12 @@ public class WeaponAdapter extends BaseAdapter {
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         convertView = inflater.inflate(R.layout.weapon_detail, parent, false);
 
-        ImageView img = (ImageView)convertView.findViewById(R.id.gun_img);
-        TextView name = (TextView)convertView.findViewById(R.id.name);
+        ImageView img = (ImageView) convertView.findViewById(R.id.gun_img);
+        TextView name = (TextView) convertView.findViewById(R.id.name);
         convertView.findViewById(R.id.weapon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)mContext).addView(Me.guns.get(position));
+                ((MainActivity) mContext).addView(Me.guns.get(position));
             }
         });
 

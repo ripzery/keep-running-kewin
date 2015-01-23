@@ -1,7 +1,7 @@
 package com.example.ripzery.projectx01.ar.detail;
 
-import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
 import com.example.ripzery.projectx01.interface_model.Item;
+import com.example.ripzery.projectx01.model.weapon.Gun;
 
 import java.util.ArrayList;
 
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 public class Me {
     public static final float myMaxHP = 100;
     public static float myHP = myMaxHP;
+    public static int distanceMultiplier = 1;
 
     public static ArrayList<Item> items = new ArrayList<Item>();
     public static ArrayList<Gun> guns = new ArrayList<Gun>();

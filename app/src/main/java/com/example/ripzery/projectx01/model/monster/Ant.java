@@ -18,6 +18,8 @@ public class Ant implements Monster {
     private double latitude;
     private double longitude;
     private int x, y;
+    private int attackPower = 20;
+    private int hp = 30;
 
     public Ant() {
 
@@ -73,6 +75,16 @@ public class Ant implements Monster {
         this.latitude = latlng.latitude;
         this.longitude = latlng.longitude;
 
+    }
+
+    @Override
+    public int getHp() {
+        return hp;
+    }
+
+    @Override
+    public int getAttackPower() {
+        return attackPower;
     }
 
     @Override

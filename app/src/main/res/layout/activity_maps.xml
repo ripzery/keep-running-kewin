@@ -100,7 +100,7 @@
                     android:layout_height="64dp"
                     android:layout_marginLeft="@dimen/row_left_right_margin"
                     android:layout_marginTop="@dimen/row_left_right_margin"
-                    android:src="@drawable/home"
+                    android:src="@drawable/home_ic"
                     app:cb_color="@color/circle_view" />
 
             </FrameLayout>
@@ -124,7 +124,7 @@
                     android:background="@color/sliding_bar"
                     android:minHeight="64dp">
 
-                <com.ctrlplusz.anytextview.AnyTextView
+                    <com.ctrlplusz.anytextview.AnyTextView
                         android:id="@+id/tvItemCount"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
@@ -153,7 +153,7 @@
                     android:layout_below="@+id/sliding_layout_title"
                     android:background="@color/sliding_bar">
 
-                <at.markushi.ui.RevealColorView
+                    <at.markushi.ui.RevealColorView
                         android:id="@+id/reveal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -163,13 +163,13 @@
                         android:id="@+id/gvBag"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:layout_margin="10dp"
                         android:columnWidth="90dp"
                         android:gravity="center"
                         android:horizontalSpacing="10dp"
                         android:numColumns="auto_fit"
                         android:stretchMode="columnWidth"
                         android:verticalSpacing="10dp"
-                        android:layout_margin="10dp"
                         android:visibility="gone" />
 
 

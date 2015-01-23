@@ -1,4 +1,4 @@
-package com.example.ripzery.projectx01.ar.detail.weapon;
+package com.example.ripzery.projectx01.model.weapon;
 
 import android.content.Context;
 

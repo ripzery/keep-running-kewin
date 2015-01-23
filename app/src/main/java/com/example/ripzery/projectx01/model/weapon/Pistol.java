@@ -1,4 +1,4 @@
-package com.example.ripzery.projectx01.ar.detail.weapon;
+package com.example.ripzery.projectx01.model.weapon;
 
 import android.content.Context;
 
@@ -10,7 +10,7 @@ import com.google.android.gms.maps.model.LatLng;
  * Created by Rawipol on 1/11/15 AD.
  */
 public class Pistol extends Gun {
-    public static final String type = "Desert";
+    public static final String type = "Pistol";
     private LatLng latLng;
 
     public Pistol(Context mContext, int bullet) {

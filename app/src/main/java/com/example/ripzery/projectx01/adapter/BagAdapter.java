@@ -10,15 +10,15 @@ import android.widget.ImageView;
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
-import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
 import com.example.ripzery.projectx01.custom.SquareImageButton;
+import com.example.ripzery.projectx01.interface_model.Item;
 
 
 /**
  * Created by Rawipol on 1/18/15 AD.
  */
 public class BagAdapter extends BaseAdapter {
-    private final Handler handler1;
+    private Handler handler1;
     //private final Desert gun;
     private MapsActivity mContext;
     /*private Integer[] mThumbIds = {
@@ -63,6 +63,7 @@ public class BagAdapter extends BaseAdapter {
             imageButton = (SquareImageButton) convertView;
         }
 
+        // ถ้าเป็นปืน
         if(position < Me.guns.size()) {
 
             imageButton.setImageResource(Me.guns.get(position).get_thumb());
@@ -74,13 +75,39 @@ public class BagAdapter extends BaseAdapter {
 
                 }
             });
+            //ถ้าเป็นไอเทม
         }else{
-            imageButton.setImageResource(Me.items.get(position - Me.guns.size()).getThumb());
+            final Item item = Me.items.get(position - Me.guns.size());
+            imageButton.setImageResource(item.getThumb());
             imageButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Me.items.add(new Desert(mContext,5));
-                    notifyDataSetChanged();
+                    switch (item.getType()) {
+                        case "Distancex2":
+                            Me.distanceMultiplier = 2;
+                            handler1 = new Handler();
+                            handler1.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Me.distanceMultiplier = 1;
+                                }
+                            }, 10000);
+                            break;
+                        case "Distancex3":
+                            Me.distanceMultiplier = 3;
+                            handler1 = new Handler();
+                            handler1.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Me.distanceMultiplier = 1;
+                                }
+                            }, 10000);
+                            break;
+                        case "Shield":
+
+                            break;
+                    }
+                    Me.items.remove(item);
                 }
             });
         }

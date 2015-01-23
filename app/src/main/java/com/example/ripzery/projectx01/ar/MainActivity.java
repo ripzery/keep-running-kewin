@@ -17,16 +17,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.Singleton;
 import com.example.ripzery.projectx01.ar.adapter.WeaponAdapter;
 import com.example.ripzery.projectx01.ar.detail.Me;
-import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
-import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
-import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
 import com.example.ripzery.projectx01.ar.util.CameraPreview;
 import com.example.ripzery.projectx01.interface_model.Monster;
+import com.example.ripzery.projectx01.model.weapon.Gun;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +32,13 @@ import it.sephiroth.android.library.widget.HListView;
 
 public class MainActivity extends RajawaliVRActivity {
 
+    private final float pi = 3.14159265359f;
+    private final float holding_value = 0f;
     private Renderer mRenderer;
     private ImageButton leftBtn;
     private ImageButton upBtn;
     private ImageButton rightBtn;
     private ImageButton downBtn;
-
     private ImageView mPointer;
     private SensorManager mSensorManager;
     private Sensor mAccelerometer;
@@ -53,11 +51,8 @@ public class MainActivity extends RajawaliVRActivity {
     private float[] mOrientation = new float[3];
     private float mCurrentX = 0f;
     private float mCurrentZ = 0f;
-
     private float distance = 15;
-    private final float pi = 3.14159265359f;
     private float getx;
-    private final float holding_value = 0f;
     private float gety;
     private int disp_width;
     private int disp_height;
@@ -90,11 +85,11 @@ public class MainActivity extends RajawaliVRActivity {
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        contentFrame = (FrameLayout)getLayoutInflater().inflate(R.layout.activity_main,null);
+        contentFrame = (FrameLayout) getLayoutInflater().inflate(R.layout.activity_main, null);
 
         mRenderer.setSurfaceView(mSurfaceView);
         super.setRenderer(mRenderer);
-        mLayout.addView(contentFrame,0);
+        mLayout.addView(contentFrame, 0);
 
         /*leftBtn = (ImageButton)findViewById(R.id.left_btn);
         leftBtn.setId(0);
@@ -102,16 +97,16 @@ public class MainActivity extends RajawaliVRActivity {
 
         Singleton mon = Singleton.getInstance();
         ArrayList<Monster> m = mon.getAllMonsters();
-        for(int i=0;i<m.size();i++){
+        for (int i = 0; i < m.size(); i++) {
             Log.d("oakTag", m.get(i).getPoint().toString());
         }
 
 
-       //addView();
+        //addView();
         guns = new ArrayList<Gun>();
-        for(int i=0; i<Me.items.size(); i++ ){
-            if(Me.items.get(i) instanceof Gun){
-                guns.add((Gun)Me.items.get(i));
+        for (int i = 0; i < Me.items.size(); i++) {
+            if (Me.items.get(i) instanceof Gun) {
+                guns.add((Gun) Me.items.get(i));
             }
         }
 
@@ -120,24 +115,24 @@ public class MainActivity extends RajawaliVRActivity {
 
     }
 
-    public void initView(){
-        ar_interface = (FrameLayout)getLayoutInflater().inflate(R.layout.ar_interface,null);
+    public void initView() {
+        ar_interface = (FrameLayout) getLayoutInflater().inflate(R.layout.ar_interface, null);
         mLayout.addView(ar_interface);
-        bloodFilter = (ImageView)ar_interface.findViewById(R.id.blood_filter);
-        selectedGunImg = (ImageView)ar_interface.findViewById(R.id.selected_gun);
-        bullet = (TextView)ar_interface.findViewById(R.id.bullet);
-        remainBullet = (TextView)ar_interface.findViewById(R.id.remain_bullet);
-        shootBtn = (ImageButton)ar_interface.findViewById(R.id.shoot_btn);
-        reloadBtn = (ImageButton)ar_interface.findViewById(R.id.reload_btn);
-        weaponSelector = (FrameLayout)ar_interface.findViewById(R.id.weapon_selector);
+        bloodFilter = (ImageView) ar_interface.findViewById(R.id.blood_filter);
+        selectedGunImg = (ImageView) ar_interface.findViewById(R.id.selected_gun);
+        bullet = (TextView) ar_interface.findViewById(R.id.bullet);
+        remainBullet = (TextView) ar_interface.findViewById(R.id.remain_bullet);
+        shootBtn = (ImageButton) ar_interface.findViewById(R.id.shoot_btn);
+        reloadBtn = (ImageButton) ar_interface.findViewById(R.id.reload_btn);
+        weaponSelector = (FrameLayout) ar_interface.findViewById(R.id.weapon_selector);
 
         bloodFilter.setImageAlpha(0);
 
         addView(Me.guns.get(Me.chosenGun));
     }
 
-    public void addView(Gun selected){
-        if(dialog != null) {
+    public void addView(Gun selected) {
+        if (dialog != null) {
             if (dialog.isShowing()) {
                 dialog.hide();
             }
@@ -150,18 +145,17 @@ public class MainActivity extends RajawaliVRActivity {
         shootBtn.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()){
+                switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        if(!isReload) {
+                        if (!isReload) {
                             if (selectedGun.getBullet() != 0) {
                                 mRenderer.transitionAnimation(0, selectedGun.getDamage());
                                 selectedGun.playShootSound();
                                 selectedGun.shoot(1);
-                            }
-                            else
+                            } else
                                 selectedGun.playEmptySound();
                             updateBullet();
-                        }else{
+                        } else {
 
                         }
                         break;
@@ -175,7 +169,7 @@ public class MainActivity extends RajawaliVRActivity {
         reloadBtn.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()){
+                switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         selectedGun.playReloadSound();
                         isReload = true;
@@ -191,9 +185,10 @@ public class MainActivity extends RajawaliVRActivity {
 
                         break;
                     default:
-                        mRenderer.transitionAnimation(-1,0);
+                        mRenderer.transitionAnimation(-1, 0);
                 }
-                return false;            }
+                return false;
+            }
         });
 
         weaponSelector.setOnClickListener(new View.OnClickListener() {
@@ -204,7 +199,7 @@ public class MainActivity extends RajawaliVRActivity {
                 dialog.setContentView(R.layout.weapon_selection);
                 dialog.setCancelable(true);
 
-                HListView hListView = (HListView)dialog.findViewById(R.id.hListView1);
+                HListView hListView = (HListView) dialog.findViewById(R.id.hListView1);
 
 
                 hListView.setAdapter(new WeaponAdapter(MainActivity.this));
@@ -234,21 +229,21 @@ public class MainActivity extends RajawaliVRActivity {
         });
     }
 
-    public void bloodShed(){
-        if(bloodFilter != null) {
+    public void bloodShed() {
+        if (bloodFilter != null) {
 
             int alpha = Math.round(255 - (Me.myHP * (255 / Me.myMaxHP)));
-            Log.d("oakTag","alpha "+alpha);
+            Log.d("oakTag", "alpha " + alpha);
             bloodFilter.setImageAlpha(alpha);
-            if(Me.myHP <= 0){
+            if (Me.myHP <= 0) {
                 finish();
             }
         }
     }
 
     private void updateBullet() {
-        bullet.setText(""+selectedGun.getBullet());
-        remainBullet.setText(""+selectedGun.getRemain_bullet());
+        bullet.setText("" + selectedGun.getBullet());
+        remainBullet.setText("" + selectedGun.getRemain_bullet());
     }
 
 

@@ -19,9 +19,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Settings;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
@@ -38,13 +36,13 @@ import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.adapter.BagAdapter;
 import com.example.ripzery.projectx01.ar.MainActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
-import com.example.ripzery.projectx01.ar.detail.weapon.Desert;
-import com.example.ripzery.projectx01.ar.detail.weapon.Gun;
-import com.example.ripzery.projectx01.ar.detail.weapon.Pistol;
 import com.example.ripzery.projectx01.interface_model.Item;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.item.ItemDistancex2;
 import com.example.ripzery.projectx01.model.monster.Ant;
+import com.example.ripzery.projectx01.model.weapon.Desert;
+import com.example.ripzery.projectx01.model.weapon.Gun;
+import com.example.ripzery.projectx01.model.weapon.Pistol;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.github.pavlospt.CircleView;
@@ -79,11 +77,8 @@ import at.markushi.ui.RevealColorView;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
-//import android.location.LocationListener;
-
 public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, GpsStatus.Listener {
 
-    public static final int AR_REQ = 123;
     private static final long DURATION_TO_FIX_LOST_MS = 10000;
     private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
@@ -103,6 +98,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     AnyTextView tvItemCount;
     @InjectView(R.id.cbHome)
     CircleButton cbHome;
+    private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
+    private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
@@ -127,7 +124,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private double oldAzimuth = 0;
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
-    private ActionBar mActionBar;
     private Handler genGhostHandler, genItemHandler;
     private Runnable keepGenerateGhost, keepGenerateItem;
     private boolean isGameStart = false;
@@ -141,99 +137,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private LocationManager locationManager;
     private boolean gpsFix;
     private long locationTime = 0;
-    private Toolbar toolbar;
     private boolean isExpanded = false;
     private RevealColorView revealColorView;
-    private View selectedView;
     private int backgroundColor;
     private AnimatorSet set;
     private BagAdapter mBagAdapter;
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        AlertDialog.Builder setting_mobile_data = new AlertDialog.Builder(this)
-                .setTitle("Mobile data is not enabled yet")
-                .setMessage("Go to setting again")
-                .setCancelable(false)
-                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        MapsActivity.this.finish();
-                    }
-                })
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        startActivityForResult(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS), DATA_ENABLED_REQ);
-                    }
-                });
-
-        AlertDialog.Builder setting_location = new AlertDialog.Builder(this)
-                .setTitle("Set location mode to high accuracy")
-                .setMessage("Go to setting again")
-                .setCancelable(false)
-                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        MapsActivity.this.finish();
-                    }
-                })
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        startActivityForResult(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), LOCATION_ENABLED_REQ);
-                    }
-                });
-
-        // if recieve from data_enabled request
-        if (requestCode == DATA_ENABLED_REQ) {
-
-            if (!isNetworkConnected()) {
-                // Mobile data isn't enable yet.
-                Log.d("Mobile data status : ", "disabled");
-                setting_mobile_data.show();
-            } else if (!isLocationEnabled()) {
-                setting_location.show();
-            } else {
-                setUpMapIfNeeded();
-                initVar();
-                initListener();
-            }
-        } else if (requestCode == LOCATION_ENABLED_REQ) {
-            if (!isLocationEnabled()) {
-                //Location is not enable yet.
-
-                Log.d("Location status : ", "disabled");
-                setting_location.show();
-            } else if (!isNetworkConnected()) {
-                setting_mobile_data.show();
-            } else {
-                setUpMapIfNeeded();
-                initVar();
-                initListener();
-            }
-        }
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        //setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
+        // setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        //กำหนดค่าเริ่มต้นให้ item
-        Me.guns.add(new Desert(this,14));
-        Me.guns.add(new Pistol(this,60));
-        Me.guns.add(new Desert(this,60));
-
-
-//        eventBus = EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).installDefaultEventBus();
+        // กำหนดค่าเริ่มต้นให้ item
+        Me.guns.add(new Desert(this, 14));
+        Me.guns.add(new Pistol(this, 60));
+        Me.guns.add(new Desert(this, 60));
 
         if (!isNetworkConnected()) {
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
@@ -278,11 +201,19 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             initVar();
             initListener();
         }
-
     }
 
     private void initVar() {
         ButterKnife.inject(this);
+
+        ALL_SELF_ITEM.add("ItemDistancex2");
+        ALL_SELF_ITEM.add("ItemDistancex3");
+        ALL_SELF_ITEM.add("Shield");
+
+        ALL_MONSTER_ITEM.add("Pistol");
+        ALL_MONSTER_ITEM.add("Desert");
+        ALL_MONSTER_ITEM.add("Shotgun");
+        ALL_MONSTER_ITEM.add("Mine");
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -291,7 +222,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(true);
-
 
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
@@ -350,10 +280,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         final int color = getColor(mBag);
                         final Point p = getLocationInView(revealColorView, mBag);
 
-//                        if (selectedView == mBag) {
-//                            revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
-//                            selectedView = null;
-//                        } else {
                         revealColorView.reveal(p.x, p.y, color, mBag.getHeight() / 2, 340, new android.animation.Animator.AnimatorListener() {
                             @Override
                             public void onAnimationStart(android.animation.Animator animator) {
@@ -376,8 +302,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                             }
                         });
                         mBag.setVisibility(View.GONE);
-//                            selectedView = mBag;
-//                        }
                     }
 
                     @Override
@@ -410,7 +334,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-//                        locationClient.removeLocationUpdates(MapsActivity.this);
                         MapsActivity.this.finish();
                     }
                 }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -436,23 +359,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 }
             }
         });
-    }
 
-    private int getColor(View view) {
-        return Color.parseColor((String) view.getTag());
-    }
 
-    private Point getLocationInView(View src, View target) {
-        final int[] l0 = new int[2];
-        src.getLocationOnScreen(l0);
-
-        final int[] l1 = new int[2];
-        target.getLocationOnScreen(l1);
-
-        l1[0] = l1[0] - l0[0] + target.getWidth() / 2;
-        l1[1] = l1[1] - l0[1] + target.getHeight() / 2;
-
-        return new Point(l1[0], l1[1]);
     }
 
     private void initListener() {
@@ -474,16 +382,22 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
         });
 
+        // TODO : support all self-items 1.Distancex2 2.Distancex3 3.Shield
+        // TODO : support all monster-items 1.Pistol 2.Desert 3.Shotgun 4.Mine
+
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                if (marker.getTitle().equals("Distancex2") || marker.getTitle().equals("Distancex3")) {
+                // Handle self-items
+                if (ALL_SELF_ITEM.contains(marker.getTitle())) {
                     marker.remove();
                     listItems.remove(marker);
                     Me.items.add(itemDistancex2);
                     allItems.remove(itemDistancex2);
                     mBagAdapter.notifyDataSetChanged();
-                } else if (marker.getTitle().equals("Pistol") || marker.getTitle().equals("Desert")) {
+                }
+                //Handle Monster-items
+                else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
 
                 }
                 return true;
@@ -496,6 +410,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // กำหนดค่าเริ่มต้นของ UpdateTime ไว้เป็นเวลาปัจจุบัน
 //        previousUpdateTime = System.currentTimeMillis();
 
+    }
+
+    private int getColor(View view) {
+        return Color.parseColor((String) view.getTag());
+    }
+
+    private Point getLocationInView(View src, View target) {
+        final int[] l0 = new int[2];
+        src.getLocationOnScreen(l0);
+
+        final int[] l1 = new int[2];
+        target.getLocationOnScreen(l1);
+
+        l1[0] = l1[0] - l0[0] + target.getWidth() / 2;
+        l1[1] = l1[1] - l0[1] + target.getHeight() / 2;
+
+        return new Point(l1[0], l1[1]);
     }
 
 
@@ -539,6 +470,24 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
             @Override
             public void run() {
+
+                // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
+                if (!listMGhost.isEmpty() && !listGhostName.isEmpty() && allMonsters.get(allMonsters.indexOf(monster)).getHp() <= 0) {
+
+                    listMGhost.remove(0);
+                    listGhostName.remove(marker.getTitle());
+                    allMonsters.remove(monster);
+                    updateMonsterId();
+                    allRunnableMonster.remove(this);
+
+                    if (hideMarker) {
+                        marker.setVisible(false);
+                    } else {
+                        marker.setVisible(true);
+                    }
+
+                }
+
 
                 // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
                 long elapsed = (run_time * 16) - adjustStartTime;
@@ -603,19 +552,29 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     run_time++;
 
                 } else { // เลื่อนจนถึงผู้เล่นแล้ว
-                    if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
-                        listMGhost.remove(0);
-                        listGhostName.remove(marker.getTitle());
-                        allMonsters.remove(monster);
-                        updateMonsterId();
-                        allRunnableMonster.remove(this);
-                    }
 
-                    if (hideMarker) {
-                        marker.setVisible(false);
-                    } else {
-                        marker.setVisible(true);
+                    /* ชุดโค้ดที่ทำการลบ marker ออกจาก maps
+                    if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
+
+                            listMGhost.remove(0);
+                            listGhostName.remove(marker.getTitle());
+                            allMonsters.remove(monster);
+                            updateMonsterId();
+                            allRunnableMonster.remove(this);
+
+                            if (hideMarker) {
+                                marker.setVisible(false);
+                            } else {
+                                marker.setVisible(true);
+                            }
+
                     }
+                    */
+
+                    int monsterIndex = allMonsters.indexOf(monster);
+                    Me.myHP -= allMonsters.get(monsterIndex).getAttackPower();
+                    handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
+
                 }
             }
         };
@@ -690,6 +649,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
                 }
             }
+
             @Override
             public void onCancel() {
 
@@ -948,6 +908,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
             final LocationListener firstGetLocation = new LocationListener() {
                 int numberOfUpdate = 0;
+
                 @Override
                 public void onLocationChanged(Location location) {
                     numberOfUpdate++;
@@ -1001,8 +962,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     @Override
     public void onLocationChanged(Location location) {
-
-
         // แสดงความเร็วและความแม่นยำ
 //        mGhost1Status.setText("v : " + location.getSpeed());
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
@@ -1042,7 +1001,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // อัพเดตระยะทางที่ต้องวิ่ง
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
             countDistanceToRotCam += distance;
-            distanceGoal -= distance;
+            distanceGoal -= distance * Me.distanceMultiplier;
             if (distanceGoal <= 0) {
                 distanceGoal = 0;
             }
@@ -1060,6 +1019,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
             mPreviousLatLng = mCurrentLatLng;
         }
+    }
+
+    public void passAllMonster() {
+        Intent i = new Intent(this, MainActivity.class);
+        Singleton.getInstance().setAllMonsters(allMonsters);
+        startActivity(i);
     }
 
     public boolean isAccuracyAcceptable(double acc) {
@@ -1101,17 +1066,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     }
 
-    public void passAllMonster() {
-        Intent i = new Intent(this, MainActivity.class);
-        Singleton.getInstance().setAllMonsters(allMonsters);
-        startActivity(i);
-
-    }
-
     @Override
     public void onGpsStatusChanged(int changeType) {
         if (locationManager != null) {
-            GpsStatus status = locationManager.getGpsStatus(null);
             switch (changeType) {
                 case GpsStatus.GPS_EVENT_FIRST_FIX:
                     gpsFix = true;
@@ -1130,6 +1087,73 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     Log.w("..", "unknown GpsStatus event type. " + changeType);
                     return;
 
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        AlertDialog.Builder setting_mobile_data = new AlertDialog.Builder(this)
+                .setTitle("Mobile data is not enabled yet")
+                .setMessage("Go to setting again")
+                .setCancelable(false)
+                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MapsActivity.this.finish();
+                    }
+                })
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivityForResult(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS), DATA_ENABLED_REQ);
+                    }
+                });
+
+        AlertDialog.Builder setting_location = new AlertDialog.Builder(this)
+                .setTitle("Set location mode to high accuracy")
+                .setMessage("Go to setting again")
+                .setCancelable(false)
+                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MapsActivity.this.finish();
+                    }
+                })
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivityForResult(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS), LOCATION_ENABLED_REQ);
+                    }
+                });
+
+        // if recieve from data_enabled request
+        if (requestCode == DATA_ENABLED_REQ) {
+
+            if (!isNetworkConnected()) {
+                // Mobile data isn't enable yet.
+                Log.d("Mobile data status : ", "disabled");
+                setting_mobile_data.show();
+            } else if (!isLocationEnabled()) {
+                setting_location.show();
+            } else {
+                setUpMapIfNeeded();
+                initVar();
+                initListener();
+            }
+        } else if (requestCode == LOCATION_ENABLED_REQ) {
+            if (!isLocationEnabled()) {
+                //Location is not enable yet.
+
+                Log.d("Location status : ", "disabled");
+                setting_location.show();
+            } else if (!isNetworkConnected()) {
+                setting_mobile_data.show();
+            } else {
+                setUpMapIfNeeded();
+                initVar();
+                initListener();
             }
         }
     }
