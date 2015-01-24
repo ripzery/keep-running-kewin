@@ -14,7 +14,6 @@ import android.hardware.SensorManager;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
@@ -30,6 +29,8 @@ import android.widget.GridView;
 import android.widget.TextView;
 
 import com.ctrlplusz.anytextview.AnyTextView;
+import com.daimajia.androidanimations.library.Techniques;
+import com.daimajia.androidanimations.library.YoYo;
 import com.daimajia.easing.Glider;
 import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
@@ -43,6 +44,7 @@ import com.example.ripzery.projectx01.model.monster.Ant;
 import com.example.ripzery.projectx01.model.weapon.Desert;
 import com.example.ripzery.projectx01.model.weapon.Gun;
 import com.example.ripzery.projectx01.model.weapon.Pistol;
+import com.example.ripzery.projectx01.util.CheckConnectivity;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.github.pavlospt.CircleView;
@@ -68,7 +70,6 @@ import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -140,8 +141,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private boolean isExpanded = false;
     private RevealColorView revealColorView;
     private int backgroundColor;
-    private AnimatorSet set;
+    private AnimatorSet animationItemBagSet;
     private BagAdapter mBagAdapter;
+    private CheckConnectivity connectivity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -153,14 +155,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        // setup class เช็คสถานะการเชื่อม network
+        connectivity = new CheckConnectivity(this);
+
         // กำหนดค่าเริ่มต้นให้ item
         Me.guns.add(new Desert(this, 14));
         Me.guns.add(new Pistol(this, 60));
         Me.guns.add(new Desert(this, 60));
 
-        if (!isNetworkConnected()) {
+        if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
-                    .setTitle("Mobile data is disabled")
+                    .setTitle("Please enable mobile data or wifi")
                     .setMessage("Go to setting")
                     .setCancelable(false)
                     .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
@@ -169,7 +174,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                             MapsActivity.this.finish();
                         }
                     })
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    .setNeutralButton("Wifi", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            startActivityForResult(new Intent(Settings.ACTION_WIFI_SETTINGS), DATA_ENABLED_REQ);
+                        }
+                    })
+                    .setPositiveButton("Mobile Data", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             startActivityForResult(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS), DATA_ENABLED_REQ);
@@ -196,7 +207,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             setting.show();
         }
 
-        if (isLocationEnabled() && isNetworkConnected()) {
+        if (isLocationEnabled() && (connectivity.is3gConnected() || connectivity.isWifiConnected())) {
             setUpMapIfNeeded();
             initVar();
             initListener();
@@ -230,13 +241,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         final float pHeight = displayMetrics.heightPixels;
         final float pWidth = displayMetrics.widthPixels;
 
-        set = new AnimatorSet();
-        set.playTogether(
+        animationItemBagSet = new AnimatorSet();
+        animationItemBagSet.playTogether(
                 Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationY", 0, pHeight / 2 - 100)),
                 Glider.glide(Skill.SineEaseIn, 1200, ObjectAnimator.ofFloat(mBag, "translationX", 0, pWidth / 2 - 100))
         );
 
-        set.setDuration(500);
+        animationItemBagSet.setDuration(500);
 
         mBagAdapter = new BagAdapter(this);
         final GridView gView = (GridView) findViewById(R.id.gvBag);
@@ -268,8 +279,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void onPanelExpanded(View view) {
 
                 isExpanded = true;
-                set.start();
-                set.addListener(new Animator.AnimatorListener() {
+                animationItemBagSet.start();
+                animationItemBagSet.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
 
@@ -326,6 +337,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
             }
         });
+
+        YoYo.with(Techniques.Landing)
+                .duration(700)
+                .playOn(cbHome);
 
 
         cbHome.setOnClickListener(new View.OnClickListener() {
@@ -1035,22 +1050,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         return false;
     }
 
-    public boolean isNetworkConnected() {
-
-        boolean mobileDataEnabled; // Assume disabled
-        ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-        try {
-            Class cmClass = Class.forName(cm.getClass().getName());
-            Method method = cmClass.getDeclaredMethod("getMobileDataEnabled");
-            method.setAccessible(true); // Make the method callable
-            // get the setting for "mobile data"
-            mobileDataEnabled = (Boolean) method.invoke(cm);
-        } catch (Exception e) {
-            return false;
-        }
-        return mobileDataEnabled;
-    }
-
     public void updateMonsterId() {
         for (int i = 0; i < allMonsters.size(); i++) {
             allMonsters.get(i).setId(i);
@@ -1095,7 +1094,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         AlertDialog.Builder setting_mobile_data = new AlertDialog.Builder(this)
-                .setTitle("Mobile data is not enabled yet")
+                .setTitle("Mobile data or Wifi is not enabled yet")
                 .setMessage("Go to setting again")
                 .setCancelable(false)
                 .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
@@ -1104,7 +1103,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         MapsActivity.this.finish();
                     }
                 })
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                .setNeutralButton("Wifi", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        startActivityForResult(new Intent(Settings.ACTION_WIFI_SETTINGS), DATA_ENABLED_REQ);
+                    }
+                })
+                .setPositiveButton("Mobile data", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         startActivityForResult(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS), DATA_ENABLED_REQ);
@@ -1131,7 +1136,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // if recieve from data_enabled request
         if (requestCode == DATA_ENABLED_REQ) {
 
-            if (!isNetworkConnected()) {
+            if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
                 // Mobile data isn't enable yet.
                 Log.d("Mobile data status : ", "disabled");
                 setting_mobile_data.show();
@@ -1148,7 +1153,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                 Log.d("Location status : ", "disabled");
                 setting_location.show();
-            } else if (!isNetworkConnected()) {
+            } else if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
                 setting_mobile_data.show();
             } else {
                 setUpMapIfNeeded();

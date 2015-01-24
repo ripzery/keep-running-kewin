@@ -11,7 +11,7 @@ import com.google.android.gms.maps.model.LatLng;
 // TODO: rename drawable shield
 public class Shield implements Item {
     public static final String type = "Shield";
-    public static final int id = R.drawable.shield;
+    public static final int id = R.drawable.distancex2; // TODO : need to change
     LatLng latLng;
 
     @Override

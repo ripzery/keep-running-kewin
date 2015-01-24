@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
@@ -92,6 +93,9 @@ public class BagAdapter extends BaseAdapter {
                                     Me.distanceMultiplier = 1;
                                 }
                             }, 10000);
+                            RelativeLayout circleViewLayout = (RelativeLayout) mContext.findViewById(R.id.layoutCircleView);
+
+
                             break;
                         case "Distancex3":
                             Me.distanceMultiplier = 3;
