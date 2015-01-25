@@ -24,8 +24,6 @@ public interface Monster {
 
     BitmapDescriptor getIcon();
 
-    void setIcon(BitmapDescriptor icon);
-
     LatLng getLatLng();
 
     void setLatLng(LatLng latlng);

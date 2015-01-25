@@ -1,8 +1,12 @@
 package com.example.ripzery.projectx01.model.weapon;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.example.ripzery.projectx01.R;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 
 
@@ -11,6 +15,8 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public class Pistol extends Gun {
     public static final String type = "Pistol";
+    public static final int id = R.drawable.pin_pistol;
+    private BitmapDescriptor icon;
     private LatLng latLng;
 
     public Pistol(Context mContext, int bullet) {
@@ -18,6 +24,13 @@ public class Pistol extends Gun {
         gun_img = R.drawable.pistol;
         gun_thumb = R.drawable.pistol;
         setSound(R.raw.gun, R.raw.reload);
+
+        Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.pin_pistol),
+                240,
+                240,
+                false);
+
+        icon = BitmapDescriptorFactory.fromBitmap(resize);
     }
 
     @Override
@@ -38,5 +51,10 @@ public class Pistol extends Gun {
     @Override
     public String getType() {
         return type;
+    }
+
+    @Override
+    public BitmapDescriptor getMarkerIcon() {
+        return icon;
     }
 }

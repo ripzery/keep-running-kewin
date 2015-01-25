@@ -1,5 +1,6 @@
 package com.example.ripzery.projectx01.interface_model;
 
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.LatLng;
 
 /**
@@ -14,4 +15,6 @@ public interface Item {
     public void setLatLng(LatLng latLng);
 
     public String getType();
+
+    public BitmapDescriptor getMarkerIcon();
 }

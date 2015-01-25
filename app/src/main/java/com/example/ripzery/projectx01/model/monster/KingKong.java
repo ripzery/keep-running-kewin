@@ -1,15 +1,20 @@
 package com.example.ripzery.projectx01.model.monster;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.app.MapsActivity;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 
 /**
  * Created by visit on 1/14/15 AD.
  */
-public class Ant implements Monster {
+public class KingKong implements Monster {
 
     private int id;
     private String type;
@@ -21,8 +26,14 @@ public class Ant implements Monster {
     private int attackPower = 20;
     private int hp = 30;
 
-    public Ant() {
+    public KingKong(MapsActivity mapsActivity) {
 
+        Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.monster_ic),
+                120,
+                120,
+                false);
+
+        icon = BitmapDescriptorFactory.fromBitmap(resize);
     }
 
     @Override
@@ -58,11 +69,6 @@ public class Ant implements Monster {
     @Override
     public BitmapDescriptor getIcon() {
         return icon;
-    }
-
-    @Override
-    public void setIcon(BitmapDescriptor icon) {
-        this.icon = icon;
     }
 
     @Override

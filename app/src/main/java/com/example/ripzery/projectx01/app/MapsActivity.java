@@ -11,7 +11,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -40,11 +39,13 @@ import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.interface_model.Item;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.item.ItemDistancex2;
-import com.example.ripzery.projectx01.model.monster.Ant;
+import com.example.ripzery.projectx01.model.monster.KingKong;
 import com.example.ripzery.projectx01.model.weapon.Desert;
 import com.example.ripzery.projectx01.model.weapon.Gun;
 import com.example.ripzery.projectx01.model.weapon.Pistol;
 import com.example.ripzery.projectx01.util.CheckConnectivity;
+import com.example.ripzery.projectx01.util.CheckLocation;
+import com.example.ripzery.projectx01.util.ConnectGoogleApiClient;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.github.pavlospt.CircleView;
@@ -58,7 +59,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -78,16 +78,21 @@ import at.markushi.ui.RevealColorView;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
-public class MapsActivity extends ActionBarActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, GpsStatus.Listener {
+public class MapsActivity extends ActionBarActivity implements SensorEventListener, LocationListener {
 
-    private static final long DURATION_TO_FIX_LOST_MS = 10000;
-    private static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
-    private static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
-    private static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
-    private static final int DATA_ENABLED_REQ = 1;
-    private static final int LOCATION_ENABLED_REQ = 2;
-    private final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
-    private final int MAX_ITEM_AT_ONCE = 3; // กำหนดจำนวนไอเทมสูงสุดในแผนที่
+    public static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
+    public static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
+    public static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
+    public static final int DATA_ENABLED_REQ = 1;
+    public static final int LOCATION_ENABLED_REQ = 2;
+    public final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
+    public final int MAX_ITEM_AT_ONCE = 3; // กำหนดจำนวนไอเทมสูงสุดในแผนที่
+    public GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    public ProgressDialog progress;
+    public LatLng mCurrentLatLng, mPreviousLatLng;
+    public Marker myArrow;
+    public GoogleApiClient mGoogleApiClient;
+    public CheckLocation checkLocation;
     SensorManager sensorManager;
     @InjectView(R.id.tv1)
     TextView mGhost2Status;
@@ -105,23 +110,19 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private LatLngBounds playground;
-    private ProgressDialog progress;
-    private LatLng mCurrentLatLng, mPreviousLatLng;
     private Handler handler = new Handler();
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
     private ArrayList<Marker> listItems = new ArrayList<Marker>();
-    private Ant mMonster;
+    private KingKong mMonster;
     private ItemDistancex2 itemDistancex2;
     private AlertDialog.Builder builder;
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
     private float[] accelerometerData = new float[3];
     private float[] magneticData = new float[3];
-    private Marker myArrow;
     private double oldAzimuth = 0;
     private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
@@ -133,17 +134,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Item> allItems = new ArrayList<>();
     private ArrayList<Runnable> allRunnableMonster = new ArrayList<>();
     private int currentBearing = 0;
-    private GoogleApiClient mGoogleApiClient;
     private int timeout = 30000;
     private LocationManager locationManager;
-    private boolean gpsFix;
-    private long locationTime = 0;
     private boolean isExpanded = false;
     private RevealColorView revealColorView;
     private int backgroundColor;
     private AnimatorSet animationItemBagSet;
     private BagAdapter mBagAdapter;
     private CheckConnectivity connectivity;
+    private ConnectGoogleApiClient connectGoogleApiClient;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -158,11 +157,18 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // setup class เช็คสถานะการเชื่อม network
         connectivity = new CheckConnectivity(this);
 
+        // setup class เช็คสถานะ Location
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        checkLocation = new CheckLocation(this, locationManager);
+        locationManager.addGpsStatusListener(checkLocation);
+
+
         // กำหนดค่าเริ่มต้นให้ item
         Me.guns.add(new Desert(this, 14));
         Me.guns.add(new Pistol(this, 60));
         Me.guns.add(new Desert(this, 60));
 
+        Log.d("Location Enabled", checkLocation.isLocationEnabled() + "");
         if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
                     .setTitle("Please enable mobile data or wifi")
@@ -187,7 +193,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         }
                     });
             setting.show();
-        } else if (!isLocationEnabled()) {
+        } else if (!checkLocation.isLocationEnabled()) {
+            Log.d("Enter", "No?");
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
                     .setTitle("Set location mode to high accuracy")
                     .setMessage("Go to setting")
@@ -207,7 +214,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             setting.show();
         }
 
-        if (isLocationEnabled() && (connectivity.is3gConnected() || connectivity.isWifiConnected())) {
+        if (checkLocation.isLocationEnabled() && (connectivity.is3gConnected() || connectivity.isWifiConnected())) {
             setUpMapIfNeeded();
             initVar();
             initListener();
@@ -219,12 +226,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         ALL_SELF_ITEM.add("ItemDistancex2");
         ALL_SELF_ITEM.add("ItemDistancex3");
-        ALL_SELF_ITEM.add("Shield");
+//        ALL_SELF_ITEM.add("Shield");
 
         ALL_MONSTER_ITEM.add("Pistol");
         ALL_MONSTER_ITEM.add("Desert");
-        ALL_MONSTER_ITEM.add("Shotgun");
-        ALL_MONSTER_ITEM.add("Mine");
+//        ALL_MONSTER_ITEM.add("Shotgun");
+//        ALL_MONSTER_ITEM.add("Mine");
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -380,6 +387,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     private void initListener() {
 
+        connectGoogleApiClient = new ConnectGoogleApiClient(this);
+
         // เมื่อแผนที่โหลดเสร็จเรียบร้อยให้เปลี่ยนข้อความ progress จาก Wait while loading map... เป็น Wait while getting your location
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
@@ -389,8 +398,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 if (response == ConnectionResult.SUCCESS) {
                     mGoogleApiClient = new GoogleApiClient.Builder(MapsActivity.this)
                             .addApi(LocationServices.API)
-                            .addConnectionCallbacks(MapsActivity.this)
-                            .addOnConnectionFailedListener(MapsActivity.this)
+                            .addConnectionCallbacks(connectGoogleApiClient)
+                            .addOnConnectionFailedListener(connectGoogleApiClient)
                             .build();
                     mGoogleApiClient.connect();
                 }
@@ -418,9 +427,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 return true;
             }
         });
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.addGpsStatusListener(this);
 
         // กำหนดค่าเริ่มต้นของ UpdateTime ไว้เป็นเวลาปัจจุบัน
 //        previousUpdateTime = System.currentTimeMillis();
@@ -612,8 +618,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
-                    mMonster = new Ant();
-                    mMonster.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
+                    mMonster = new KingKong(MapsActivity.this);
                     mMonster.setSpeed(3);
                     addMonster(mMonster);
                 } else {
@@ -635,7 +640,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int range = max_generate_item_timeout - min_generate_item_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_item_timeout);
                     timeout = timeout * 1000; // convert to millisec
-                    itemDistancex2 = new ItemDistancex2();
+                    itemDistancex2 = new ItemDistancex2(MapsActivity.this);
                     addItem(itemDistancex2);
                 } else {
                     timeout = 1000;
@@ -648,7 +653,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     // เลื่อนตำแหน่งของกล้อง
-    private void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
+    public void setCameraPosition(LatLng Location, int zoomLevel, int tilt) {
         CameraPosition camPos = new CameraPosition.Builder()
                 .target(Location)
                 .zoom(zoomLevel)
@@ -673,7 +678,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     // เลื่อนตำแหน่งของกล้องโดยตั้งค่า bearing ด้วย
-    private void setCameraPosition(LatLng Location, int zoomLevel, int tilt, int bearing) {
+    public void setCameraPosition(LatLng Location, int zoomLevel, int tilt, int bearing) {
 
         CameraPosition camPos = new CameraPosition.Builder()
                 .target(Location)
@@ -706,7 +711,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         double lonRange = bound.northeast.longitude - lonMin;
 
         LatLng itemLatLng = new LatLng(latMin + (Math.random() * latRange), lonMin + (Math.random() * lonRange));
-        MarkerOptions itemMarkerPosition = new MarkerOptions().position(itemLatLng).icon(BitmapDescriptorFactory.fromResource(item.getThumb()));
+        MarkerOptions itemMarkerPosition = new MarkerOptions().position(itemLatLng).icon(item.getMarkerIcon());
         item.setLatLng(itemLatLng);
         return itemMarkerPosition;
     }
@@ -771,17 +776,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         listItems.add(mItem);
     }
 
-    // เรียกส่งตำแหน่ง(บนหน้าจอ ไม่ใช่ latlng)ปัจจุบันของปีศาจทุกตัวเป็น arraylist<Point>
-//    public ArrayList<Point> getAllGhostPosition() {
-//        ArrayList<Point> allGhostPoint = new ArrayList<>();
-//        for (Marker m : listMGhost) {
-//            Point ghostPoint = mMap.getProjection().toScreenLocation(m.getPosition());
-//            Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
-//            allGhostPoint.add(new Point(ghostPoint.x - userPoint.x, userPoint.y - ghostPoint.y));
-//        }
-//        return allGhostPoint;
-//    }
-
     @Override
     public void onPause() {
         super.onPause();
@@ -793,7 +787,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (keepGenerateGhost != null)
             genGhostHandler.removeCallbacks(keepGenerateGhost);
         if (locationManager != null)
-            locationManager.removeGpsStatusListener(this);
+            locationManager.removeGpsStatusListener(checkLocation);
     }
 
     @Override
@@ -805,7 +799,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         if (locationManager != null) {
-            locationManager.addGpsStatusListener(this);
+            locationManager.addGpsStatusListener(checkLocation);
         }
 
         for (Runnable r : allRunnableMonster) {
@@ -817,7 +811,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
     }
-
 
     @Override
     protected void onDestroy() {
@@ -835,7 +828,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         if (locationManager != null) {
-            locationManager.removeGpsStatusListener(this);
+            locationManager.removeGpsStatusListener(checkLocation);
         }
 
         Me.guns = new ArrayList<Gun>();
@@ -914,86 +907,24 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     @Override
-    public void onConnected(Bundle bundle) {
-        Log.d("status", "connected");
-        if (LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient) == null) {
-            locationrequest = LocationRequest.create();
-            locationrequest.setInterval(1000);
-            locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-            final LocationListener firstGetLocation = new LocationListener() {
-                int numberOfUpdate = 0;
-
-                @Override
-                public void onLocationChanged(Location location) {
-                    numberOfUpdate++;
-                    if (isAccuracyAcceptable(location.getAccuracy())) {
-                        mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                        if (myArrow == null) {
-                            mPreviousLatLng = mCurrentLatLng;
-                            setCameraPosition(mCurrentLatLng, 18, 0);
-                            myArrow = mMap.addMarker(new MarkerOptions()
-                                    .position(mCurrentLatLng)
-                                    .anchor((float) 0.5, (float) 0.5)
-                                    .flat(true)
-                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
-
-                        }
-                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-                    } else {
-                        progress.setMessage("Waiting for gps accuracy lower than " + THRESHOLD_ACC + " metres");
-                        Log.d("numupdate", numberOfUpdate + "");
-                        if (numberOfUpdate > 5) {
-                            progress.setMessage("You may be have to go outside or fix your gps by using gps fix application");
-                        }
-                    }
-                }
-            };
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, firstGetLocation);
-        } else {
-            mCurrentLatLng = new LatLng(LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient).getLongitude());
-            if (myArrow == null) {
-                mPreviousLatLng = mCurrentLatLng;
-                setCameraPosition(mCurrentLatLng, 18, 0);
-                myArrow = mMap.addMarker(new MarkerOptions()
-                        .position(mCurrentLatLng)
-                        .anchor((float) 0.5, (float) 0.5)
-                        .flat(true)
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
-
-            }
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d("status", "onConnectionFailed");
-    }
-
-    @Override
     public void onLocationChanged(Location location) {
         // แสดงความเร็วและความแม่นยำ
 //        mGhost1Status.setText("v : " + location.getSpeed());
         mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 //        Log.d("Accuracy Grade", getGrade((int) location.getAccuracy()));
 //        toolbar.setSubtitle();
-        tvItemCount.setText("Accuracy : " + getGrade((int) location.getAccuracy()));
+        tvItemCount.setText("Accuracy : " + checkLocation.getGrade((int) location.getAccuracy()));
 //        mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
         if (progress.isShowing() && builder == null) {
             builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                 @Override
+
                 public void onClick(DialogInterface dialog, int which) {
 
                     //เมื่อทำการคลิก "yes" ให้กำหนดขอบเขตการเล่นและเพิ่ม Ghost มาวิ่งไล่ผู้เล่น
                     playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-                    mMonster = new Ant();
-                    mMonster.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ant));
+                    mMonster = new KingKong(MapsActivity.this);
                     mMonster.setSpeed(3);
                     addMonster(mMonster);
                     keepGeneratingGhost();
@@ -1012,7 +943,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         if (isGameStart) {
-            locationTime = location.getTime();
+            checkLocation.setLocationTime(location.getTime());
             // อัพเดตระยะทางที่ต้องวิ่ง
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
             countDistanceToRotCam += distance;
@@ -1042,51 +973,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         startActivity(i);
     }
 
-    public boolean isAccuracyAcceptable(double acc) {
-        if (acc < THRESHOLD_ACC) {
-            //acceptable
-            return true;
-        }
-        return false;
-    }
-
     public void updateMonsterId() {
         for (int i = 0; i < allMonsters.size(); i++) {
             allMonsters.get(i).setId(i);
             Log.d("updateMonsterId1st", "" + allMonsters.get(i).getId());
-        }
-    }
-
-    public boolean isLocationEnabled() {
-        LocationManager manager = (LocationManager) MapsActivity.this.getSystemService(Context.LOCATION_SERVICE);
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            return false;
-        } else return true;
-
-    }
-
-    @Override
-    public void onGpsStatusChanged(int changeType) {
-        if (locationManager != null) {
-            switch (changeType) {
-                case GpsStatus.GPS_EVENT_FIRST_FIX:
-                    gpsFix = true;
-                    break;
-                case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
-                    // if it has been more then 10 seconds since the last update, consider the fix lost
-                    gpsFix = System.currentTimeMillis() - locationTime < DURATION_TO_FIX_LOST_MS;
-                    break;
-                case GpsStatus.GPS_EVENT_STARTED: // GPS turned on
-                    gpsFix = false;
-                    break;
-                case GpsStatus.GPS_EVENT_STOPPED: // GPS turned off
-                    gpsFix = false;
-                    break;
-                default:
-                    Log.w("..", "unknown GpsStatus event type. " + changeType);
-                    return;
-
-            }
         }
     }
 
@@ -1140,7 +1030,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 // Mobile data isn't enable yet.
                 Log.d("Mobile data status : ", "disabled");
                 setting_mobile_data.show();
-            } else if (!isLocationEnabled()) {
+            } else if (!checkLocation.isLocationEnabled()) {
                 setting_location.show();
             } else {
                 setUpMapIfNeeded();
@@ -1148,7 +1038,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 initListener();
             }
         } else if (requestCode == LOCATION_ENABLED_REQ) {
-            if (!isLocationEnabled()) {
+            if (!checkLocation.isLocationEnabled()) {
                 //Location is not enable yet.
 
                 Log.d("Location status : ", "disabled");
@@ -1161,24 +1051,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 initListener();
             }
         }
-    }
-
-    private String getGrade(int acc) {
-
-        if (!isLocationEnabled()) {
-            return "Disabled";
-        } else if (!gpsFix) {
-            return "Waiting for Fix";
-        } else if (acc <= 5) {
-            return "Excellent";
-        } else if (acc <= 10) {
-            return "Good";
-        } else if (acc <= 30) {
-            return "Fair";
-        } else if (acc <= 100) {
-            return "Bad";
-        }
-        return "Unusable";
     }
 }
 
