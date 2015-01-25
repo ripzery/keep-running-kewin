@@ -25,8 +25,8 @@ import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.GridView;
-import android.widget.TextView;
 
+import com.akexorcist.roundcornerprogressbar.IconRoundCornerProgressBar;
 import com.ctrlplusz.anytextview.AnyTextView;
 import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
@@ -94,8 +94,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public GoogleApiClient mGoogleApiClient;
     public CheckLocation checkLocation;
     SensorManager sensorManager;
-    @InjectView(R.id.tv1)
-    TextView mGhost2Status;
+    //    @InjectView(R.id.tv1)
+//    TextView mGhost2Status;
     @InjectView(R.id.btnBag)
     CircleButton mBag;
     @InjectView(R.id.cvTextM)
@@ -104,6 +104,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     AnyTextView tvItemCount;
     @InjectView(R.id.cbHome)
     CircleButton cbHome;
+    @InjectView(R.id.playerStatus)
+    IconRoundCornerProgressBar playerStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
     private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
@@ -167,6 +169,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         Me.guns.add(new Desert(this, 14));
         Me.guns.add(new Pistol(this, 60));
         Me.guns.add(new Desert(this, 60));
+        Me.items.add(new ItemDistancex2(this));
 
         Log.d("Location Enabled", checkLocation.isLocationEnabled() + "");
         if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
@@ -345,11 +348,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
         });
 
-        YoYo.with(Techniques.Landing)
-                .duration(700)
-                .playOn(cbHome);
-
-
         cbHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -450,7 +448,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         return new Point(l1[0], l1[1]);
     }
 
-
+    // TODO : Bug marker move away from player
     public void animateMarker(final Monster monster, final Marker marker, final Location toPosition,
                               final boolean hideMarker, final double speed) {
 
@@ -910,7 +908,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public void onLocationChanged(Location location) {
         // แสดงความเร็วและความแม่นยำ
 //        mGhost1Status.setText("v : " + location.getSpeed());
-        mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
+//        mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
 //        Log.d("Accuracy Grade", getGrade((int) location.getAccuracy()));
 //        toolbar.setSubtitle();
         tvItemCount.setText("Accuracy : " + checkLocation.getGrade((int) location.getAccuracy()));
@@ -930,6 +928,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     keepGeneratingGhost();
                     keepGeneratingItem();
                     isGameStart = true;
+
+                    // เมื่อเริ่มเกมให้เล่นอนิเมชั่น
+                    startGameViewAnimation();
+
                 }
             });
 
@@ -937,6 +939,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             progress.dismiss();
             builder.setMessage("Are you ready?");
             builder.setTitle("Mission 1 start");
+            builder.setCancelable(false);
             builder.show();
         }
 
@@ -965,6 +968,107 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
             mPreviousLatLng = mCurrentLatLng;
         }
+    }
+
+    public void startGameViewAnimation() {
+        cbHome.setVisibility(View.VISIBLE);
+        YoYo.with(Techniques.Landing)
+                .duration(700)
+                .withListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mCvDistanceStatus.setVisibility(View.VISIBLE);
+                        YoYo.with(Techniques.Landing)
+                                .duration(700)
+                                .withListener(new Animator.AnimatorListener() {
+                                    @Override
+                                    public void onAnimationStart(Animator animation) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationEnd(Animator animation) {
+                                        playerStatus.setVisibility(View.VISIBLE);
+                                        YoYo.with(Techniques.Landing)
+                                                .duration(1000)
+                                                .withListener(new Animator.AnimatorListener() {
+                                                    @Override
+                                                    public void onAnimationStart(Animator animation) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onAnimationEnd(Animator animation) {
+                                                        mBag.setVisibility(View.VISIBLE);
+                                                        YoYo.with(Techniques.SlideInLeft)
+                                                                .duration(800)
+                                                                .withListener(new Animator.AnimatorListener() {
+                                                                    @Override
+                                                                    public void onAnimationStart(Animator animation) {
+
+                                                                    }
+
+                                                                    @Override
+                                                                    public void onAnimationEnd(Animator animation) {
+                                                                        YoYo.with(Techniques.Shake)
+                                                                                .duration(300)
+                                                                                .playOn(mBag);
+                                                                    }
+
+                                                                    @Override
+                                                                    public void onAnimationCancel(Animator animation) {
+
+                                                                    }
+
+                                                                    @Override
+                                                                    public void onAnimationRepeat(Animator animation) {
+
+                                                                    }
+                                                                })
+                                                                .playOn(mBag);
+                                                    }
+
+                                                    @Override
+                                                    public void onAnimationCancel(Animator animation) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onAnimationRepeat(Animator animation) {
+
+                                                    }
+                                                })
+                                                .playOn(playerStatus);
+                                    }
+
+                                    @Override
+                                    public void onAnimationCancel(Animator animation) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationRepeat(Animator animation) {
+
+                                    }
+                                }).playOn(mCvDistanceStatus);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                })
+                .playOn(cbHome);
     }
 
     public void passAllMonster() {
