@@ -224,8 +224,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private void initVar() {
         ButterKnife.inject(this);
 
-        ALL_SELF_ITEM.add("ItemDistancex2");
-        ALL_SELF_ITEM.add("ItemDistancex3");
+        ALL_SELF_ITEM.add("Distancex2");
+        ALL_SELF_ITEM.add("Distancex3");
 //        ALL_SELF_ITEM.add("Shield");
 
         ALL_MONSTER_ITEM.add("Pistol");
