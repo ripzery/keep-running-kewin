@@ -6,7 +6,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
@@ -51,7 +50,7 @@ public class BagAdapter extends BaseAdapter {
     public View getView(final int position, View convertView, ViewGroup parent) {
 
 
-        SquareImageButton imageButton;
+        final SquareImageButton imageButton;
         if (convertView == null) {
             imageButton = new SquareImageButton(mContext);
             imageButton.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -65,7 +64,7 @@ public class BagAdapter extends BaseAdapter {
         }
 
         // ถ้าเป็นปืน
-        if(position < Me.guns.size()) {
+        if (position < Me.guns.size()) {
 
             imageButton.setImageResource(Me.guns.get(position).get_thumb());
             imageButton.setOnClickListener(new View.OnClickListener() {
@@ -77,7 +76,7 @@ public class BagAdapter extends BaseAdapter {
                 }
             });
             //ถ้าเป็นไอเทม
-        }else{
+        } else {
             final Item item = Me.items.get(position - Me.guns.size());
             imageButton.setImageResource(item.getThumb());
             imageButton.setOnClickListener(new View.OnClickListener() {
@@ -93,9 +92,6 @@ public class BagAdapter extends BaseAdapter {
                                     Me.distanceMultiplier = 1;
                                 }
                             }, 10000);
-                            RelativeLayout circleViewLayout = (RelativeLayout) mContext.findViewById(R.id.layoutCircleView);
-
-
                             break;
                         case "Distancex3":
                             Me.distanceMultiplier = 3;
