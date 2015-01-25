@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.Sensor;
@@ -20,6 +21,7 @@ import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Interpolator;
@@ -93,6 +95,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public Marker myArrow;
     public GoogleApiClient mGoogleApiClient;
     public CheckLocation checkLocation;
+    public boolean isExpanded = false, isUseItem = false;
+    public SlidingUpPanelLayout itemBagLayout;
     SensorManager sensorManager;
     //    @InjectView(R.id.tv1)
 //    TextView mGhost2Status;
@@ -106,6 +110,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     CircleButton cbHome;
     @InjectView(R.id.playerStatus)
     IconRoundCornerProgressBar playerStatus;
+    @InjectView(R.id.itemUse)
+    CircleButton mItemUse;
+    @InjectView(R.id.itemStatus)
+    IconRoundCornerProgressBar itemStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
     private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
@@ -138,13 +146,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int currentBearing = 0;
     private int timeout = 30000;
     private LocationManager locationManager;
-    private boolean isExpanded = false;
     private RevealColorView revealColorView;
     private int backgroundColor;
     private AnimatorSet animationItemBagSet;
     private BagAdapter mBagAdapter;
     private CheckConnectivity connectivity;
     private ConnectGoogleApiClient connectGoogleApiClient;
+    private AnimatorSet animateItemUseSet;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -259,6 +267,18 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         animationItemBagSet.setDuration(500);
 
+//        final int[] locationItem = new int[2];
+//        final int[] locationDistance = new int[2];
+//        mItemUse.getLocationOnScreen(locationItem);
+//        mCvDistanceStatus.getLocationOnScreen(locationDistance);
+//
+//        animateItemUseSet = new AnimatorSet();
+//        animateItemUseSet.playTogether(
+//                Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mItemUse, "translationY", 0,(locationItem[1] - locationDistance[1])))
+//        );
+//
+//        animateItemUseSet.setDuration(500);
+
         mBagAdapter = new BagAdapter(this);
         final GridView gView = (GridView) findViewById(R.id.gvBag);
         gView.setAdapter(mBagAdapter);
@@ -266,7 +286,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         revealColorView = (RevealColorView) findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
 
-        final SlidingUpPanelLayout itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         itemBagLayout.setAnchorPoint(0.4f);
         itemBagLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
             @Override
@@ -277,12 +297,80 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             @Override
             public void onPanelCollapsed(View view) {
                 isExpanded = false;
-                mBag.setVisibility(View.VISIBLE);
-                gView.setVisibility(View.GONE);
-                final Point p = getLocationInView(revealColorView, mBag);
-                revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
-                mBag.setTranslationX(0);
-                mBag.setTranslationY(0);
+                if (!isUseItem) {
+                    mBag.setVisibility(View.VISIBLE);
+                    gView.setVisibility(View.GONE);
+                    final Point p = getLocationInView(revealColorView, mBag);
+                    revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
+                    mBag.setTranslationX(0);
+                    mBag.setTranslationY(0);
+                } else {
+                    isUseItem = false;
+                    final int[] locationItem = new int[2];
+                    final int[] locationDistance = new int[2];
+                    mItemUse.getLocationOnScreen(locationItem);
+                    mCvDistanceStatus.getLocationOnScreen(locationDistance);
+                    /// Converts 14 dip into its equivalent px
+
+                    Resources r = getResources();
+                    float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, r.getDisplayMetrics());
+
+                    animateItemUseSet = new AnimatorSet();
+                    animateItemUseSet.playTogether(
+                            Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mItemUse, "translationY", 0, (locationDistance[1] - locationItem[1] + px + mBag.getHeight())))
+                    );
+
+                    animateItemUseSet.setDuration(500);
+                    Log.d("translate", (locationItem[1] - locationDistance[1]) + "");
+                    animateItemUseSet.start();
+                    animateItemUseSet.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            itemStatus.setVisibility(View.VISIBLE);
+                            YoYo.with(Techniques.Landing)
+                                    .duration(600)
+                                    .withListener(new Animator.AnimatorListener() {
+                                        @Override
+                                        public void onAnimationStart(Animator animation) {
+
+                                        }
+
+                                        @Override
+                                        public void onAnimationEnd(Animator animation) {
+                                            itemStatus.setAlpha(0.7f);
+                                        }
+
+                                        @Override
+                                        public void onAnimationCancel(Animator animation) {
+
+                                        }
+
+                                        @Override
+                                        public void onAnimationRepeat(Animator animation) {
+
+                                        }
+                                    })
+                                    .playOn(itemStatus);
+                            mItemUse.setVisibility(View.GONE);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                }
+
             }
 
             @Override
@@ -1004,6 +1092,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                                                     @Override
                                                     public void onAnimationEnd(Animator animation) {
+                                                        playerStatus.setAlpha(0.7f);
                                                         mBag.setVisibility(View.VISIBLE);
                                                         YoYo.with(Techniques.SlideInLeft)
                                                                 .duration(800)
@@ -1069,6 +1158,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     }
                 })
                 .playOn(cbHome);
+    }
+
+    public void setItemAnimation(int image) {
+        itemStatus.setVisibility(View.GONE);
+        mItemUse.setTranslationY(0);
+        mItemUse.setImageResource(image);
+        mItemUse.setVisibility(View.VISIBLE);
     }
 
     public void passAllMonster() {

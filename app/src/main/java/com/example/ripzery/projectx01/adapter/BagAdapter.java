@@ -92,6 +92,9 @@ public class BagAdapter extends BaseAdapter {
                                     Me.distanceMultiplier = 1;
                                 }
                             }, 10000);
+                            mContext.isUseItem = true;
+                            mContext.itemBagLayout.collapsePanel();
+                            mContext.setItemAnimation(item.getThumb());
                             break;
                         case "Distancex3":
                             Me.distanceMultiplier = 3;

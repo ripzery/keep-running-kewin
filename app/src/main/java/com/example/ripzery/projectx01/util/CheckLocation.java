@@ -1,8 +1,10 @@
 package com.example.ripzery.projectx01.util;
 
-import android.content.Context;
 import android.location.GpsStatus;
 import android.location.LocationManager;
+import android.os.Build;
+import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.ripzery.projectx01.app.MapsActivity;
@@ -34,10 +36,19 @@ public class CheckLocation implements GpsStatus.Listener {
 
 
     public boolean isLocationEnabled() {
-        LocationManager manager = (LocationManager) mapsActivity.getSystemService(Context.LOCATION_SERVICE);
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            return false;
-        } else return true;
+        int locationMode = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            try {
+                locationMode = Settings.Secure.getInt(mapsActivity.getContentResolver(), Settings.Secure.LOCATION_MODE);
+
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+            }
+            return (locationMode != Settings.Secure.LOCATION_MODE_OFF && locationMode == Settings.Secure.LOCATION_MODE_HIGH_ACCURACY); //check location mode
+        } else {
+            String locationProviders = Settings.Secure.getString(mapsActivity.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            return !TextUtils.isEmpty(locationProviders);
+        }
     }
 
     public void setLocationTime(long locationTime) {
