@@ -1,11 +1,23 @@
 package com.example.ripzery.projectx01.adapter;
 
+import android.app.Dialog;
+import android.content.Context;
+import android.database.MatrixCursor;
 import android.os.Handler;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
@@ -33,7 +45,12 @@ public class BagAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return Me.guns.size() + Me.items.size();
+
+        if(Me.guns.size() + Me.items.size() >= 12)
+            return 12;
+        else
+            return Me.guns.size() + Me.items.size();
+
     }
 
     @Override
@@ -50,36 +67,57 @@ public class BagAdapter extends BaseAdapter {
     public View getView(final int position, View convertView, ViewGroup parent) {
 
 
-        final SquareImageButton imageButton;
+
         if (convertView == null) {
-            imageButton = new SquareImageButton(mContext);
+           /* imageButton = new SquareImageButton(mContext);
             imageButton.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             imageButton.setPadding(8, 8, 8, 8);
-            //imageButton.setBackgroundColor(mContext.getResources().getColor(R.color.transparent));
-            imageButton.setBackgroundResource(R.drawable.round_corner);
-            imageButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-
-        } else {
-            imageButton = (SquareImageButton) convertView;
+            imageButton.setBackgroundResource(R.drawable.round_corner_btn);
+            imageButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);*/
+            LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            convertView = inflater.inflate(R.layout.slot_bag, parent, false);
         }
+
+        ImageView image = (ImageView) convertView.findViewById(R.id.img);
+        final ToggleButton toggleButton = (ToggleButton) convertView.findViewById(R.id.toggleButton);
+        TextView number = (TextView) convertView.findViewById(R.id.number_weapon);
+
 
         // ถ้าเป็นปืน
         if (position < Me.guns.size()) {
 
-            imageButton.setImageResource(Me.guns.get(position).get_thumb());
-            imageButton.setOnClickListener(new View.OnClickListener() {
+            image.setImageResource(Me.guns.get(position).getThumb());
+            number.setText(Me.guns.get(position).getBullet()+"");
+            toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if(isChecked){
+                        Me.selectGun = true;
+                        Me.chosenGun = position;
+                        ((MapsActivity) mContext).passAllMonster(true,toggleButton);
+
+                    }else{
+                        Me.selectGun = false;
+                        ((MapsActivity) mContext).passAllMonster(false,null);
+
+                    }
+                }
+            });
+
+              /*      .setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Me.chosenGun = position;
                     ((MapsActivity) mContext).passAllMonster();
 
                 }
-            });
+            });*/
             //ถ้าเป็นไอเทม
         } else {
             final Item item = Me.items.get(position - Me.guns.size());
-            imageButton.setImageResource(item.getThumb());
-            imageButton.setOnClickListener(new View.OnClickListener() {
+            image.setImageResource(item.getThumb());
+            image.setImageResource(Me.items.get(position - Me.guns.size()).getThumb());
+            image.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     switch (item.getType()) {
@@ -109,8 +147,11 @@ public class BagAdapter extends BaseAdapter {
         }
 
 
-        return imageButton;
+        return convertView;
     }
+
+
+
 
 
 }

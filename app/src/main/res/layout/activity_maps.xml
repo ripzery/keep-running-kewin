@@ -1,5 +1,6 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     xmlns:foobar="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/motherView"
@@ -158,43 +159,103 @@
 
                 </RelativeLayout>
 
+
                 <FrameLayout
                     android:id="@+id/sliding_layout_content"
                     android:layout_width="match_parent"
-                    android:layout_height="fill_parent"
+                    android:layout_height="match_parent"
                     android:layout_below="@+id/sliding_layout_title"
-                    android:background="@color/sliding_bar">
+                    >
 
-                    <at.markushi.ui.RevealColorView
-                        android:id="@+id/reveal"
+                    <FrameLayout
+                        android:id="@+id/sliding_layout_content"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@color/sliding_content" />
+                        android:background="@color/sliding_bar">
 
-                    <GridView
-                        android:id="@+id/gvBag"
+                        <at.markushi.ui.RevealColorView
+                            android:id="@+id/reveal"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@color/sliding_content" />
+
+                        <GridView
+                            android:id="@+id/gvBag"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginLeft="10dp"
+                            android:layout_marginRight="10dp"
+                            android:clipToPadding="false"
+                            android:columnWidth="90dp"
+                            android:gravity="center"
+                            android:horizontalSpacing="10dp"
+                            android:numColumns="auto_fit"
+                            android:paddingBottom="20dp"
+                            android:paddingTop="20dp"
+                            android:stretchMode="columnWidth"
+                            android:verticalSpacing="10dp"
+                            android:visibility="gone" />
+
+
+                    </FrameLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/option_bar"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_margin="10dp"
-                        android:columnWidth="90dp"
-                        android:gravity="center"
-                        android:horizontalSpacing="10dp"
-                        android:numColumns="auto_fit"
-                        android:stretchMode="columnWidth"
-                        android:verticalSpacing="10dp"
-                        android:visibility="gone" />
+                        android:layout_height="84dp"
+                        android:visibility="gone"
+                        android:layout_gravity="bottom">
+
+                        <LinearLayout
+                            android:id="@+id/option"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@color/sliding_bar"
+                            android:minHeight="56dp"
+                            android:layout_alignParentBottom="true"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/dropItemBtn"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:text="DROP"
+                                android:padding="15dp"
+                                android:textSize="15sp"
+                                android:textColor="@color/primary"
+                                android:background="@drawable/trans_square_btn"/>
+
+                        <Button
+                            android:id="@+id/detailItemBtn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:text="DETAIL"
+                            android:padding="15dp"
+                            android:textSize="15sp"
+                            android:textColor="@color/primary_dark_material_light"
+                            android:background="@drawable/trans_square_btn"/>
+
+                        </LinearLayout>
+
+                        <com.getbase.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/use_btn"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_alignTop="@id/option"
+                            android:layout_gravity="bottom|right"
+                            android:layout_marginTop="-28dp"
+                            android:layout_alignParentRight="true"
+                            android:layout_marginRight="20dp"
+                            fab:fab_colorNormal="@color/primary_dark"
+                            fab:fab_colorPressed="@color/primary_light"
+                            fab:fab_icon="@drawable/play_ic" />
+
+                    </RelativeLayout>
 
 
                 </FrameLayout>
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_alignParentBottom="true"
-                    android:background="@color/sliding_bar"
-                    android:minHeight="56dp">
 
-                </RelativeLayout>
 
             </RelativeLayout>
 
@@ -212,6 +273,7 @@
                 android:visibility="gone"
                 app:cb_color="@color/primary" />
 
+
         </FrameLayout>
 
 
@@ -228,6 +290,7 @@
         android:background="#00000000"
         android:visibility="gone"
         app:cb_color="@color/dark_sub" />
+
 
 </FrameLayout>
 

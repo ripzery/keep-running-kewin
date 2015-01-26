@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/dark_sub">
+
+        <com.example.ripzery.projectx01.ar.custom.TextViewBullet
+            android:id="@+id/detail_name"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Pistol"
+            android:textSize="20dp"
+            android:textColor="@color/white"/>
+
+        <ImageView
+            android:id="@+id/detail_exit"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical|left"
+            android:layout_marginLeft="10dp"
+            android:src="@drawable/abc_ic_clear_mtrl_alpha"/>
+
+
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/detail_img"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="@color/light_sub"
+        android:src="@drawable/pistol"
+        android:scaleType="centerInside"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/detail_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="hello"
+            android:padding="20dp"/>
+
+        </ScrollView>
+
+</LinearLayout>

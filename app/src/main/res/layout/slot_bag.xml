@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="100dp"
+    android:layout_height="100dp">
+
+
+
+    <ToggleButton
+        android:id="@+id/toggleButton"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text=""
+        android:textOn=""
+        android:background="@drawable/round_corner_btn"
+        android:elevation="0dp"
+        android:textOff=""/>
+
+    <ImageView
+        android:id="@+id/img"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/pistol"
+        android:elevation="1dp"
+        android:scaleType="centerInside"/>
+
+    <TextView
+        android:id="@+id/number_weapon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="20"
+        android:layout_gravity="bottom|right"
+        android:layout_margin="5dp"
+        android:elevation="1dp"
+        android:textColor="@color/my_primary_text"
+        android:textSize="20sp"
+        />
+
+
+
+</FrameLayout>

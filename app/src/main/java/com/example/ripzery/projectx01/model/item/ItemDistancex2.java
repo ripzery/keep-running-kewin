@@ -31,8 +31,18 @@ public class ItemDistancex2 implements Item {
     }
 
     @Override
+    public String getName() {
+        return type;
+    }
+
+    @Override
     public int getThumb() {
         return id_thumb;
+    }
+
+    @Override
+    public String getDescription() {
+        return "";
     }
 
     @Override

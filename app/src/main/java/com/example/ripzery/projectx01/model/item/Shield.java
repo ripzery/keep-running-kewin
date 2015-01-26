@@ -32,8 +32,18 @@ public class Shield implements Item {
     }
 
     @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
     public int getThumb() {
         return id_thumb;
+    }
+
+    @Override
+    public String getDescription() {
+        return null;
     }
 
     @Override

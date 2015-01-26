@@ -28,6 +28,7 @@ public abstract class Gun implements Item {
     private int soundReload;
     private SoundPool soundPool;
     private int soundEmpty;
+    protected String description;
 
     public Gun(Context mContext, String name, int total_bullet, int max_bullet, float damage, int reload_time) {
         this.mContext = mContext;
@@ -106,10 +107,6 @@ public abstract class Gun implements Item {
         return gun_img;
     }
 
-    public int get_thumb() {
-        return gun_thumb;
-    }
-
     public float getDamage() {
         return damage;
     }
@@ -124,5 +121,9 @@ public abstract class Gun implements Item {
 
     public void playEmptySound() {
         soundPool.play(soundEmpty, volume, volume, 1, 0, 1f);
+    }
+
+    public String getDescription(){
+        return description;
     }
 }

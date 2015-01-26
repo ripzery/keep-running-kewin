@@ -8,7 +8,11 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public interface Item {
 
+    public String getName();
+
     public int getThumb();
+
+    public String getDescription();
 
     public LatLng getLatLng();
 

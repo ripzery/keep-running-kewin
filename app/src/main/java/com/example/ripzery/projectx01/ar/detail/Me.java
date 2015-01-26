@@ -16,5 +16,11 @@ public class Me {
     public static ArrayList<Item> items = new ArrayList<Item>();
     public static ArrayList<Gun> guns = new ArrayList<Gun>();
     public static int chosenGun;
+    public static int chosenItem;
+
+    public static boolean selectGun = false;
+    public static boolean selectItem = false;
+
+    public static int bagMaxCapacity = 12;
 
 }

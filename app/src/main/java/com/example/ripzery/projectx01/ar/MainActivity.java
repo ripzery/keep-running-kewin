@@ -139,7 +139,7 @@ public class MainActivity extends RajawaliVRActivity {
         }
 
         this.selectedGun = selected;
-        selectedGunImg.setImageResource(selectedGun.get_thumb());
+        selectedGunImg.setImageResource(selectedGun.getThumb());
         updateBullet();
 
         shootBtn.setOnTouchListener(new View.OnTouchListener() {

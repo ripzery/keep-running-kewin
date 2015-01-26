@@ -1,6 +1,7 @@
 package com.example.ripzery.projectx01.app;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,11 +13,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
@@ -25,10 +26,20 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.WindowManager;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.akexorcist.roundcornerprogressbar.IconRoundCornerProgressBar;
 import com.ctrlplusz.anytextview.AnyTextView;
@@ -53,6 +64,7 @@ import com.example.ripzery.projectx01.util.CheckLocation;
 import com.example.ripzery.projectx01.util.ConnectGoogleApiClient;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -101,8 +113,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public boolean isExpanded = false, isUseItem = false;
     public SlidingUpPanelLayout itemBagLayout;
     SensorManager sensorManager;
-    //    @InjectView(R.id.tv1)
-//    TextView mGhost2Status;
     @InjectView(R.id.btnBag)
     CircleButton mBag;
     @InjectView(R.id.cvTextM)
@@ -123,14 +133,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+
     private LatLngBounds playground;
     private Handler handler = new Handler();
     private Runnable runnable;
     private ArrayList<String> listGhostName = new ArrayList<String>();
     private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
     private ArrayList<Marker> listItems = new ArrayList<Marker>();
-    private KingKong mMonster;
-    private Item item;
+    private ItemDistancex2 itemDistancex2;
     private AlertDialog.Builder builder;
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
@@ -149,17 +159,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int currentBearing = 0;
     private int timeout = 30000;
     private LocationManager locationManager;
+    private boolean gpsFix;
+    private long locationTime = 0;
     private RevealColorView revealColorView;
     private int backgroundColor;
     private AnimatorSet animationItemBagSet;
     private BagAdapter mBagAdapter;
     private CheckConnectivity connectivity;
+    private RelativeLayout optionBar;
+    private FloatingActionButton facUseBtn;
+    private FloatingActionButton useBtn;
+    private Button dropItemBtn;
+    private Button detailItemBtn;
+    private GridView gView;
     private ConnectGoogleApiClient connectGoogleApiClient;
     private AnimatorSet animateItemUseSet;
-    private PowerManager.WakeLock mWakeLock;
     private Handler handlerItemStatus;
     private Runnable runnableItemStatus;
     private Item itemUse;
+    private KingKong mMonster;
+    private Item item;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -171,6 +190,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+
+        //กำหนดค่าเริ่มต้นให้ item
+        Me.guns.add(new Desert(this, 14));
+        Me.guns.add(new Pistol(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
+        Me.guns.add(new Desert(this,60));
         // setup class เช็คสถานะการเชื่อม network
         connectivity = new CheckConnectivity(this);
 
@@ -276,24 +315,38 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         animationItemBagSet.setDuration(500);
 
-//        final int[] locationItem = new int[2];
-//        final int[] locationDistance = new int[2];
-//        mItemUse.getLocationOnScreen(locationItem);
-//        mCvDistanceStatus.getLocationOnScreen(locationDistance);
-//
-//        animateItemUseSet = new AnimatorSet();
-//        animateItemUseSet.playTogether(
-//                Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mItemUse, "translationY", 0,(locationItem[1] - locationDistance[1])))
-//        );
-//
-//        animateItemUseSet.setDuration(500);
-
         mBagAdapter = new BagAdapter(this);
-        final GridView gView = (GridView) findViewById(R.id.gvBag);
+        gView = (GridView) findViewById(R.id.gvBag);
         gView.setAdapter(mBagAdapter);
 
         revealColorView = (RevealColorView) findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
+
+        optionBar = (RelativeLayout)findViewById(R.id.option_bar);
+        //เมื่อกดดู detail ของ item
+        dropItemBtn = (Button)findViewById(R.id.dropItemBtn);
+        dropItemBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //TODO drop item
+            }
+        });
+        detailItemBtn = (Button)findViewById(R.id.detailItemBtn);
+        detailItemBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDetailItemDialog();
+            }
+        });
+        useBtn = (FloatingActionButton)findViewById(R.id.use_btn);
+        useBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO เริ่ม Activity ใหม่
+            }
+        });
+        //facUseBtn = (FloatingActionButton)findViewById(R.id.use_btn);
+
 
         itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         itemBagLayout.setAnchorPoint(0.4f);
@@ -1116,6 +1169,65 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
             mPreviousLatLng = mCurrentLatLng;
         }
+    }
+
+    public void passAllMonster(boolean isChecked,ToggleButton toggleButton) {
+
+        if(isChecked){
+            uncheckAllChildrenCascade(gView);
+            toggleButton.setChecked(true);
+            optionBar.setVisibility(View.VISIBLE);
+
+        }else{
+            optionBar.setVisibility(View.GONE);
+
+        }
+        //Intent i = new Intent(this, MainActivity.class);
+        //Singleton.getInstance().setAllMonsters(allMonsters);
+        //startActivity(i);
+    }
+
+    private void uncheckAllChildrenCascade(ViewGroup vg) {
+        for (int i = 0; i < vg.getChildCount(); i++) {
+            ViewGroup v = (ViewGroup)vg.getChildAt(i);
+            View vv = v.getChildAt(0);
+            if (vv instanceof ToggleButton) {
+                ((ToggleButton) vv).setChecked(false);
+            } else if (vv instanceof ViewGroup) {
+                uncheckAllChildrenCascade((ViewGroup) v);
+            }
+        }
+    }
+
+    private void showDetailItemDialog() {
+        Item selected;
+        if (Me.chosenGun < Me.guns.size()) {
+            selected = Me.guns.get(Me.chosenGun);
+        } else {
+            selected = Me.items.get(Me.chosenGun - Me.guns.size());
+        }//TODO ทำระบบเลือก item
+
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.detail_item_dialog);
+        dialog.setCancelable(true);
+
+        ImageView image = (ImageView) dialog.findViewById(R.id.detail_img);
+        image.setImageResource(selected.getThumb());
+
+        TextView name = (TextView) dialog.findViewById(R.id.detail_name);
+        name.setText(selected.getName());
+
+        TextView desciption = (TextView) dialog.findViewById(R.id.detail_text);
+        desciption.setText(selected.getDescription());
+
+
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+        dialog.show();
+
+        dialog.getWindow().setAttributes(lp);
     }
 
     public void startGameViewAnimation() {

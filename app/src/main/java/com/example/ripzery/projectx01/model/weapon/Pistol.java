@@ -25,6 +25,8 @@ public class Pistol extends Gun {
         gun_thumb = R.drawable.pistol;
         setSound(R.raw.gun, R.raw.reload);
 
+        description = "From its ambidextrous safety to the extended beavertail, the Tactical II in 9mm will be love at first shot. The full length guide rod and snag free combat-style adjustable sights are built for performance. Comes in a fully parkerized finish. The Tactical II Model gives you everything you want in a 1911 at great value, plus the backing of the Rock Island Armory full lifetime warranty. *Caliber: 9mm *Action: Single *Barrel Length 5\" *Sights: Fiber optic front, Combat adjustable rear *Grips: G10 *Safety: Ambidextrous *Capacity: 9 Rounds";
+
         Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.pin_pistol),
                 240,
                 240,
