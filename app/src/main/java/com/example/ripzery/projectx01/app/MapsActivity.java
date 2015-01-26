@@ -13,7 +13,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -29,14 +28,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.WindowManager;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -190,26 +186,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-
-        //กำหนดค่าเริ่มต้นให้ item
-        Me.guns.add(new Desert(this, 14));
-        Me.guns.add(new Pistol(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
-        Me.guns.add(new Desert(this,60));
         // setup class เช็คสถานะการเชื่อม network
         connectivity = new CheckConnectivity(this);
 
@@ -325,31 +301,94 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         optionBar = (RelativeLayout)findViewById(R.id.option_bar);
         //เมื่อกดดู detail ของ item
         dropItemBtn = (Button)findViewById(R.id.dropItemBtn);
+
+        detailItemBtn = (Button) findViewById(R.id.detailItemBtn);
+
+        useBtn = (FloatingActionButton) findViewById(R.id.use_btn);
+        //facUseBtn = (FloatingActionButton)findViewById(R.id.use_btn);
+
+
+        itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        itemBagLayout.setAnchorPoint(0.4f);
+    }
+
+    private void initListener() {
+
+        connectGoogleApiClient = new ConnectGoogleApiClient(this);
+
+        // เมื่อแผนที่โหลดเสร็จเรียบร้อยให้เปลี่ยนข้อความ progress จาก Wait while loading map... เป็น Wait while getting your location
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                progress.setMessage("Waiting for GPS ...");
+                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
+                if (response == ConnectionResult.SUCCESS) {
+                    mGoogleApiClient = new GoogleApiClient.Builder(MapsActivity.this)
+                            .addApi(LocationServices.API)
+                            .addConnectionCallbacks(connectGoogleApiClient)
+                            .addOnConnectionFailedListener(connectGoogleApiClient)
+                            .build();
+                    mGoogleApiClient.connect();
+                }
+            }
+        });
+
+        // TODO : support all self-items 1.Distancex2 2.Distancex3 3.Shield
+        // TODO : support all monster-items 1.Pistol 2.Desert 3.Shotgun 4.Mine
+
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                // Handle self-items
+                if (ALL_SELF_ITEM.contains(marker.getTitle())) {
+                    Me.items.add(allItems.get(listItems.indexOf(marker)));
+                }
+                //Handle Monster-items
+                else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
+                    Me.guns.add((Gun) allItems.get(listItems.indexOf(marker)));
+                }
+                allItems.remove(listItems.indexOf(marker));
+                listItems.remove(marker);
+                marker.remove();
+                mBagAdapter.notifyDataSetChanged();
+                return true;
+            }
+        });
+
         dropItemBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //TODO drop item
+                if (Me.chosenGun < Me.guns.size()) {
+                    Me.guns.remove(Me.chosenGun);
+                } else {
+                    Me.items.remove(Me.chosenGun - Me.guns.size());
+                }
+                mBagAdapter.notifyDataSetChanged();
             }
         });
-        detailItemBtn = (Button)findViewById(R.id.detailItemBtn);
         detailItemBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showDetailItemDialog();
             }
         });
-        useBtn = (FloatingActionButton)findViewById(R.id.use_btn);
         useBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // TODO เริ่ม Activity ใหม่
+                if (Me.chosenGun >= Me.guns.size()) {
+                    isUseItem = true;
+                    itemBagLayout.collapsePanel();
+                    setItemAnimation(item);
+                    Me.items.remove(item);
+                    mBagAdapter.notifyDataSetChanged();
+                } else {
+                    passAllMonster();
+                }
             }
         });
-        //facUseBtn = (FloatingActionButton)findViewById(R.id.use_btn);
 
-
-        itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
-        itemBagLayout.setAnchorPoint(0.4f);
         itemBagLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
             @Override
             public void onPanelSlide(View view, float v) {
@@ -542,64 +581,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 dialog.setTitle("Stop playing?");
                 dialog.setMessage("Your current progress won't saved");
                 dialog.show();
-            }
-        });
-
-        mBag.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                if (!isExpanded) {
-
-                } else {
-
-                }
-            }
-        });
-
-
-    }
-
-    private void initListener() {
-
-        connectGoogleApiClient = new ConnectGoogleApiClient(this);
-
-        // เมื่อแผนที่โหลดเสร็จเรียบร้อยให้เปลี่ยนข้อความ progress จาก Wait while loading map... เป็น Wait while getting your location
-        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
-            @Override
-            public void onMapLoaded() {
-                progress.setMessage("Waiting for GPS ...");
-                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
-                if (response == ConnectionResult.SUCCESS) {
-                    mGoogleApiClient = new GoogleApiClient.Builder(MapsActivity.this)
-                            .addApi(LocationServices.API)
-                            .addConnectionCallbacks(connectGoogleApiClient)
-                            .addOnConnectionFailedListener(connectGoogleApiClient)
-                            .build();
-                    mGoogleApiClient.connect();
-                }
-            }
-        });
-
-        // TODO : support all self-items 1.Distancex2 2.Distancex3 3.Shield
-        // TODO : support all monster-items 1.Pistol 2.Desert 3.Shotgun 4.Mine
-
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-                // Handle self-items
-                if (ALL_SELF_ITEM.contains(marker.getTitle())) {
-                    Me.items.add(allItems.get(listItems.indexOf(marker)));
-                }
-                //Handle Monster-items
-                else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
-                    Me.guns.add((Gun) allItems.get(listItems.indexOf(marker)));
-                }
-                allItems.remove(listItems.indexOf(marker));
-                listItems.remove(marker);
-                marker.remove();
-                mBagAdapter.notifyDataSetChanged();
-                return true;
             }
         });
 
@@ -1182,9 +1163,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             optionBar.setVisibility(View.GONE);
 
         }
-        //Intent i = new Intent(this, MainActivity.class);
-        //Singleton.getInstance().setAllMonsters(allMonsters);
-        //startActivity(i);
     }
 
     private void uncheckAllChildrenCascade(ViewGroup vg) {
@@ -1199,13 +1177,19 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
     }
 
-    private void showDetailItemDialog() {
+    private Item getItemFromPosition(int position) {
         Item selected;
         if (Me.chosenGun < Me.guns.size()) {
-            selected = Me.guns.get(Me.chosenGun);
+            selected = Me.guns.get(position);
         } else {
-            selected = Me.items.get(Me.chosenGun - Me.guns.size());
-        }//TODO ทำระบบเลือก item
+            selected = Me.items.get(position - Me.guns.size());
+        }
+
+        return selected;
+    }
+
+    private void showDetailItemDialog() {
+        Item selected = getItemFromPosition(Me.chosenGun);
 
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);

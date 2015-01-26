@@ -1,28 +1,18 @@
 package com.example.ripzery.projectx01.adapter;
 
-import android.app.Dialog;
 import android.content.Context;
-import android.database.MatrixCursor;
-import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
-import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
-import com.example.ripzery.projectx01.custom.SquareImageButton;
 import com.example.ripzery.projectx01.interface_model.Item;
 
 
@@ -30,7 +20,6 @@ import com.example.ripzery.projectx01.interface_model.Item;
  * Created by Rawipol on 1/18/15 AD.
  */
 public class BagAdapter extends BaseAdapter {
-    private Handler handler1;
     //private final Desert gun;
     private MapsActivity mContext;
     /*private Integer[] mThumbIds = {
@@ -39,7 +28,6 @@ public class BagAdapter extends BaseAdapter {
 
     public BagAdapter(MapsActivity c) {
         mContext = c;
-        handler1 = new Handler();
         //gun = new Desert(mContext, 40);
     }
 
@@ -83,26 +71,26 @@ public class BagAdapter extends BaseAdapter {
         TextView number = (TextView) convertView.findViewById(R.id.number_weapon);
 
 
+        toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    Me.selectGun = true;
+                    Me.chosenGun = position;
+                    ((MapsActivity) mContext).passAllMonster(true, toggleButton);
+
+                } else {
+                    Me.selectGun = false;
+                    ((MapsActivity) mContext).passAllMonster(false, null);
+
+                }
+            }
+        });
         // ถ้าเป็นปืน
         if (position < Me.guns.size()) {
 
             image.setImageResource(Me.guns.get(position).getThumb());
-            number.setText(Me.guns.get(position).getBullet()+"");
-            toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if(isChecked){
-                        Me.selectGun = true;
-                        Me.chosenGun = position;
-                        ((MapsActivity) mContext).passAllMonster(true,toggleButton);
-
-                    }else{
-                        Me.selectGun = false;
-                        ((MapsActivity) mContext).passAllMonster(false,null);
-
-                    }
-                }
-            });
+            number.setText(Me.guns.get(position).getBullet() + "");
 
               /*      .setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -117,36 +105,7 @@ public class BagAdapter extends BaseAdapter {
             final Item item = Me.items.get(position - Me.guns.size());
             image.setImageResource(item.getThumb());
             image.setImageResource(Me.items.get(position - Me.guns.size()).getThumb());
-            image.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    switch (item.getType()) {
-                        case "Distancex2":
-                            Me.distanceMultiplier = 2;
-                            break;
-                        case "Distancex3":
-                            Me.distanceMultiplier = 3;
-                            handler1 = new Handler();
-                            handler1.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Me.distanceMultiplier = 1;
-                                }
-                            }, 10000);
-                            break;
-                        case "Shield":
-                            break;
-                    }
-                    mContext.isUseItem = true;
-                    mContext.itemBagLayout.collapsePanel();
-                    mContext.setItemAnimation(item);
-                    Me.items.remove(item);
-                    notifyDataSetChanged();
-                }
-            });
         }
-
-
         return convertView;
     }
 
