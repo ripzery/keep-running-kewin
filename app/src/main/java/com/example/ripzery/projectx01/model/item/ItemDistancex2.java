@@ -16,8 +16,10 @@ import com.google.android.gms.maps.model.LatLng;
 public class ItemDistancex2 implements Item {
     public static final String type = "Distancex2";
     public static final int id_thumb = R.drawable.speed_x2;
+    public static final int effect_time = 15; // กำหนดระยะเวลาที่ไอเทมนี้ทำงาน
     LatLng latLng;
     private BitmapDescriptor icon;
+
 
     public ItemDistancex2(MapsActivity mapsActivity) {
         Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.pin_speedx2),
@@ -50,5 +52,10 @@ public class ItemDistancex2 implements Item {
     @Override
     public BitmapDescriptor getMarkerIcon() {
         return icon;
+    }
+
+    @Override
+    public int getEffectTimeOut() {
+        return effect_time;
     }
 }

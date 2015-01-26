@@ -57,4 +57,9 @@ public class Pistol extends Gun {
     public BitmapDescriptor getMarkerIcon() {
         return icon;
     }
+
+    @Override
+    public int getEffectTimeOut() {
+        return 0;
+    }
 }

@@ -85,16 +85,6 @@ public class BagAdapter extends BaseAdapter {
                     switch (item.getType()) {
                         case "Distancex2":
                             Me.distanceMultiplier = 2;
-                            handler1 = new Handler();
-                            handler1.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Me.distanceMultiplier = 1;
-                                }
-                            }, 10000);
-                            mContext.isUseItem = true;
-                            mContext.itemBagLayout.collapsePanel();
-                            mContext.setItemAnimation(item.getThumb());
                             break;
                         case "Distancex3":
                             Me.distanceMultiplier = 3;
@@ -107,10 +97,13 @@ public class BagAdapter extends BaseAdapter {
                             }, 10000);
                             break;
                         case "Shield":
-
                             break;
                     }
+                    mContext.isUseItem = true;
+                    mContext.itemBagLayout.collapsePanel();
+                    mContext.setItemAnimation(item);
                     Me.items.remove(item);
+                    notifyDataSetChanged();
                 }
             });
         }

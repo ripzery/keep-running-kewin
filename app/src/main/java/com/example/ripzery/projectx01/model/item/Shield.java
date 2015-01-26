@@ -18,6 +18,7 @@ import com.google.android.gms.maps.model.LatLng;
 public class Shield implements Item {
     public static final String type = "Shield";
     public static final int id_thumb = R.drawable.distancex2; // TODO : need to change
+    public static final int effect_time = 8; // กำหนดระยะเวลาที่ไอเทมนี้ทำงาน
     LatLng latLng;
     private BitmapDescriptor icon;
 
@@ -52,5 +53,10 @@ public class Shield implements Item {
     @Override
     public BitmapDescriptor getMarkerIcon() {
         return icon;
+    }
+
+    @Override
+    public int getEffectTimeOut() {
+        return effect_time;
     }
 }

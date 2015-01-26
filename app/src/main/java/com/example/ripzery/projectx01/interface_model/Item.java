@@ -17,4 +17,6 @@ public interface Item {
     public String getType();
 
     public BitmapDescriptor getMarkerIcon();
+
+    public int getEffectTimeOut(); // use with itemDistancex2,x3
 }

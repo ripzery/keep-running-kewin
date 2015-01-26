@@ -16,6 +16,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
@@ -24,6 +25,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.GridView;
@@ -41,6 +43,7 @@ import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.interface_model.Item;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.example.ripzery.projectx01.model.item.ItemDistancex2;
+import com.example.ripzery.projectx01.model.item.ItemDistancex3;
 import com.example.ripzery.projectx01.model.monster.KingKong;
 import com.example.ripzery.projectx01.model.weapon.Desert;
 import com.example.ripzery.projectx01.model.weapon.Gun;
@@ -127,7 +130,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
     private ArrayList<Marker> listItems = new ArrayList<Marker>();
     private KingKong mMonster;
-    private ItemDistancex2 itemDistancex2;
+    private Item item;
     private AlertDialog.Builder builder;
     private Sensor accelerometerSensor;
     private Sensor magneticFieldSensor;
@@ -153,6 +156,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private CheckConnectivity connectivity;
     private ConnectGoogleApiClient connectGoogleApiClient;
     private AnimatorSet animateItemUseSet;
+    private PowerManager.WakeLock mWakeLock;
+    private Handler handlerItemStatus;
+    private Runnable runnableItemStatus;
+    private Item itemUse;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -172,6 +179,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         checkLocation = new CheckLocation(this, locationManager);
         locationManager.addGpsStatusListener(checkLocation);
 
+        // กำหนดให้ screen always on
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // กำหนดค่าเริ่มต้นให้ item
         Me.guns.add(new Desert(this, 14));
@@ -332,6 +341,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         @Override
                         public void onAnimationEnd(Animator animation) {
                             itemStatus.setVisibility(View.VISIBLE);
+                            itemStatus.setIconImageResource(itemUse.getThumb());
+                            itemStatus.setAlpha(0.7f);
                             YoYo.with(Techniques.Landing)
                                     .duration(600)
                                     .withListener(new Animator.AnimatorListener() {
@@ -342,7 +353,32 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                                         @Override
                                         public void onAnimationEnd(Animator animation) {
+                                            final int effectTime = itemUse.getEffectTimeOut();
                                             itemStatus.setAlpha(0.7f);
+                                            Me.distanceMultiplier = itemUse.getType().equals("Distancex2") ? 2 : 3;
+                                            if (itemUse != null) {
+                                                itemStatus.setMax(effectTime);
+                                                itemStatus.setProgress(effectTime);
+                                            }
+
+                                            handlerItemStatus = new Handler();
+                                            runnableItemStatus = new Runnable() {
+                                                int count = 0;
+
+                                                @Override
+                                                public void run() {
+                                                    count++;
+                                                    itemStatus.setProgress((float) (effectTime - count));
+                                                    if (count >= effectTime) {
+                                                        Me.distanceMultiplier = 1;
+                                                        handlerItemStatus.removeCallbacks(this);
+                                                        itemStatus.setVisibility(View.INVISIBLE);
+                                                    } else {
+                                                        handlerItemStatus.postDelayed(this, 1000);
+                                                    }
+                                                }
+                                            };
+                                            handlerItemStatus.postDelayed(runnableItemStatus, 1000);
                                         }
 
                                         @Override
@@ -500,16 +536,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public boolean onMarkerClick(Marker marker) {
                 // Handle self-items
                 if (ALL_SELF_ITEM.contains(marker.getTitle())) {
-                    marker.remove();
-                    listItems.remove(marker);
-                    Me.items.add(itemDistancex2);
-                    allItems.remove(itemDistancex2);
-                    mBagAdapter.notifyDataSetChanged();
+                    Me.items.add(allItems.get(listItems.indexOf(marker)));
                 }
                 //Handle Monster-items
                 else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
-
+                    Me.guns.add((Gun) allItems.get(listItems.indexOf(marker)));
                 }
+                allItems.remove(listItems.indexOf(marker));
+                listItems.remove(marker);
+                marker.remove();
+                mBagAdapter.notifyDataSetChanged();
                 return true;
             }
         });
@@ -718,6 +754,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     public void keepGeneratingItem() {
         genItemHandler = new Handler();
+        int range = max_generate_item_timeout - min_generate_item_timeout + 1;
+        timeout = (int) ((Math.random() * range) + min_generate_item_timeout);
+        timeout = timeout * 1000; // convert to millisec
         keepGenerateItem = new Runnable() {
             @Override
             public void run() {
@@ -726,15 +765,34 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int range = max_generate_item_timeout - min_generate_item_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_item_timeout);
                     timeout = timeout * 1000; // convert to millisec
-                    itemDistancex2 = new ItemDistancex2(MapsActivity.this);
-                    addItem(itemDistancex2);
+                    int random_item = (int) (Math.random() * (ALL_SELF_ITEM.size() + ALL_MONSTER_ITEM.size()));
+                    if (random_item < ALL_SELF_ITEM.size()) {
+                        switch (ALL_SELF_ITEM.get(random_item)) {
+                            case "Distancex2":
+                                item = new ItemDistancex2(MapsActivity.this);
+                                break;
+                            case "Distancex3":
+                                item = new ItemDistancex3(MapsActivity.this);
+                                break;
+                        }
+                    } else {
+                        switch (ALL_MONSTER_ITEM.get(random_item - ALL_SELF_ITEM.size())) {
+                            case "Pistol":
+                                item = new Pistol(MapsActivity.this, 20);
+                                break;
+                            case "Desert":
+                                item = new Desert(MapsActivity.this, 20);
+                                break;
+                        }
+                    }
+                    addItem(item);
                 } else {
-                    timeout = 1000;
+                    timeout = 30000;
                 }
                 genItemHandler.postDelayed(this, timeout);
             }
         };
-        genItemHandler.postDelayed(keepGenerateItem, 30000);
+        genItemHandler.postDelayed(keepGenerateItem, timeout);
 
     }
 
@@ -858,6 +916,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     private void addItem(Item item) {
+        allItems.add(item);
         final Marker mItem = mMap.addMarker(getRandomMarker(playground, item).title(item.getType()));
         listItems.add(mItem);
     }
@@ -901,6 +960,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
         if (allRunnableMonster.size() > 0 && keepGenerateGhost != null) {
             for (Runnable r : allRunnableMonster) {
                 handler.removeCallbacks(r);
@@ -1083,7 +1143,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                     public void onAnimationEnd(Animator animation) {
                                         playerStatus.setVisibility(View.VISIBLE);
                                         YoYo.with(Techniques.Landing)
-                                                .duration(1000)
+                                                .duration(800)
                                                 .withListener(new Animator.AnimatorListener() {
                                                     @Override
                                                     public void onAnimationStart(Animator animation) {
@@ -1095,7 +1155,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                                         playerStatus.setAlpha(0.7f);
                                                         mBag.setVisibility(View.VISIBLE);
                                                         YoYo.with(Techniques.SlideInLeft)
-                                                                .duration(800)
+                                                                .duration(500)
                                                                 .withListener(new Animator.AnimatorListener() {
                                                                     @Override
                                                                     public void onAnimationStart(Animator animation) {
@@ -1104,8 +1164,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                                                                     @Override
                                                                     public void onAnimationEnd(Animator animation) {
-                                                                        YoYo.with(Techniques.Shake)
-                                                                                .duration(300)
+                                                                        YoYo.with(Techniques.RubberBand)
+                                                                                .duration(400)
                                                                                 .playOn(mBag);
                                                                     }
 
@@ -1160,10 +1220,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .playOn(cbHome);
     }
 
-    public void setItemAnimation(int image) {
-        itemStatus.setVisibility(View.GONE);
+    public void setItemAnimation(Item item) {
+        itemUse = item;
+        itemStatus.setVisibility(View.INVISIBLE);
+        if (handlerItemStatus != null) {
+            handlerItemStatus.removeCallbacks(runnableItemStatus);
+        }
         mItemUse.setTranslationY(0);
-        mItemUse.setImageResource(image);
+        mItemUse.setImageResource(itemUse.getThumb());
         mItemUse.setVisibility(View.VISIBLE);
     }
 

@@ -60,4 +60,9 @@ public class Desert extends Gun {
         return icon;
     }
 
+    @Override
+    public int getEffectTimeOut() {
+        return 0;
+    }
+
 }

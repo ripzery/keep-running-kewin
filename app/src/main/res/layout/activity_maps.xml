@@ -67,7 +67,7 @@
                         android:layout_height="wrap_content"
                         android:layout_margin="@dimen/row_left_right_margin"
                         android:layout_toRightOf="@+id/cbHome"
-                        android:alpha="0.6"
+                        android:alpha="0.6  "
                         android:visibility="gone"
                         app:backgroundColor="@color/circle_view_dark"
                         app:headerColor="@color/dark_sub"
@@ -103,13 +103,13 @@
                         android:layout_below="@+id/cvTextM"
                         android:layout_marginLeft="@dimen/row_left_right_margin"
                         android:alpha="0.5"
-                        android:visibility="gone"
+                        android:visibility="invisible"
                         app:backgroundColor="@color/circle_view"
                         app:headerColor="#607D8B"
                         app:iconSize="40dp"
                         app:iconSrc="@drawable/speed_x2"
-                        app:max="100"
-                        app:progress="100"
+                        app:max="15"
+                        app:progress="15"
                         app:progressColor="#90A4AE" />
 
 
@@ -226,8 +226,8 @@
         android:layout_marginLeft="@dimen/row_left_right_margin"
         android:layout_marginRight="@dimen/row_left_right_margin"
         android:background="#00000000"
-        android:tag="@color/dark_sub"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:cb_color="@color/dark_sub" />
 
 </FrameLayout>
 

@@ -17,6 +17,7 @@ public class ItemDistancex3 implements Item {
     public static final String type = "Distancex3";
     public static final int id = R.drawable.pin_speedx3;
     public static final int id_thumb = R.drawable.speed_x3;
+    public static final int effect_time = 10;
     LatLng latLng;
     private BitmapDescriptor icon;
 
@@ -51,5 +52,10 @@ public class ItemDistancex3 implements Item {
     @Override
     public BitmapDescriptor getMarkerIcon() {
         return icon;
+    }
+
+    @Override
+    public int getEffectTimeOut() {
+        return effect_time;
     }
 }
