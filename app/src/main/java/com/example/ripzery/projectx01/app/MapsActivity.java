@@ -6,7 +6,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.Sensor;
@@ -22,7 +21,6 @@ import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -119,8 +117,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     CircleButton cbHome;
     @InjectView(R.id.playerStatus)
     IconRoundCornerProgressBar playerStatus;
-    @InjectView(R.id.itemUse)
-    CircleButton mItemUse;
+    //    @InjectView(R.id.itemUse)
+//    CircleButton mItemUse;
     @InjectView(R.id.itemStatus)
     IconRoundCornerProgressBar itemStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
@@ -129,13 +127,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-
+    private int[] locationDistance, locationItem;
     private LatLngBounds playground;
     private Handler handler = new Handler();
     private Runnable runnable;
-    private ArrayList<String> listGhostName = new ArrayList<String>();
-    private ArrayList<Marker> listMGhost = new ArrayList<Marker>();
-    private ArrayList<Marker> listItems = new ArrayList<Marker>();
+    private ArrayList<String> listMonsterName = new ArrayList<String>();
+    private ArrayList<Marker> listMarkerMonster = new ArrayList<Marker>();
+    private ArrayList<Marker> listMarkerItems = new ArrayList<Marker>();
     private ItemDistancex2 itemDistancex2;
     private AlertDialog.Builder builder;
     private Sensor accelerometerSensor;
@@ -174,7 +172,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Runnable runnableItemStatus;
     private Item itemUse;
     private KingKong mMonster;
-    private Item item;
+    private Item generatedItem;
+    private float px;
+    private float moveDistance;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -201,6 +201,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         Me.guns.add(new Desert(this, 14));
         Me.guns.add(new Pistol(this, 60));
         Me.guns.add(new Desert(this, 60));
+        Me.items.add(new ItemDistancex2(this));
+        Me.items.add(new ItemDistancex2(this));
+        Me.items.add(new ItemDistancex2(this));
         Me.items.add(new ItemDistancex2(this));
 
         Log.d("Location Enabled", checkLocation.isLocationEnabled() + "");
@@ -305,11 +308,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         detailItemBtn = (Button) findViewById(R.id.detailItemBtn);
 
         useBtn = (FloatingActionButton) findViewById(R.id.use_btn);
+
+        handlerItemStatus = new Handler();
         //facUseBtn = (FloatingActionButton)findViewById(R.id.use_btn);
 
 
         itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
-        itemBagLayout.setAnchorPoint(0.4f);
+
+        animateItemUseSet = new AnimatorSet();
     }
 
     private void initListener() {
@@ -339,18 +345,22 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                // Handle self-items
-                if (ALL_SELF_ITEM.contains(marker.getTitle())) {
-                    Me.items.add(allItems.get(listItems.indexOf(marker)));
+
+                if (!listMarkerMonster.contains(marker)) {
+                    // Handle self-items
+                    if (ALL_SELF_ITEM.contains(marker.getTitle())) {
+                        Me.items.add(allItems.get(listMarkerItems.indexOf(marker)));
+                    }
+                    //Handle Monster-items
+                    else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
+                        Me.guns.add((Gun) allItems.get(listMarkerItems.indexOf(marker)));
+                    }
+                    allItems.remove(listMarkerItems.indexOf(marker));
+                    listMarkerItems.remove(marker);
+                    marker.remove();
+                    mBagAdapter.notifyDataSetChanged();
                 }
-                //Handle Monster-items
-                else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
-                    Me.guns.add((Gun) allItems.get(listItems.indexOf(marker)));
-                }
-                allItems.remove(listItems.indexOf(marker));
-                listItems.remove(marker);
-                marker.remove();
-                mBagAdapter.notifyDataSetChanged();
+
                 return true;
             }
         });
@@ -367,24 +377,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 mBagAdapter.notifyDataSetChanged();
             }
         });
+
         detailItemBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showDetailItemDialog();
             }
         });
+
         useBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // TODO เริ่ม Activity ใหม่
-                if (Me.chosenGun >= Me.guns.size()) {
-                    isUseItem = true;
-                    itemBagLayout.collapsePanel();
-                    setItemAnimation(item);
-                    Me.items.remove(item);
-                    mBagAdapter.notifyDataSetChanged();
-                } else {
+                if (Me.chosenGun < Me.guns.size()) {
                     passAllMonster();
+                } else {
+                    isUseItem = true;
+                    Item useItem = Me.items.get(Me.chosenGun - Me.guns.size());
+                    setItemAnimation(useItem);
+                    Me.items.remove(useItem);
+                    mBagAdapter.notifyDataSetChanged();
                 }
             }
         });
@@ -398,107 +410,71 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             @Override
             public void onPanelCollapsed(View view) {
                 isExpanded = false;
-                if (!isUseItem) {
-                    mBag.setVisibility(View.VISIBLE);
-                    gView.setVisibility(View.GONE);
-                    final Point p = getLocationInView(revealColorView, mBag);
-                    revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
-                    mBag.setTranslationX(0);
-                    mBag.setTranslationY(0);
-                } else {
+                mBag.setVisibility(View.VISIBLE);
+                gView.setVisibility(View.GONE);
+                final Point p = getLocationInView(revealColorView, mBag);
+                revealColorView.hide(p.x, p.y, backgroundColor, 0, 300, null);
+                mBag.setTranslationX(0);
+                mBag.setTranslationY(0);
+
+                if (isUseItem) {
                     isUseItem = false;
-                    final int[] locationItem = new int[2];
-                    final int[] locationDistance = new int[2];
-                    mItemUse.getLocationOnScreen(locationItem);
-                    mCvDistanceStatus.getLocationOnScreen(locationDistance);
                     /// Converts 14 dip into its equivalent px
 
-                    Resources r = getResources();
-                    float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, r.getDisplayMetrics());
+                    itemStatus.setIconImageResource(itemUse.getThumb());
+                    itemStatus.setAlpha(0.7f);
+                    final int effectTime = itemUse.getEffectTimeOut();
+                    if (itemUse != null) {
+                        itemStatus.setMax(effectTime);
+                        itemStatus.setProgress(effectTime);
+                    }
 
-                    animateItemUseSet = new AnimatorSet();
-                    animateItemUseSet.playTogether(
-                            Glider.glide(Skill.CircEaseIn, 1200, ObjectAnimator.ofFloat(mItemUse, "translationY", 0, (locationDistance[1] - locationItem[1] + px + mBag.getHeight())))
-                    );
+                    YoYo.with(Techniques.FadeInLeft)
+                            .duration(300)
+                            .withListener(new Animator.AnimatorListener() {
 
-                    animateItemUseSet.setDuration(500);
-                    Log.d("translate", (locationItem[1] - locationDistance[1]) + "");
-                    animateItemUseSet.start();
-                    animateItemUseSet.addListener(new Animator.AnimatorListener() {
-                        @Override
-                        public void onAnimationStart(Animator animation) {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+                                    itemStatus.setVisibility(View.VISIBLE);
+                                }
 
-                        }
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    itemStatus.setAlpha(0.7f);
 
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            itemStatus.setVisibility(View.VISIBLE);
-                            itemStatus.setIconImageResource(itemUse.getThumb());
-                            itemStatus.setAlpha(0.7f);
-                            YoYo.with(Techniques.Landing)
-                                    .duration(600)
-                                    .withListener(new Animator.AnimatorListener() {
-                                        @Override
-                                        public void onAnimationStart(Animator animation) {
+                                    Me.distanceMultiplier = itemUse.getType().equals("Distancex2") ? 2 : 3;
 
-                                        }
+                                    runnableItemStatus = new Runnable() {
+                                        int count = 0;
 
                                         @Override
-                                        public void onAnimationEnd(Animator animation) {
-                                            final int effectTime = itemUse.getEffectTimeOut();
-                                            itemStatus.setAlpha(0.7f);
-                                            Me.distanceMultiplier = itemUse.getType().equals("Distancex2") ? 2 : 3;
-                                            if (itemUse != null) {
-                                                itemStatus.setMax(effectTime);
-                                                itemStatus.setProgress(effectTime);
+                                        public void run() {
+                                            count++;
+                                            itemStatus.setProgress((float) (effectTime - count));
+                                            if (count >= effectTime) {
+                                                Me.distanceMultiplier = 1;
+                                                handlerItemStatus.removeCallbacks(this);
+                                                itemStatus.setVisibility(View.INVISIBLE);
+                                            } else {
+                                                handlerItemStatus.postDelayed(this, 1000);
                                             }
-
-                                            handlerItemStatus = new Handler();
-                                            runnableItemStatus = new Runnable() {
-                                                int count = 0;
-
-                                                @Override
-                                                public void run() {
-                                                    count++;
-                                                    itemStatus.setProgress((float) (effectTime - count));
-                                                    if (count >= effectTime) {
-                                                        Me.distanceMultiplier = 1;
-                                                        handlerItemStatus.removeCallbacks(this);
-                                                        itemStatus.setVisibility(View.INVISIBLE);
-                                                    } else {
-                                                        handlerItemStatus.postDelayed(this, 1000);
-                                                    }
-                                                }
-                                            };
-                                            handlerItemStatus.postDelayed(runnableItemStatus, 1000);
                                         }
+                                    };
+                                    handlerItemStatus.postDelayed(runnableItemStatus, 1000);
+                                }
 
-                                        @Override
-                                        public void onAnimationCancel(Animator animation) {
+                                @Override
+                                public void onAnimationCancel(Animator animation) {
 
-                                        }
+                                }
 
-                                        @Override
-                                        public void onAnimationRepeat(Animator animation) {
+                                @Override
+                                public void onAnimationRepeat(Animator animation) {
 
-                                        }
-                                    })
-                                    .playOn(itemStatus);
-                            mItemUse.setVisibility(View.GONE);
-                        }
-
-                        @Override
-                        public void onAnimationCancel(Animator animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animator animation) {
-
-                        }
-                    });
+                                }
+                            })
+                            .playOn(itemStatus);
                 }
-
             }
 
             @Override
@@ -649,10 +625,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void run() {
 
                 // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
-                if (!listMGhost.isEmpty() && !listGhostName.isEmpty() && allMonsters.get(allMonsters.indexOf(monster)).getHp() <= 0) {
+                if (!listMarkerMonster.isEmpty() && !listMonsterName.isEmpty() && allMonsters.get(allMonsters.indexOf(monster)).getHp() <= 0) {
 
-                    listMGhost.remove(0);
-                    listGhostName.remove(marker.getTitle());
+                    listMarkerMonster.remove(0);
+                    listMonsterName.remove(marker.getTitle());
                     allMonsters.remove(monster);
                     updateMonsterId();
                     allRunnableMonster.remove(this);
@@ -731,10 +707,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 } else { // เลื่อนจนถึงผู้เล่นแล้ว
 
                     /* ชุดโค้ดที่ทำการลบ marker ออกจาก maps
-                    if (!listMGhost.isEmpty() && !listGhostName.isEmpty()) {
+                    if (!listMarkerMonster.isEmpty() && !listMonsterName.isEmpty()) {
 
-                            listMGhost.remove(0);
-                            listGhostName.remove(marker.getTitle());
+                            listMarkerMonster.remove(0);
+                            listMonsterName.remove(marker.getTitle());
                             allMonsters.remove(monster);
                             updateMonsterId();
                             allRunnableMonster.remove(this);
@@ -770,7 +746,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             @Override
             public void run() {
 
-                if (listMGhost.size() < MAX_GHOST_AT_ONCE) {
+                if (listMarkerMonster.size() < MAX_GHOST_AT_ONCE) {
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
@@ -795,7 +771,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             @Override
             public void run() {
 
-                if (listItems.size() < MAX_ITEM_AT_ONCE) {
+                if (listMarkerItems.size() < MAX_ITEM_AT_ONCE) {
                     int range = max_generate_item_timeout - min_generate_item_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_item_timeout);
                     timeout = timeout * 1000; // convert to millisec
@@ -803,23 +779,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     if (random_item < ALL_SELF_ITEM.size()) {
                         switch (ALL_SELF_ITEM.get(random_item)) {
                             case "Distancex2":
-                                item = new ItemDistancex2(MapsActivity.this);
+                                generatedItem = new ItemDistancex2(MapsActivity.this);
                                 break;
                             case "Distancex3":
-                                item = new ItemDistancex3(MapsActivity.this);
+                                generatedItem = new ItemDistancex3(MapsActivity.this);
                                 break;
                         }
                     } else {
                         switch (ALL_MONSTER_ITEM.get(random_item - ALL_SELF_ITEM.size())) {
                             case "Pistol":
-                                item = new Pistol(MapsActivity.this, 20);
+                                generatedItem = new Pistol(MapsActivity.this, 20);
                                 break;
                             case "Desert":
-                                item = new Desert(MapsActivity.this, 20);
+                                generatedItem = new Desert(MapsActivity.this, 20);
                                 break;
                         }
                     }
-                    addItem(item);
+                    addItem(generatedItem);
                 } else {
                     timeout = 30000;
                 }
@@ -926,9 +902,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         //กำหนดชื่อให้ปีศาจแต่ละตัว
         String name = "Ghost";
         for (int i = 1; i <= 5; i++) {
-            if (!listGhostName.contains(name + i)) {
+            if (!listMonsterName.contains(name + i)) {
                 ghost.setType(name + i);
-                listGhostName.add(name + i);
+                listMonsterName.add(name + i);
                 break;
             }
         }
@@ -946,13 +922,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             Log.d("id", allMonsters.get(i).getId() + "");
         }
         animateMarker(allMonsters.get(allMonsters.size() - 1), mGhost, location, true, ghost.getSpeed());
-        listMGhost.add(mGhost);
+        listMarkerMonster.add(mGhost);
     }
 
     private void addItem(Item item) {
         allItems.add(item);
         final Marker mItem = mMap.addMarker(getRandomMarker(playground, item).title(item.getType()));
-        listItems.add(mItem);
+        listMarkerItems.add(mItem);
     }
 
     @Override
@@ -1017,7 +993,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (myArrow != null && listMGhost.size() > 0) {
+        if (myArrow != null && listMarkerMonster.size() > 0) {
             int sensorType = event.sensor.getType();
             if (sensorType == Sensor.TYPE_ACCELEROMETER) {
                 accelerometerData = event.values;
@@ -1262,6 +1238,27 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                                                     public void onAnimationEnd(Animator animation) {
                                                                         YoYo.with(Techniques.RubberBand)
                                                                                 .duration(400)
+                                                                                .withListener(new Animator.AnimatorListener() {
+                                                                                    @Override
+                                                                                    public void onAnimationStart(Animator animation) {
+
+                                                                                    }
+
+                                                                                    @Override
+                                                                                    public void onAnimationEnd(Animator animation) {
+
+                                                                                    }
+
+                                                                                    @Override
+                                                                                    public void onAnimationCancel(Animator animation) {
+
+                                                                                    }
+
+                                                                                    @Override
+                                                                                    public void onAnimationRepeat(Animator animation) {
+
+                                                                                    }
+                                                                                })
                                                                                 .playOn(mBag);
                                                                     }
 
@@ -1319,12 +1316,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public void setItemAnimation(Item item) {
         itemUse = item;
         itemStatus.setVisibility(View.INVISIBLE);
-        if (handlerItemStatus != null) {
+        if (runnableItemStatus != null) {
             handlerItemStatus.removeCallbacks(runnableItemStatus);
+            Log.d("remove", "!");
         }
-        mItemUse.setTranslationY(0);
-        mItemUse.setImageResource(itemUse.getThumb());
-        mItemUse.setVisibility(View.VISIBLE);
+        itemBagLayout.collapsePanel();
     }
 
     public void passAllMonster() {

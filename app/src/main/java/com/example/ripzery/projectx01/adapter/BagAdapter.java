@@ -55,7 +55,6 @@ public class BagAdapter extends BaseAdapter {
     public View getView(final int position, View convertView, ViewGroup parent) {
 
 
-
         if (convertView == null) {
            /* imageButton = new SquareImageButton(mContext);
             imageButton.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -75,7 +74,6 @@ public class BagAdapter extends BaseAdapter {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    Me.selectGun = true;
                     Me.chosenGun = position;
                     ((MapsActivity) mContext).passAllMonster(true, toggleButton);
 
@@ -91,6 +89,7 @@ public class BagAdapter extends BaseAdapter {
 
             image.setImageResource(Me.guns.get(position).getThumb());
             number.setText(Me.guns.get(position).getBullet() + "");
+            Me.selectGun = true;
 
               /*      .setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -102,14 +101,12 @@ public class BagAdapter extends BaseAdapter {
             });*/
             //ถ้าเป็นไอเทม
         } else {
+            Me.selectGun = false;
             final Item item = Me.items.get(position - Me.guns.size());
             image.setImageResource(item.getThumb());
-            image.setImageResource(Me.items.get(position - Me.guns.size()).getThumb());
         }
         return convertView;
     }
-
-
 
 
 
