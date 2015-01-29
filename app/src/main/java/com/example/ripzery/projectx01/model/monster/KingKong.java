@@ -23,7 +23,7 @@ public class KingKong implements Monster {
     private double latitude;
     private double longitude;
     private int x, y;
-    private int attackPower = 20;
+    private int attackPower = 1;
     private int hp = 30;
 
     public KingKong(MapsActivity mapsActivity) {

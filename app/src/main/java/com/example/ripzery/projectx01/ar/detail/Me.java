@@ -9,7 +9,7 @@ import java.util.ArrayList;
  * Created by Rawipol on 1/13/15 AD.
  */
 public class Me {
-    public static final float myMaxHP = 100;
+    public static final float myMaxHP = 70;
     public static float myHP = myMaxHP;
     public static int distanceMultiplier = 1;
 

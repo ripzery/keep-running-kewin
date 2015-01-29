@@ -117,8 +117,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     CircleButton cbHome;
     @InjectView(R.id.playerStatus)
     IconRoundCornerProgressBar playerStatus;
-    //    @InjectView(R.id.itemUse)
-//    CircleButton mItemUse;
     @InjectView(R.id.itemStatus)
     IconRoundCornerProgressBar itemStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
@@ -197,15 +195,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // กำหนดให้ screen always on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        // กำหนดค่าเริ่มต้นให้ item
-        Me.guns.add(new Desert(this, 14));
-        Me.guns.add(new Pistol(this, 60));
-        Me.guns.add(new Desert(this, 60));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
-
         Log.d("Location Enabled", checkLocation.isLocationEnabled() + "");
         if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
             AlertDialog.Builder setting = new AlertDialog.Builder(this)
@@ -271,13 +260,27 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        ALL_MONSTER_ITEM.add("Shotgun");
 //        ALL_MONSTER_ITEM.add("Mine");
 
+
+        // กำหนดค่าเริ่มต้นให้ static var
+        Me.myHP = 70;
+        Me.distanceMultiplier = 1;
+
+        // กำหนดค่าเริ่มต้นให้ item
+        Me.guns.add(new Desert(this, 14));
+        Me.guns.add(new Pistol(this, 60));
+        Me.guns.add(new Desert(this, 60));
+        Me.items.add(new ItemDistancex2(this));
+        Me.items.add(new ItemDistancex2(this));
+        Me.items.add(new ItemDistancex2(this));
+        Me.items.add(new ItemDistancex2(this));
+
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.getUiSettings().setCompassEnabled(false);
-        mMap.getUiSettings().setZoomGesturesEnabled(true);
+        mMap.getUiSettings().setZoomGesturesEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
-        mMap.getUiSettings().setScrollGesturesEnabled(true);
+        mMap.getUiSettings().setScrollGesturesEnabled(false);
 
         progress = new ProgressDialog(this);
         progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
@@ -651,11 +654,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
                     if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
 
-                        adjustDuration = adjustDuration - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+                        adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))));
 
                     } else { // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่ามากขึ้น
 
-                        adjustDuration = adjustDuration + ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, mCurrentLatLng) / (speed / 1000.0)));
+                        adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))));
                     }
 
                     // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
@@ -691,20 +694,21 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
 //                marker.showInfoWindow();
 //                marker.setAlpha(t);
+                int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition());
 
-                if (DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition()) < 50 && !isVibrate) {
+                if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
                     Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
                     // Vibrate for 500 milliseconds
                     v.vibrate(500);
                     isVibrate = true;
                 }
 
-                //ถ้าเลื่อนไม่ถึงผู้เล่นก็ให้เลื่อนต่อไปเรื่อยๆในทุกๆ 16 ms (จะได้ 60fps)
-                if (t < 1.0) {
+                //ถ้า ปีศาจยังมาไม่ใกล้ผู้เล่นมากกว่า xxx เมตร ก็ให้วิ่งต่อ
+                if (distanceBetweenMonsterAndPlayer > 10) {
                     handler.postDelayed(this, 16);
                     run_time++;
 
-                } else { // เลื่อนจนถึงผู้เล่นแล้ว
+                } else { // เลื่อนจนถึงผู้เล่นแล้ว (โจมตีได้)
 
                     /* ชุดโค้ดที่ทำการลบ marker ออกจาก maps
                     if (!listMarkerMonster.isEmpty() && !listMonsterName.isEmpty()) {
@@ -724,10 +728,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     }
                     */
 
-                    int monsterIndex = allMonsters.indexOf(monster);
-                    Me.myHP -= allMonsters.get(monsterIndex).getAttackPower();
-                    handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
+                    Log.d("Attack!", "Monster No." + allMonsters.indexOf(monster));
+                    if (Me.myHP >= monster.getAttackPower())
+                        Me.myHP -= monster.getAttackPower();
 
+                    if (Me.myHP > 50) {
+                        playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
+                        playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
+                    } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+                        playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
+                        playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
+                    } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+                        playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
+                        playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+                    }
+                    playerStatus.setProgress(Me.myHP);
+//                    Log.d("HpProgress",""+playerStatus.getProgress());
+                    handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
                 }
             }
         };
@@ -751,7 +768,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
                     mMonster = new KingKong(MapsActivity.this);
-                    mMonster.setSpeed(3);
+                    mMonster.setSpeed(10);
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;

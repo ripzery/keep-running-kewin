@@ -68,15 +68,15 @@
                         android:layout_height="wrap_content"
                         android:layout_margin="@dimen/row_left_right_margin"
                         android:layout_toRightOf="@+id/cbHome"
-                        android:alpha="0.6  "
-                        android:visibility="gone"
+                        android:alpha="0.6"
+                        android:visibility="invisible"
                         app:backgroundColor="@color/circle_view_dark"
-                        app:headerColor="@color/dark_sub"
+                        app:headerColor="#388E3D"
                         app:iconSize="40dp"
                         app:iconSrc="@drawable/ic_person"
                         app:max="100"
                         app:progress="100"
-                        app:progressColor="@color/primary" />
+                        app:progressColor="#4CAF50" />
 
                     <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
                         android:id="@+id/cvTextM"
@@ -225,13 +225,13 @@
                                 android:textSize="15sp" />
 
                             <Button
-                            android:id="@+id/detailItemBtn"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
+                                android:id="@+id/detailItemBtn"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
                                 android:background="@drawable/trans_square_btn"
-                            android:padding="15dp"
+                                android:padding="15dp"
                                 android:text="DETAIL"
-                            android:textColor="@color/primary_dark_material_light"
+                                android:textColor="@color/primary_dark_material_light"
                                 android:textSize="15sp" />
 
                         </LinearLayout>
@@ -253,7 +253,6 @@
 
 
                 </FrameLayout>
-
 
 
             </RelativeLayout>
