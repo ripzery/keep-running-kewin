@@ -25,8 +25,12 @@ public class KingKong implements Monster {
     private int x, y;
     private int attackPower = 1;
     private int hp = 30;
+    private MapsActivity mapsActivity;
+    private boolean isRaged = false;
 
     public KingKong(MapsActivity mapsActivity) {
+
+        this.mapsActivity = mapsActivity;
 
         Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.monster_ic),
                 120,
@@ -71,6 +75,20 @@ public class KingKong implements Monster {
         return icon;
     }
 
+    public void setIcon(int drawable) {
+        if (drawable == R.drawable.monster_ic) {
+            isRaged = false;
+        } else {
+            isRaged = true;
+        }
+        Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), drawable),
+                120,
+                120,
+                false);
+
+        icon = BitmapDescriptorFactory.fromBitmap(resize);
+    }
+
     @Override
     public LatLng getLatLng() {
         return new LatLng(latitude, longitude);
@@ -102,5 +120,9 @@ public class KingKong implements Monster {
     public void setPoint(Point xy) {
         this.x = xy.x;
         this.y = xy.y;
+    }
+
+    public boolean isRaged() {
+        return isRaged;
     }
 }
