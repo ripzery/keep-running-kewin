@@ -17,7 +17,7 @@ import com.google.android.gms.maps.model.LatLng;
 public class KingKong implements Monster {
 
     private int id;
-    private boolean isDie = true;
+    private boolean isDie = false;
     private String type;
     private double speed;
     private BitmapDescriptor icon;
@@ -107,6 +107,10 @@ public class KingKong implements Monster {
         return hp;
     }
 
+    public void setHp(int hp) {
+        this.hp = hp;
+    }
+
     @Override
     public int getAttackPower() {
         return attackPower;
@@ -127,11 +131,11 @@ public class KingKong implements Monster {
         return isRaged;
     }
 
-    public void setDie(boolean isDie) {
-        this.isDie = isDie;
-    }
-
     public boolean isDie() {
         return isDie;
+    }
+
+    public void setDie(boolean isDie) {
+        this.isDie = isDie;
     }
 }

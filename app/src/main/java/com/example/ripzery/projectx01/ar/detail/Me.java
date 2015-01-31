@@ -23,6 +23,13 @@ public class Me {
 
     public static int bagMaxCapacity = 12;
 
+    public static int weight = 70;
+    public static int totalDuration = 0;
+    public static float highestSpeed = 0;
+    public static double averageSpeed = 0;
+    public static float calories = 0;
+
+
 }
 
 

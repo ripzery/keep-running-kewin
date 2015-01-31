@@ -84,6 +84,7 @@ import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 
 import at.markushi.ui.CircleButton;
@@ -98,6 +99,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
     public static final int DATA_ENABLED_REQ = 1;
     public static final int LOCATION_ENABLED_REQ = 2;
+    private static int maxDistance = 1000;
     public final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     public final int MAX_ITEM_AT_ONCE = 3; // กำหนดจำนวนไอเทมสูงสุดในแผนที่
     public GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -180,6 +182,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private AnimatorSet animationGetItemSet;
     private GoogleMap.OnMarkerClickListener itemMarkerClickListener;
     private Location mCurrentLocation;
+    private AlertDialog.Builder endGameDialog;
+    private Calendar startGameTime;
+    private Calendar endGameTime;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -327,6 +332,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
 
+        endGameDialog = new AlertDialog.Builder(MapsActivity.this)
+                .setPositiveButton("Result", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                })
+                .setNeutralButton("Play again", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                })
+                .setCancelable(false);
     }
 
     private void initListener() {
@@ -370,7 +395,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     marker.remove();
                     mBagAdapter.notifyDataSetChanged();
                 }
-
                 return true;
             }
         });
@@ -638,23 +662,21 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public void run() {
 
                 // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
-                if (!listMarkerMonster.isEmpty() && !listMonsterName.isEmpty() && allMonsters.get(allMonsters.indexOf(monster)).getHp() <= 0) {
-
-                    listMarkerMonster.remove(0);
-                    listMonsterName.remove(marker.getTitle());
-                    allMonsters.remove(monster);
+                if (monster.isDie()) {
+                    handler.removeCallbacks(this);
+                    if (!listMarkerMonster.isEmpty())
+                        listMarkerMonster.remove(marker);
+                    if (!listMonsterName.isEmpty())
+                        listMonsterName.remove(marker.getTitle());
                     updateMonsterId();
                     allRunnableMonster.remove(this);
-
-                    if (hideMarker) {
+                    if (hideMarker || monster.isDie()) {
                         marker.setVisible(false);
                     } else {
                         marker.setVisible(true);
                     }
 
                 }
-
-
                 // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
                 long elapsed = (run_time * 16) - adjustStartTime;
 
@@ -750,19 +772,35 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     if (Me.myHP >= monster.getAttackPower())
                         Me.myHP -= monster.getAttackPower();
 
-                    if (Me.myHP > 50) {
-                        playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
-                        playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-                    } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
-                        playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
-                        playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-                    } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
-                        playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
-                        playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
-                    }
-                    playerStatus.setProgress(Me.myHP);
+
+                    if (Me.myHP <= 0) {
+                        endGameTime = Calendar.getInstance();
+                        int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
+                        int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
+                        Me.totalDuration = endTotalSec - startTotalSec;
+                        Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
+                        endGameDialog.setMessage("Total duration : " + calculateGameDuration()[0] + " : " + calculateGameDuration()[1] + " : " + calculateGameDuration()[2]
+                                + "\n Average speed : " + Me.averageSpeed + " km/hr."
+                                + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
+
+                        endGameDialog.show();
+                        unRegisterAllListener();
+
+                    } else {
+                        if (Me.myHP > 50) {
+                            playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
+                            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
+                        } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+                            playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
+                            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
+                        } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+                            playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
+                            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+                        }
+                        playerStatus.setProgress(Me.myHP);
 //                    Log.d("HpProgress",""+playerStatus.getProgress());
-                    handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
+                        handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
+                    }
                 }
             }
         };
@@ -969,9 +1007,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         listMarkerItems.add(mItem);
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
+    public void unRegisterAllListener() {
         sensorManager.unregisterListener(this, accelerometerSensor);
         sensorManager.unregisterListener(this, magneticFieldSensor);
         for (Runnable r : allRunnableMonster) {
@@ -981,11 +1017,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             genGhostHandler.removeCallbacks(keepGenerateGhost);
         if (locationManager != null)
             locationManager.removeGpsStatusListener(checkLocation);
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
+    public void registerAllListener() {
         if (sensorManager != null) {
             sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
             sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -993,6 +1029,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         if (locationManager != null) {
             locationManager.addGpsStatusListener(checkLocation);
+        }
+
+        if (Singleton.getAllMonsters() != null) {
+            allMonsters = Singleton.getAllMonsters();
         }
 
         for (Runnable r : allRunnableMonster) {
@@ -1006,18 +1046,32 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             mBagAdapter.notifyDataSetChanged();
         }
 
+        if (isGameStart && locationrequest != null)
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+
         if (Me.myHP > 50) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
             playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-        } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+        } else if (Me.myHP > 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
             playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-        } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+        } else if (Me.myHP <= 10 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
             playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
         }
         playerStatus.setProgress(Me.myHP);
+    }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        unRegisterAllListener();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        registerAllListener();
     }
 
     @Override
@@ -1137,6 +1191,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     keepGeneratingGhost();
                     keepGeneratingItem();
                     isGameStart = true;
+                    startGameTime = Calendar.getInstance();
 
                     // เมื่อเริ่มเกมให้เล่นอนิเมชั่น
                     startGameViewAnimation();
@@ -1159,13 +1214,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // อัพเดตระยะทางที่ต้องวิ่ง
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
             countDistanceToRotCam += distance;
-            distanceGoal -= distance * Me.distanceMultiplier;
-            if (distanceGoal <= 0) {
-                distanceGoal = 0;
-            }
 
-            // แสดงระยะทางที่เหลือ
-//            mGhost3Status.setText(distanceGoal + " m");
+            if (location.getSpeed() > Me.highestSpeed)
+                Me.highestSpeed = location.getSpeed();
+
+            distanceGoal -= distance * Me.distanceMultiplier;
             mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
 
             // เลื่อนตำแหน่งของลูกษรใหม่
@@ -1174,8 +1227,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // กำหนดตำแหน่งของกล้องใหม่
             setCameraPosition(mCurrentLatLng, 18, 0, currentBearing);
 
-            //ให้ตำแหน่งก่อนหน้าเท่ากับตำแหน่งปัจจุบัน+
             mPreviousLatLng = mCurrentLatLng;
+
+            // ถ้าจบเกม
+            if (distanceGoal <= 0) {
+                distanceGoal = 0;
+                unRegisterAllListener();
+                endGameDialog.setMessage(calculateGameDuration()[0] + " : " + calculateGameDuration()[1] + " : " + calculateGameDuration()[2]);
+                endGameDialog.show();
+
+            }
+
         }
     }
 
@@ -1372,6 +1434,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             Log.d("remove", "!");
         }
         itemBagLayout.collapsePanel();
+    }
+
+    public int[] calculateGameDuration() {
+        int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
+        int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
+        int diff = endTotalSec - startTotalSec;
+        return new int[]{diff / 3600, diff / 60, diff % 60};
     }
 
     public void passAllMonster() {

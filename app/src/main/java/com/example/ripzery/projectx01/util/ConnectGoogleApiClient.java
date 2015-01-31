@@ -33,6 +33,7 @@ public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbac
         if (LocationServices.FusedLocationApi.getLastLocation(mapsActivity.mGoogleApiClient) == null) {
             locationrequest = LocationRequest.create();
             locationrequest.setInterval(1000);
+//            locationrequest.setExpirationTime(60000);
             locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
             final LocationListener firstGetLocation = new LocationListener() {
