@@ -269,7 +269,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
         // กำหนดค่าเริ่มต้นให้ static var
-        Me.myHP = 70;
+        Me.myHP = Me.myMaxHP;
         Me.distanceMultiplier = 1;
 
         // กำหนดค่าเริ่มต้นให้ item
@@ -1002,6 +1002,18 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (keepGenerateGhost != null) {
             genGhostHandler.postDelayed(keepGenerateGhost, timeout);
         }
+
+        if (Me.myHP > 50) {
+            playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
+            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
+        } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+            playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
+            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
+        } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+            playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
+            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+        }
+        playerStatus.setProgress(Me.myHP);
 
     }
 
