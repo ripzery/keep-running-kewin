@@ -559,6 +559,7 @@ public class RajawaliRenderer implements GLSurfaceView.Renderer, INode {
 			for (int i = 0, j = mScenes.size(); i < j; ++i)
 				mScenes.get(i).destroyScene();
 		}
+        performFrameTasks();
 		stopRendering();
 	}
 

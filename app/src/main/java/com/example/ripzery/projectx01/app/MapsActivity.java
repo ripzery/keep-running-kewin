@@ -1002,6 +1002,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (keepGenerateGhost != null) {
             genGhostHandler.postDelayed(keepGenerateGhost, timeout);
         }
+        if(mBagAdapter != null){
+            mBagAdapter.notifyDataSetChanged();
+        }
 
         if (Me.myHP > 50) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));

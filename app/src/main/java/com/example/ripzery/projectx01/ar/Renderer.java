@@ -2,11 +2,13 @@ package com.example.ripzery.projectx01.ar;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 
 import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.app.Singleton;
 import com.example.ripzery.projectx01.ar.detail.KingKong;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.ar.detail.Monster;
@@ -58,6 +60,7 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
         super.onSurfaceCreated(gl, config);
     }
 
+
     @Override
     public void initScene() {
         getCurrentScene().setBackgroundColor(0);
@@ -92,15 +95,24 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
             Material material = new Material();
             material.enableLighting(false);*/
 
-            for (int i = 0; i< 5;i++) {
+            Singleton mSing = Singleton.getInstance();
+            ArrayList<com.example.ripzery.projectx01.interface_model.Monster> arrMons =  mSing.getAllMonsters();
 
+            for (int i = 0; i< arrMons.size();i++) {
 
+                Log.d("monsterdetail",arrMons.get(i).getPoint()+"");
+
+                Point point = arrMons.get(i).getPoint();
                 KingKong kingKong = new KingKong(mContext, i);
                 kingKong.setOnAttackListener(this);
                 getCurrentScene().addChild((kingKong.renderModel(mTextureManager, .1f, 0, 90, 90)));
 
-                Vector3 fromPos =  new Vector3((i - 3) * 20, 0, -80);
-                Vector3 toPos =  new Vector3(0, -3, -5);
+                Vector3 fromPos =  new Vector3(point.x/5 , 0, - (point.y / 5)); //*-1 ให้ y เพราะ แกน z กับ y สลับทิศทางกัน
+                double toz = -5;
+                if(point.y < 0){
+                    toz = 5;
+                }
+                Vector3 toPos =  new Vector3(0, -3, toz);
                 getCurrentScene().registerAnimation(kingKong.setTranslate(fromPos, toPos, 500));
 
                 kingKong.playWalk();
@@ -279,5 +291,14 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
             }
         }
 
+    }
+
+
+    @Override
+    public void onSurfaceDestroyed() {
+        mMonsters = null;
+        bullets = null;
+        System.gc();
+        super.onSurfaceDestroyed();
     }
 }

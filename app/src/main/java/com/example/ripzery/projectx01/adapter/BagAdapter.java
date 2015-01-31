@@ -88,7 +88,7 @@ public class BagAdapter extends BaseAdapter {
         if (position < Me.guns.size()) {
 
             image.setImageResource(Me.guns.get(position).getThumb());
-            number.setText(Me.guns.get(position).getBullet() + "");
+            number.setText(Me.guns.get(position).getBullet()+Me.guns.get(position).getRemain_bullet() + "");
             Me.selectGun = true;
 
               /*      .setOnClickListener(new View.OnClickListener() {

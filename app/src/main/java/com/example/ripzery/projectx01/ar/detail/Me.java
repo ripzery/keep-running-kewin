@@ -24,3 +24,5 @@ public class Me {
     public static int bagMaxCapacity = 12;
 
 }
+
+
