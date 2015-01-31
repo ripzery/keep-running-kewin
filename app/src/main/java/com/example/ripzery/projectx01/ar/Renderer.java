@@ -47,6 +47,7 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
     private int bulletIndex = 0;
 
     private float weaponDamage;
+    private ArrayList<com.example.ripzery.projectx01.interface_model.Monster> arrMons;
 
 
     public Renderer(Context context) {
@@ -96,7 +97,7 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
             material.enableLighting(false);*/
 
             Singleton mSing = Singleton.getInstance();
-            ArrayList<com.example.ripzery.projectx01.interface_model.Monster> arrMons =  mSing.getAllMonsters();
+            arrMons =  mSing.getAllMonsters();
 
             for (int i = 0; i< arrMons.size();i++) {
 
@@ -279,6 +280,7 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
                                 mMonsters.get(j).playDead();
                                 mMonsters.get(j).getMonster().setShowBoundingVolume(false);
                                 mMonsters.get(j).pauseTranslate();
+                                arrMons.get(j).setDie(true);
 
                             }
 

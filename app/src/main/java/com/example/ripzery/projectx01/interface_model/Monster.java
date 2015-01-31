@@ -35,4 +35,8 @@ public interface Monster {
     Point getPoint();
 
     void setPoint(Point xy);
+
+    public void setDie(boolean isDie);
+
+    public boolean isDie();
 }
