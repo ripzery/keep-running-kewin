@@ -664,10 +664,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
                 if (monster.isDie()) {
                     handler.removeCallbacks(this);
-                    if (!listMarkerMonster.isEmpty())
+                    if (!listMarkerMonster.isEmpty()) {
                         listMarkerMonster.remove(marker);
+                    }
                     if (!listMonsterName.isEmpty())
                         listMonsterName.remove(marker.getTitle());
+                    if (!allMonsters.isEmpty()) {
+                        allMonsters.remove(monster);
+                        Singleton.setAllMonsters(allMonsters);
+                    }
                     updateMonsterId();
                     allRunnableMonster.remove(this);
                     if (hideMarker || monster.isDie()) {
@@ -676,75 +681,75 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         marker.setVisible(true);
                     }
 
-                }
-                // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
-                long elapsed = (run_time * 16) - adjustStartTime;
+                } else {
+                    // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
+                    long elapsed = (run_time * 16) - adjustStartTime;
 
-                // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
-                if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
+                    // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
+                    if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
 
-                    // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
-                    if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
+                        // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
+                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
 
-                        adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))));
+                            adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))));
 
-                    } else { // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่ามากขึ้น
+                        } else { // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่ามากขึ้น
 
-                        adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))));
-                    }
+                            adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))));
+                        }
 
-                    // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
-                    toPosition.setLatitude(mCurrentLatLng.latitude);
-                    toPosition.setLongitude(mCurrentLatLng.longitude);
+                        // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
+                        toPosition.setLatitude(mCurrentLatLng.latitude);
+                        toPosition.setLongitude(mCurrentLatLng.longitude);
 
-                    // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
-                    newStartLatLng = marker.getPosition();
-                    adjustStartTime = run_time * 16;
-                    adjustDuration = adjustDuration - elapsed;
-                    elapsed = 0;
+                        // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
+                        newStartLatLng = marker.getPosition();
+                        adjustStartTime = run_time * 16;
+                        adjustDuration = adjustDuration - elapsed;
+                        elapsed = 0;
 //
 //                    Log.d("adjustDuration",""+adjustDuration);
 //                    Log.d("elapse",""+elapsed);
-                }
+                    }
 
 
-                // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
+                    // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
 //                mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
 
-                // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
-                float t = interpolator.getInterpolation((float) elapsed
-                        / adjustDuration);
+                    // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
+                    float t = interpolator.getInterpolation((float) elapsed
+                            / adjustDuration);
 //                Log.d("t",""+t);
-                marker.setPosition(spherical.interpolate(t, newStartLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
-                Point monsterPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
-                Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+                    marker.setPosition(spherical.interpolate(t, newStartLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
+                    Point monsterPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
+                    Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
 //                Log.d("id",""+monster.getId());
-                monster.setPoint(new Point(monsterPoint.x - userPoint.x, userPoint.y - monsterPoint.y));
-                monster.setLatLng(marker.getPosition());
+                    monster.setPoint(new Point(monsterPoint.x - userPoint.x, userPoint.y - monsterPoint.y));
+                    monster.setLatLng(marker.getPosition());
 
 //                Singleton.getInstance().setAllMonsters(allMonsters);
 //                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
 //                marker.showInfoWindow();
 //                marker.setAlpha(t);
-                int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition());
+                    int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition());
 
-                if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
-                    Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
-                    // Vibrate for 500 milliseconds
-                    v.vibrate(500);
-                    isVibrate = true;
-                }
-
-                //ถ้า ปีศาจยังมาไม่ใกล้ผู้เล่นมากกว่า xxx เมตร ก็ให้วิ่งต่อ
-                if (distanceBetweenMonsterAndPlayer > 10) {
-                    handler.postDelayed(this, 16);
-                    run_time++;
-                    if (((KingKong) monster).isRaged()) {
-                        ((KingKong) monster).setIcon(R.drawable.monster_ic);
-                        marker.setIcon(monster.getIcon());
+                    if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
+                        Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
+                        // Vibrate for 500 milliseconds
+                        v.vibrate(500);
+                        isVibrate = true;
                     }
 
-                } else { // เลื่อนจนถึงผู้เล่นแล้ว (โจมตีได้)
+                    //ถ้า ปีศาจยังมาไม่ใกล้ผู้เล่นมากกว่า xxx เมตร ก็ให้วิ่งต่อ
+                    if (distanceBetweenMonsterAndPlayer > 10) {
+                        handler.postDelayed(this, 16);
+                        run_time++;
+                        if (((KingKong) monster).isRaged()) {
+                            ((KingKong) monster).setIcon(R.drawable.monster_ic);
+                            marker.setIcon(monster.getIcon());
+                        }
+
+                    } else { // เลื่อนจนถึงผู้เล่นแล้ว (โจมตีได้)
 
                     /* ชุดโค้ดที่ทำการลบ marker ออกจาก maps
                     if (!listMarkerMonster.isEmpty() && !listMonsterName.isEmpty()) {
@@ -764,44 +769,46 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     }
                     */
 
-                    if (!((KingKong) monster).isRaged()) {
-                        ((KingKong) monster).setIcon(R.drawable.monster_rage_ic);
-                        marker.setIcon(monster.getIcon());
-                    }
-                    Log.d("Attack!", "Monster No." + allMonsters.indexOf(monster));
-                    if (Me.myHP >= monster.getAttackPower())
-                        Me.myHP -= monster.getAttackPower();
-
-
-                    if (Me.myHP <= 0) {
-                        endGameTime = Calendar.getInstance();
-                        int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
-                        int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
-                        Me.totalDuration = endTotalSec - startTotalSec;
-                        Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
-                        endGameDialog.setMessage("Total duration : " + calculateGameDuration()[0] + " : " + calculateGameDuration()[1] + " : " + calculateGameDuration()[2]
-                                + "\n Average speed : " + Me.averageSpeed + " km/hr."
-                                + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
-
-                        endGameDialog.show();
-                        unRegisterAllListener();
-
-                    } else {
-                        if (Me.myHP > 50) {
-                            playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
-                            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-                        } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
-                            playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
-                            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-                        } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
-                            playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
-                            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+                        if (!((KingKong) monster).isRaged()) {
+                            ((KingKong) monster).setIcon(R.drawable.monster_rage_ic);
+                            marker.setIcon(monster.getIcon());
                         }
-                        playerStatus.setProgress(Me.myHP);
+                        Log.d("Attack!", "Monster No." + allMonsters.indexOf(monster));
+                        if (Me.myHP >= monster.getAttackPower())
+                            Me.myHP -= monster.getAttackPower();
+
+
+                        if (Me.myHP <= 0) {
+                            endGameTime = Calendar.getInstance();
+                            int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
+                            int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
+                            Me.totalDuration = endTotalSec - startTotalSec;
+                            Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
+                            endGameDialog.setMessage("Total duration : " + calculateGameDuration()[0] + " : " + calculateGameDuration()[1] + " : " + calculateGameDuration()[2]
+                                    + "\n Average speed : " + Me.averageSpeed + " km/hr."
+                                    + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
+
+                            endGameDialog.show();
+                            unRegisterAllListener();
+
+                        } else {
+                            if (Me.myHP > 50) {
+                                playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
+                                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
+                            } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+                                playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
+                                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
+                            } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+                                playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
+                                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+                            }
+                            playerStatus.setProgress(Me.myHP);
 //                    Log.d("HpProgress",""+playerStatus.getProgress());
-                        handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
+                            handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
+                        }
                     }
                 }
+
             }
         };
         /*
@@ -1015,8 +1022,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
         if (keepGenerateGhost != null)
             genGhostHandler.removeCallbacks(keepGenerateGhost);
+        if (keepGenerateItem != null)
+            genItemHandler.removeCallbacks(keepGenerateItem);
         if (locationManager != null)
             locationManager.removeGpsStatusListener(checkLocation);
+        if (isGameStart)
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
 
     }
@@ -1042,6 +1052,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (keepGenerateGhost != null) {
             genGhostHandler.postDelayed(keepGenerateGhost, timeout);
         }
+
+        if (keepGenerateItem != null)
+            genItemHandler.postDelayed(keepGenerateItem, 1000);
+
         if(mBagAdapter != null){
             mBagAdapter.notifyDataSetChanged();
         }
