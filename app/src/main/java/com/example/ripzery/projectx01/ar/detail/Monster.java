@@ -183,19 +183,23 @@ public abstract class Monster {
     Handler attack_handler;
 
     public void attackEnemy(){
-        Log.d("oakTag", "attackEnemy "+getStatus());
-            Log.d("oakTag", "inattackEnemy "+getStatus());
+        if(Me.myHP > 0) {
+            Log.d("oakTag", "attackEnemy " + getStatus());
+            Log.d("oakTag", "inattackEnemy " + getStatus());
 
             playAttack();
             mListener.onAttack(attack);
-           ((MainActivity)mContext).runOnUiThread(new Runnable() {
-               @Override
-               public void run() {
-                   attack_handler = new Handler();
-                   attack_handler.postDelayed(runnable, 1000);
-               }
-           });
-
+            ((MainActivity) mContext).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    attack_handler = new Handler();
+                    attack_handler.postDelayed(runnable, 1000);
+                }
+            });
+        }else{
+            if(attack_handler != null)
+                attack_handler.removeCallbacks(runnable);
+        }
     }
 
 

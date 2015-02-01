@@ -127,6 +127,7 @@ public class MainActivity extends RajawaliVRActivity {
         weaponSelector = (FrameLayout) ar_interface.findViewById(R.id.weapon_selector);
 
         bloodFilter.setImageAlpha(0);
+        bloodShed();
 
         addView(Me.guns.get(Me.chosenGun));
     }

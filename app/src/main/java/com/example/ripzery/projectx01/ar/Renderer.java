@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.Toast;
 
 
 import com.example.ripzery.projectx01.R;
@@ -98,6 +99,9 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
 
             Singleton mSing = Singleton.getInstance();
             arrMons =  mSing.getAllMonsters();
+
+            Log.d("oakTag","Monster num : "+arrMons.size());
+
 
             for (int i = 0; i< arrMons.size();i++) {
 

@@ -26,6 +26,10 @@
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyBwwS6ls5VH_sKeTzY-rgsfrPrTjlx1nBg" />
 
+       <!-- AIzaSyBwwS6ls5VH_sKeTzY-rgsfrPrTjlx1nBg
+
+        AIzaSyBVc7J0Lj1DGjKwOoKVV2-a74GpIMvEKFk-->
+
         <uses-feature
             android:glEsVersion="0x00020000"
             android:required="true" />

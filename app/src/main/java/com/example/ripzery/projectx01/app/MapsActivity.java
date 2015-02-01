@@ -1030,48 +1030,51 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void registerAllListener() {
-        if (sensorManager != null) {
-            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-            sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if(isGameStart) {
+            if (sensorManager != null) {
+                sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            }
+
+            if (locationManager != null) {
+                locationManager.addGpsStatusListener(checkLocation);
+            }
+
+            if (Singleton.getAllMonsters() != null) {
+                allMonsters = Singleton.getAllMonsters();
+            }
+
+            for (Runnable r : allRunnableMonster) {
+                handler.post(r);
+            }
+            Log.d("Timeout", timeout + "");
+            if (keepGenerateGhost != null) {
+                genGhostHandler.postDelayed(keepGenerateGhost, timeout);
+            }
+
+            if (keepGenerateItem != null)
+                genItemHandler.postDelayed(keepGenerateItem, 1000);
+
+            if (mBagAdapter != null) {
+                mBagAdapter.notifyDataSetChanged();
+            }
+
+            if (isGameStart && locationrequest != null)
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+
+            if (Me.myHP > 50) {
+                playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
+                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
+            } else if (Me.myHP > 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+                playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
+                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
+            } else if (Me.myHP <= 10 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+                playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
+                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+            }
+            playerStatus.setProgress(Me.myHP);
         }
 
-        if (locationManager != null) {
-            locationManager.addGpsStatusListener(checkLocation);
-        }
-
-        if (Singleton.getAllMonsters() != null) {
-            allMonsters = Singleton.getAllMonsters();
-        }
-
-        for (Runnable r : allRunnableMonster) {
-            handler.post(r);
-        }
-        Log.d("Timeout", timeout + "");
-        if (keepGenerateGhost != null) {
-            genGhostHandler.postDelayed(keepGenerateGhost, timeout);
-        }
-
-        if (keepGenerateItem != null)
-            genItemHandler.postDelayed(keepGenerateItem, 1000);
-
-        if(mBagAdapter != null){
-            mBagAdapter.notifyDataSetChanged();
-        }
-
-        if (isGameStart && locationrequest != null)
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
-
-        if (Me.myHP > 50) {
-            playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
-            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-        } else if (Me.myHP > 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
-            playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
-            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-        } else if (Me.myHP <= 10 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
-            playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
-            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
-        }
-        playerStatus.setProgress(Me.myHP);
     }
 
     @Override
@@ -1105,6 +1108,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (locationManager != null) {
             locationManager.removeGpsStatusListener(checkLocation);
         }
+
 
         Me.guns = new ArrayList<Gun>();
         Me.items = new ArrayList<Item>();
