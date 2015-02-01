@@ -50,7 +50,7 @@ public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbac
                             mapsActivity.myArrow = mapsActivity.mMap.addMarker(new MarkerOptions()
                                     .position(mapsActivity.mCurrentLatLng)
                                     .anchor((float) 0.5, (float) 0.5)
-                                    .flat(true)
+                                    .flat(false)
                                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
 
                         }
@@ -73,7 +73,7 @@ public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbac
                 mapsActivity.myArrow = mapsActivity.mMap.addMarker(new MarkerOptions()
                         .position(mapsActivity.mCurrentLatLng)
                         .anchor((float) 0.5, (float) 0.5)
-                        .flat(true)
+                        .flat(false)
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
 
             }

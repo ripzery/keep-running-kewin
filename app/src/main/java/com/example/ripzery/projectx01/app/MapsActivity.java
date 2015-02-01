@@ -100,6 +100,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public static final int DATA_ENABLED_REQ = 1;
     public static final int LOCATION_ENABLED_REQ = 2;
     private static int maxDistance = 1000;
+    private double distanceGoal = maxDistance;
     public final int MAX_GHOST_AT_ONCE = 5; // กำหนดจำนวนปีศาจมากที่สุดที่จะปรากฎตัวขึ้นพร้อมๆกัน
     public final int MAX_ITEM_AT_ONCE = 3; // กำหนดจำนวนไอเทมสูงสุดในแผนที่
     public GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -145,7 +146,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private float[] accelerometerData = new float[3];
     private float[] magneticData = new float[3];
     private double oldAzimuth = 0;
-    private double distanceGoal = 1000.0;
     private double countDistanceToRotCam = 0;
     private Handler genGhostHandler, genItemHandler;
     private Runnable keepGenerateGhost, keepGenerateItem;
@@ -185,6 +185,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private AlertDialog.Builder endGameDialog;
     private Calendar startGameTime;
     private Calendar endGameTime;
+    private int azimut;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -381,7 +382,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                if (!listMarkerMonster.contains(marker)) {
+                if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
                     // Handle self-items
                     if (ALL_SELF_ITEM.contains(marker.getTitle())) {
                         Me.items.add(allItems.get(listMarkerItems.indexOf(marker)));
@@ -779,12 +780,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
                         if (Me.myHP <= 0) {
-                            endGameTime = Calendar.getInstance();
-                            int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
-                            int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
-                            Me.totalDuration = endTotalSec - startTotalSec;
-                            Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
-                            endGameDialog.setMessage("Total duration : " + calculateGameDuration()[0] + " : " + calculateGameDuration()[1] + " : " + calculateGameDuration()[2]
+
+                            int[] duration = calculateGameDuration();
+                            endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
                                     + "\n Average speed : " + Me.averageSpeed + " km/hr."
                                     + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
 
@@ -831,7 +829,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
                     mMonster = new KingKong(MapsActivity.this);
-                    mMonster.setSpeed(10);
+                    mMonster.setSpeed(3);
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;
@@ -1130,22 +1128,32 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 if (success) {
                     float orientation[] = new float[3];
                     SensorManager.getOrientation(R, orientation);
-                    int azimut = (int) Math.round(Math.toDegrees(orientation[0]));
+                    azimut = (int) Math.round(Math.toDegrees(orientation[0]));
+//                    Log.d("orientation",orientation[1]+"");
+                    if (Math.abs(azimut - oldAzimuth) >= THRESHOLD_ROT_ARROW && isGameStart && orientation[1] > -1.25 && orientation[1] < 1.25) {
+//                        Log.d("azimuth", "" + azimut);
+//                        myArrow.setRotation(azimut);
+//                        setCameraPosition(mCurrentLatLng,18,0,azimut);
+                        CameraPosition camPos = new CameraPosition.Builder()
+                                .target(mCurrentLatLng)
+                                .zoom(18)
+                                .tilt(0)
+                                .bearing(azimut)
+                                .build();
 
-                    if (Math.abs(azimut - oldAzimuth) >= THRESHOLD_ROT_ARROW) {
-                        Log.d("azimuth", "" + azimut);
-                        myArrow.setRotation(azimut);
+                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+
                         oldAzimuth = azimut;
                     }
 
                     // ถ้าวิ่งจนได้ระยะทางเกินค่าที่กำหนดไว้ให้อัพเดตหมุนกล้องให้ตรงกับทิศที่วิ่ง
-                    if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
-                        setCameraPosition(mCurrentLatLng, 18, 0, azimut);
-                        currentBearing = azimut;
-                        myArrow.setPosition(mCurrentLatLng);
-                        myArrow.setRotation(azimut);
-                        countDistanceToRotCam = 0;
-                    }
+//                    if (countDistanceToRotCam >= THRESHOLD_ROT_CAM) {
+////                        setCameraPosition(mCurrentLatLng, 18, 0, azimut);
+//                        currentBearing = azimut;
+////                        myArrow.setPosition(mCurrentLatLng);
+////                        myArrow.setRotation(azimut);
+//                        countDistanceToRotCam = 0;
+//                    }
                 }
             }
         }
@@ -1194,6 +1202,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         tvItemCount.setText("Accuracy : " + checkLocation.getGrade((int) location.getAccuracy()));
 //        mCvVelocityStatus.setTitleText(String.format("%.2f", location.getSpeed() * 3.6));
 
+
         if (progress.isShowing() && builder == null) {
             builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                 @Override
@@ -1224,6 +1233,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         if (isGameStart) {
+            Log.d("test", "hey");
             checkLocation.setLocationTime(location.getTime());
             // อัพเดตระยะทางที่ต้องวิ่ง
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
@@ -1239,7 +1249,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             myArrow.setPosition(mCurrentLatLng);
 
             // กำหนดตำแหน่งของกล้องใหม่
-            setCameraPosition(mCurrentLatLng, 18, 0, currentBearing);
+            setCameraPosition(mCurrentLatLng, 18, 0, azimut);
 
             mPreviousLatLng = mCurrentLatLng;
 
@@ -1247,7 +1257,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             if (distanceGoal <= 0) {
                 distanceGoal = 0;
                 unRegisterAllListener();
-                endGameDialog.setMessage(calculateGameDuration()[0] + " : " + calculateGameDuration()[1] + " : " + calculateGameDuration()[2]);
+                int[] duration = calculateGameDuration();
+                endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
+                        + "\n Average speed : " + Me.averageSpeed + " km/hr."
+                        + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
                 endGameDialog.show();
 
             }
@@ -1451,9 +1464,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public int[] calculateGameDuration() {
+        if (endGameTime == null) {
+            endGameTime = Calendar.getInstance();
+        }
         int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
         int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
         int diff = endTotalSec - startTotalSec;
+        Me.totalDuration = endTotalSec - startTotalSec;
+        Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
         return new int[]{diff / 3600, diff / 60, diff % 60};
     }
 
