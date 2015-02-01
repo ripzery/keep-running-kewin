@@ -20,6 +20,7 @@ public class Potion implements Item {
     public static final int heal = 20;
     LatLng latLng;
     private BitmapDescriptor icon;
+    private String id;
 
     public Potion(MapsActivity mapsActivity) {
         Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.pin_potion),
@@ -53,6 +54,16 @@ public class Potion implements Item {
     @Override
     public void setLatLng(LatLng latLng) {
         this.latLng = latLng;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getType() {

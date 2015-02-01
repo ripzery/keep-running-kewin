@@ -16,7 +16,7 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public class KingKong implements Monster {
 
-    private int id;
+    private String id;
     private boolean isDie = false;
     private String type;
     private double speed;
@@ -42,12 +42,12 @@ public class KingKong implements Monster {
     }
 
     @Override
-    public int getId() {
+    public String getId() {
         return id;
     }
 
     @Override
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

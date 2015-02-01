@@ -19,6 +19,7 @@ public class ItemDistancex2 implements Item {
     public static final int effect_time = 15; // กำหนดระยะเวลาที่ไอเทมนี้ทำงาน
     LatLng latLng;
     private BitmapDescriptor icon;
+    private String id;
 
 
     public ItemDistancex2(MapsActivity mapsActivity) {
@@ -53,6 +54,16 @@ public class ItemDistancex2 implements Item {
     @Override
     public void setLatLng(LatLng latLng) {
         this.latLng = latLng;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getType() {
