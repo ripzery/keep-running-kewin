@@ -111,7 +111,7 @@ public class MainActivity extends RajawaliVRActivity {
         }
 
 
-        initView();
+        //initView();
 
     }
 

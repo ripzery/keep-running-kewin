@@ -829,7 +829,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
                     mMonster = new KingKong(MapsActivity.this);
-                    mMonster.setSpeed(3);
+                    mMonster.setSpeed(5);
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;

@@ -1,9 +1,11 @@
 package com.example.ripzery.projectx01.ar;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.util.Log;
+import android.view.Display;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Toast;
 
@@ -97,6 +99,11 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
             Material material = new Material();
             material.enableLighting(false);*/
 
+            int orientation = getscreenOrientation();
+            Log.d("oakTag","orientation "+orientation);
+
+
+
             Singleton mSing = Singleton.getInstance();
             arrMons =  mSing.getAllMonsters();
 
@@ -112,7 +119,25 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
                 kingKong.setOnAttackListener(this);
                 getCurrentScene().addChild((kingKong.renderModel(mTextureManager, .1f, 0, 90, 90)));
 
-                Vector3 fromPos =  new Vector3(point.x/5 , 0, - (point.y / 5)); //*-1 ให้ y เพราะ แกน z กับ y สลับทิศทางกัน
+                if(orientation == 1){
+                    if(point.x >= 0 && point.y >= 0){
+                       //Q1
+                        point.x *= -1;
+                        point.y *= -1;
+                    }else if(point.x < 0 && point.y >= 0){
+                       //Q2
+                    }else if(point.x < 0 && point.y < 0){
+                       //Q3
+                        point.x *= -1;
+                        point.y *= -1;
+                    }else{
+                       //Q4
+                    }
+                }else{
+                    point.y *= -1;
+                }
+
+                Vector3 fromPos =  new Vector3(point.x/5 , 0, point.y / 5); //*-1 ให้ y เพราะ แกน z กับ y สลับทิศทางกัน
                 double toz = -5;
                 if(point.y < 0){
                     toz = 5;
@@ -128,13 +153,13 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
 
             }
 
-//            final MainActivity activity = (MainActivity) mContext;
-//            activity.runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    activity.initView();
-//                }
-//            });
+            final MainActivity activity = (MainActivity) mContext;
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    activity.initView();
+                }
+            });
 
 
 
@@ -146,6 +171,36 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
         super.initScene();
     }
 
+    public int getscreenOrientation()
+    {
+        Display getOrient = ((MainActivity)mContext).getWindowManager().getDefaultDisplay();
+
+        int orientation = getOrient.getOrientation();
+
+        // Sometimes you may get undefined orientation Value is 0
+        // simple logic solves the problem compare the screen
+        // X,Y Co-ordinates and determine the Orientation in such cases
+        if(orientation== Configuration.ORIENTATION_UNDEFINED){
+
+            Configuration config = mContext.getResources().getConfiguration();
+            orientation = config.orientation;
+
+            if(orientation==Configuration.ORIENTATION_UNDEFINED){
+                //if height and widht of screen are equal then
+                // it is square orientation
+                if(getOrient.getWidth()==getOrient.getHeight()){
+                    orientation = Configuration.ORIENTATION_SQUARE;
+                }else{ //if widht is less than height than it is portrait
+                    if(getOrient.getWidth() < getOrient.getHeight()){
+                        orientation = Configuration.ORIENTATION_PORTRAIT;
+                    }else{ // if it is not any of the above it will defineitly be landscape
+                        orientation = Configuration.ORIENTATION_LANDSCAPE;
+                    }
+                }
+            }
+        }
+        return orientation; // return value 1 is portrait and 2 is Landscape Mode
+    }
 
 
     @Override
