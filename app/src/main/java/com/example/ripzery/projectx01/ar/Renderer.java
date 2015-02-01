@@ -34,6 +34,7 @@ import rajawali.math.Quaternion;
 import rajawali.math.vector.Vector3;
 import rajawali.parser.LoaderOBJ;
 import rajawali.parser.ParsingException;
+import rajawali.primitives.Cube;
 import rajawali.primitives.Sphere;
 
 /**
@@ -51,6 +52,9 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
 
     private float weaponDamage;
     private ArrayList<com.example.ripzery.projectx01.interface_model.Monster> arrMons;
+
+    private int scaleSpeed = 5;
+    private int orientation;
 
 
     public Renderer(Context context) {
@@ -99,7 +103,7 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
             Material material = new Material();
             material.enableLighting(false);*/
 
-            int orientation = getscreenOrientation();
+            orientation = getscreenOrientation();
             Log.d("oakTag","orientation "+orientation);
 
 
@@ -119,25 +123,10 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
                 kingKong.setOnAttackListener(this);
                 getCurrentScene().addChild((kingKong.renderModel(mTextureManager, .1f, 0, 90, 90)));
 
-                if(orientation == 1){
-                    if(point.x >= 0 && point.y >= 0){
-                       //Q1
-                        point.x *= -1;
-                        point.y *= -1;
-                    }else if(point.x < 0 && point.y >= 0){
-                       //Q2
-                    }else if(point.x < 0 && point.y < 0){
-                       //Q3
-                        point.x *= -1;
-                        point.y *= -1;
-                    }else{
-                       //Q4
-                    }
-                }else{
-                    point.y *= -1;
-                }
 
-                Vector3 fromPos =  new Vector3(point.x/5 , 0, point.y / 5); //*-1 ให้ y เพราะ แกน z กับ y สลับทิศทางกัน
+                point = convertPoint(point);
+
+                Vector3 fromPos =  new Vector3(point.x/scaleSpeed , 0, point.y / scaleSpeed); //*-1 ให้ y เพราะ แกน z กับ y สลับทิศทางกัน
                 double toz = -5;
                 if(point.y < 0){
                     toz = 5;
@@ -169,6 +158,28 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
         }
 
         super.initScene();
+    }
+
+    private Point convertPoint(Point point) {
+        if(orientation == 1){
+            if(point.x >= 0 && point.y >= 0){
+                //Q1
+                point.x *= -1;
+                point.y *= -1;
+            }else if(point.x < 0 && point.y >= 0){
+                //Q2
+            }else if(point.x < 0 && point.y < 0){
+                //Q3
+                point.x *= -1;
+                point.y *= -1;
+            }else{
+                //Q4
+            }
+        }else{
+            point.y *= -1;
+        }
+
+        return point;
     }
 
     public int getscreenOrientation()
@@ -357,6 +368,17 @@ public class Renderer extends RajawaliVRRenderer implements Monster.OnAttackList
 
     @Override
     public void onSurfaceDestroyed() {
+        if(mMonsters != null) {
+            for (int i = 0; i < mMonsters.size(); i++) {
+                Vector3 vector = mMonsters.get(i).getMonster().getPosition();
+                Log.d("oakTag_", vector.x + " " + vector.z);
+                Point point = new Point((int) Math.round(vector.x * 5), (int) Math.round(vector.z * 5));
+                point = convertPoint(point);
+                Singleton.getAllMonsters().get(i).setPoint(point);
+
+                mMonsters.get(i).removeCallback();
+            }
+        }
         mMonsters = null;
         bullets = null;
         System.gc();

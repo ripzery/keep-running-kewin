@@ -202,6 +202,11 @@ public abstract class Monster {
         }
     }
 
+    public void removeCallback(){
+        if(attack_handler != null)
+            attack_handler.removeCallbacks(runnable);
+    }
+
 
     public float getAttack(){
         return attack;
