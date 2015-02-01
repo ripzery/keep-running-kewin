@@ -1030,7 +1030,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void registerAllListener() {
-        if(isGameStart) {
+
             if (sensorManager != null) {
                 sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
                 sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -1062,6 +1062,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             if (isGameStart && locationrequest != null)
                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
 
+        if(isGameStart) {
             if (Me.myHP > 50) {
                 playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
                 playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
@@ -1237,7 +1238,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         if (isGameStart) {
-            Log.d("test", "hey");
             checkLocation.setLocationTime(location.getTime());
             // อัพเดตระยะทางที่ต้องวิ่ง
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
