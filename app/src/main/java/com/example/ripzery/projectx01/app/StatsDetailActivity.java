@@ -118,6 +118,8 @@ public class StatsDetailActivity extends ActionBarActivity {
                 LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
                 PolylineOptions polylineOptions = new PolylineOptions();
+                polylineOptions.color(getResources().getColor(R.color.hp_good_dark));
+                polylineOptions.width(8);
                 for (LatLng latLng : Singleton.getAllPlayerPositions()) {
                     polylineOptions.add(latLng);
                     builder.include(latLng);

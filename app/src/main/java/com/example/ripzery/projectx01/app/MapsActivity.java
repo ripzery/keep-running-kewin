@@ -131,10 +131,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     IconRoundCornerProgressBar itemStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
     private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
-    private int max_generate_ghost_timeout = 5; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private int min_generate_ghost_timeout = 1; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int max_generate_item_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int min_generate_item_timeout = 60; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int[] locationDistance, locationItem;
     private LatLngBounds playground;
     private Handler handler = new Handler();
@@ -843,7 +843,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 genGhostHandler.postDelayed(this, timeout);
             }
         };
-        genGhostHandler.postDelayed(keepGenerateGhost, max_generate_ghost_timeout * 1000);
+        genGhostHandler.postDelayed(keepGenerateGhost, min_generate_ghost_timeout * 1000);
     }
 
     public void keepGeneratingItem() {
