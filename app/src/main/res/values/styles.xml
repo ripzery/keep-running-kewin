@@ -36,12 +36,20 @@
         <item name="android:textColorSecondary">@color/abc_secondary_text_material_light</item>
     </style>
 
-    <style name="Theme.AppCompat.Light.NoActionBar.FullScreen" parent="@style/Theme.AppCompat.Light">
+    <style name="Theme.AppCompat.Light.NoActionBar.MapsActivity.FullScreen" parent="@style/Theme.AppCompat.Light">
         <item name="android:windowNoTitle">true</item>
         <item name="windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
-        <item name="android:actionBarStyle">@style/AppTheme_ActionBar</item>
-        <item name="android:actionBarSize">@dimen/action_bar_height</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowActionBarOverlay">true</item>
+    </style>
+
+    <style name="Theme.AppCompat.Light.NoActionBar.StatsDetail.FullScreen" parent="@style/Theme.AppCompat.Light">
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowActionBarOverlay">true</item>
     </style>
 

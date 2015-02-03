@@ -85,6 +85,7 @@ import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -130,9 +131,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     IconRoundCornerProgressBar itemStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
     private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
-    private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int max_generate_ghost_timeout = 5; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int min_generate_ghost_timeout = 1; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int[] locationDistance, locationItem;
     private LatLngBounds playground;
@@ -184,6 +185,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Calendar endGameTime;
     private int azimut;
     private boolean isResumeByAR = false;
+    private ArrayList<LatLng> allPlayerPositions = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -312,9 +314,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         revealColorView = (RevealColorView) findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
 
-        optionBar = (RelativeLayout)findViewById(R.id.option_bar);
+        optionBar = (RelativeLayout) findViewById(R.id.option_bar);
         //เมื่อกดดู detail ของ item
-        dropItemBtn = (Button)findViewById(R.id.dropItemBtn);
+        dropItemBtn = (Button) findViewById(R.id.dropItemBtn);
 
         detailItemBtn = (Button) findViewById(R.id.detailItemBtn);
 
@@ -331,7 +333,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .setPositiveButton("Result", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
+                        Intent detailIntent = new Intent(MapsActivity.this, StatsDetailActivity.class);
+                        int[] duration = calculateGameDuration();
+                        String totalDuration = duration[0] + " : " + duration[1] + " : " + duration[2];
+                        String averageSpeed = new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr.";
+                        String burnCalories = new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight);
+                        detailIntent.putExtra("totalDuration", totalDuration);
+                        detailIntent.putExtra("averageSpeed", averageSpeed);
+                        detailIntent.putExtra("burnCalories", burnCalories);
+                        Singleton.setAllPlayerPositions(allPlayerPositions);
+                        startActivity(detailIntent);
                     }
                 })
                 .setNeutralButton("Play again", new DialogInterface.OnClickListener() {
@@ -780,21 +791,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         Log.d("Attack!", "Monster No." + allMonsters.indexOf(monster));
                         if (Me.myHP >= monster.getAttackPower())
                             Me.myHP -= monster.getAttackPower();
+                        else {
+                            Me.myHP = 0;
+                        }
 
-
+                        setPlayerHP();
                         if (Me.myHP <= 0) {
 
                             // TODO : end game dialog
                             int[] duration = calculateGameDuration();
                             endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
-                                    + "\n Average speed : " + Me.averageSpeed + " km/hr."
-                                    + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
+                                    + "\n Average speed : " + new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr."
+                                    + "\n Burn Calories : " + new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight));
 
                             endGameDialog.show();
                             unRegisterAllListener();
 
                         } else {
-                            setPlayerHP();
                             handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
                         }
                     }
@@ -830,7 +843,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 genGhostHandler.postDelayed(this, timeout);
             }
         };
-        genGhostHandler.postDelayed(keepGenerateGhost, 30000);
+        genGhostHandler.postDelayed(keepGenerateGhost, max_generate_ghost_timeout * 1000);
     }
 
     public void keepGeneratingItem() {
@@ -1017,20 +1030,20 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (locationManager != null)
             locationManager.removeGpsStatusListener(checkLocation);
         if (isGameStart)
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
 
     }
 
     public void registerAllListener() {
 
-            if (sensorManager != null) {
-                sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-                sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
-            }
+        if (sensorManager != null) {
+            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
 
-            if (locationManager != null) {
-                locationManager.addGpsStatusListener(checkLocation);
-            }
+        if (locationManager != null) {
+            locationManager.addGpsStatusListener(checkLocation);
+        }
 
         if (Singleton.getAllMonsters() != null && isGameStart && isResumeByAR) {
             allMonsters = Singleton.getAllMonsters();
@@ -1057,25 +1070,25 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             isResumeByAR = false;
         }
 
-            for (Runnable r : allRunnableMonster) {
-                handler.post(r);
-            }
-            Log.d("Timeout", timeout + "");
-            if (keepGenerateGhost != null) {
-                genGhostHandler.postDelayed(keepGenerateGhost, timeout);
-            }
+        for (Runnable r : allRunnableMonster) {
+            handler.post(r);
+        }
+        Log.d("Timeout", timeout + "");
+        if (keepGenerateGhost != null) {
+            genGhostHandler.postDelayed(keepGenerateGhost, timeout);
+        }
 
-            if (keepGenerateItem != null)
-                genItemHandler.postDelayed(keepGenerateItem, 1000);
+        if (keepGenerateItem != null)
+            genItemHandler.postDelayed(keepGenerateItem, 1000);
 
-            if (mBagAdapter != null) {
-                mBagAdapter.notifyDataSetChanged();
-            }
+        if (mBagAdapter != null) {
+            mBagAdapter.notifyDataSetChanged();
+        }
 
-            if (isGameStart && locationrequest != null)
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+        if (isGameStart && locationrequest != null)
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
 
-        if(isGameStart) {
+        if (isGameStart) {
             setPlayerHP();
         }
 
@@ -1255,6 +1268,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // เลื่อนตำแหน่งของลูกษรใหม่
             myArrow.setPosition(mCurrentLatLng);
 
+            // เก็บตำแหน่งของผู้ใช้ เพื่อวาดเส้นทางที่ผ่านในตอนจบ
+            allPlayerPositions.add(mCurrentLatLng);
+
             // กำหนดตำแหน่งของกล้องใหม่
             setCameraPosition(mCurrentLatLng, 18, 0, azimut);
 
@@ -1266,8 +1282,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 unRegisterAllListener();
                 int[] duration = calculateGameDuration();
                 endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
-                        + "\n Average speed : " + Me.averageSpeed + " km/hr."
-                        + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
+                        + "\n Average speed : " + new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr."
+                        + "\n Burn Calories : " + new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight));
                 // TODO : end game dialog
                 endGameDialog.show();
 
@@ -1292,14 +1308,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         playerStatus.setProgress(Me.myHP);
     }
 
-    public void passAllMonster(boolean isChecked,ToggleButton toggleButton) {
+    public void passAllMonster(boolean isChecked, ToggleButton toggleButton) {
 
-        if(isChecked){
+        if (isChecked) {
             uncheckAllChildrenCascade(gView);
             toggleButton.setChecked(true);
             optionBar.setVisibility(View.VISIBLE);
 
-        }else{
+        } else {
             optionBar.setVisibility(View.GONE);
 
         }
@@ -1307,7 +1323,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     private void uncheckAllChildrenCascade(ViewGroup vg) {
         for (int i = 0; i < vg.getChildCount(); i++) {
-            ViewGroup v = (ViewGroup)vg.getChildAt(i);
+            ViewGroup v = (ViewGroup) vg.getChildAt(i);
             View vv = v.getChildAt(0);
             if (vv instanceof ToggleButton) {
                 ((ToggleButton) vv).setChecked(false);
@@ -1594,5 +1610,5 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
         }
     }
-}
 
+}
