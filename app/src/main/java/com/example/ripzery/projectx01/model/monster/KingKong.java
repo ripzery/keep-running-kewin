@@ -28,6 +28,9 @@ public class KingKong implements Monster {
     private int hp = 30;
     private MapsActivity mapsActivity;
     private boolean isRaged = false;
+    private LatLng toPosition;
+    private long elapsed = 0;
+    private LatLng startLatLng;
 
     public KingKong(MapsActivity mapsActivity) {
 
@@ -59,6 +62,36 @@ public class KingKong implements Monster {
     @Override
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public long getElapsed() {
+        return elapsed;
+    }
+
+    @Override
+    public void setElapsed(long elapsed) {
+        this.elapsed = elapsed;
+    }
+
+    @Override
+    public LatLng getToPosition() {
+        return toPosition;
+    }
+
+    @Override
+    public void setToPosition(LatLng toPosition) {
+        this.toPosition = toPosition;
+    }
+
+    @Override
+    public LatLng getStartLatLng() {
+        return startLatLng;
+    }
+
+    @Override
+    public void setStartLatLng(LatLng startLatLng) {
+        this.startLatLng = startLatLng;
     }
 
     @Override

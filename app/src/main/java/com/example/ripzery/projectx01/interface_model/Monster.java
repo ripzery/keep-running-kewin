@@ -18,6 +18,18 @@ public interface Monster {
 
     void setType(String type);
 
+    long getElapsed();
+
+    void setElapsed(long elapsed);
+
+    LatLng getToPosition();
+
+    void setToPosition(LatLng toPosition);
+
+    LatLng getStartLatLng();
+
+    void setStartLatLng(LatLng startLatLng);
+
     double getSpeed();
 
     void setSpeed(double speed);

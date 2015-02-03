@@ -374,37 +374,29 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
         });
 
-        // TODO : support all self-items 1.Distancex2 2.Distancex3 3.Shield
-        // TODO : support all monster-items 1.Pistol 2.Desert 3.Shotgun 4.Mine
-
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                // TODO:bug index out of bound
+                // TODO : fix item crash
                 if (Me.items.size() + Me.guns.size() >= Me.bagMaxCapacity) {
                     Toast.makeText(MapsActivity.this, "Your bag is full", Toast.LENGTH_SHORT).show();
-                }
-
-                if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
-
+                } else if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
                     for (int i = 0; i < allItems.size(); i++) {
-                        for (int j = 0; j < listMarkerItems.size(); j++) {
-                            if (allItems.get(i).getId().equals(listMarkerItems.get(j).getId())) {
-                                // Handle self-items
-                                if (ALL_SELF_ITEM.contains(marker.getTitle())) {
-                                    Me.items.add(allItems.get(i));
-                                }
-                                //Handle Monster-items
-                                else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
-                                    Me.guns.add((Gun) allItems.get(i));
-                                }
-                                allItems.remove(i);
-                                listMarkerItems.remove(j);
-                                marker.remove();
-                                mBagAdapter.notifyDataSetChanged();
-                                Log.d("Remove : ", i + "," + j);
-                                break;
+                        if (allItems.get(i).getId().equals(marker.getId())) {
+                            // Handle self-items
+                            if (ALL_SELF_ITEM.contains(marker.getTitle())) {
+                                Me.items.add(allItems.get(i));
                             }
+                            //Handle Monster-items
+                            else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
+                                Me.guns.add((Gun) allItems.get(i));
+                            }
+                            allItems.remove(i);
+                            listMarkerItems.remove(i);
+                            marker.remove();
+                            mBagAdapter.notifyDataSetChanged();
+                            Log.d("Remove : ", i + "," + i);
+                            break;
                         }
                     }
                 }
@@ -632,8 +624,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         return new Point(l1[0], l1[1]);
     }
 
-    public void animateMarker(final Monster monster, final Marker marker, final Location toPosition,
-                              final boolean hideMarker, final double speed) {
+    public void animateMarker(final Monster monster, final Marker marker,
+                              final boolean hideMarker) {
 
         // กำหนดเวลาเริ่มต้น
 //        final long start = SystemClock.uptimeMillis();
@@ -648,7 +640,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
 
         // กำหนดระยะเวลาที่จะ animate โดยขึ้นอยู่กับความเร็วของปีศาจนั้นๆ
-        final long initDuration = (long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0));
+        final long initDuration = (long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getToPosition()) / (monster.getSpeed() / 1000.0));
 
         // สร้าง interpolator
         final Interpolator interpolator = new LinearInterpolator();
@@ -661,8 +653,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // กำหนด flag ว่า marker ตัวนี้ได้แจ้งสั่นผู้ใช้เมื่อเข้าใกล้ไปแล้วหรือยัง
             boolean isVibrate = false;
 
-            LatLng newStartLatLng = startLatLng;
-
             //ปรับเวลาเริ่มต้นการเคลื่อนที่ marker ถ้าผู้ใช้เลื่อนตำแหน่ง
             long adjustStartTime = 0;
 
@@ -672,6 +662,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
             @Override
             public void run() {
+
+                if (monster.getStartLatLng() == null) {
+                    monster.setStartLatLng(startLatLng);
+                }
 
                 // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
                 if (monster.isDie()) {
@@ -695,74 +689,43 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                 } else {
                     // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
-                    long elapsed = (run_time * 16) - adjustStartTime;
+                    monster.setElapsed((run_time * 16) - adjustStartTime);
 
-                    if (isResumeByAR) {
-                        for (Monster m : allMonsters) {
-                            if (m.getId().equals(marker.getId())) {
-                                // TODO: fix position!
-                                Point myPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
-                                Point newPoint = new Point(m.getPoint().x + myPoint.x, m.getPoint().y + myPoint.y);
-                                newStartLatLng = proj.fromScreenLocation(newPoint);
-                                if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), newStartLatLng) > 10) {
-                                    // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
-//                                    Log.d("oldElapsed",elapsed+"");
-                                    double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), newStartLatLng);
-                                    elapsed = elapsed + 1000 * Math.round(distance / m.getSpeed());
-//                                    Log.d("newElapsed",elapsed+"");
-                                }
-                                marker.setPosition(newStartLatLng);
-                                // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
-                                break;
-                            }
-                        }
-                        isResumeByAR = false;
-                    }
                     // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
-                    else if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
+                    if (!mCurrentLatLng.equals(monster.getToPosition())) {
 
                         // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
-                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
+                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getLatLng()) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
 
-                            adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))));
+                            adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getToPosition()) / (monster.getSpeed() / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (monster.getSpeed() / 1000.0))));
 
                         } else { // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่ามากขึ้น
 
-                            adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))));
+                            adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (monster.getSpeed() / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getToPosition()) / (monster.getSpeed() / 1000.0))));
                         }
 
                         // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
-                        toPosition.setLatitude(mCurrentLatLng.latitude);
-                        toPosition.setLongitude(mCurrentLatLng.longitude);
+                        monster.setToPosition(mCurrentLatLng);
 
                         // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
-                        newStartLatLng = marker.getPosition();
+                        monster.setStartLatLng(marker.getPosition());
                         adjustStartTime = run_time * 16;
-                        adjustDuration = adjustDuration - elapsed;
-                        elapsed = 0;
-//
+                        adjustDuration = adjustDuration - monster.getElapsed();
+                        monster.setElapsed(0);
+
                     }
 
-                    // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
-//                mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
-
                     // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
-                    float t = interpolator.getInterpolation((float) elapsed
+                    float t = interpolator.getInterpolation((float) monster.getElapsed()
                             / adjustDuration);
 
-                    marker.setPosition(spherical.interpolate(t, newStartLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
+                    marker.setPosition(spherical.interpolate(t, monster.getStartLatLng(), monster.getToPosition()));
                     Point monsterPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
                     Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
                     monster.setPoint(new Point(monsterPoint.x - userPoint.x, userPoint.y - monsterPoint.y));
                     monster.setLatLng(marker.getPosition());
 
-                    // TODO : reset Latlng after ar mode
-
-//                Singleton.getInstance().setAllMonsters(allMonsters);
-//                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
-//                marker.showInfoWindow();
-//                marker.setAlpha(t);
-                    int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition());
+                    int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(monster.getToPosition(), marker.getPosition());
 
                     if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
                         Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
@@ -980,34 +943,36 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     // เพิ่มปีศาจ
-    private void addMonster(final Monster ghost) {
+    private void addMonster(final Monster mMonster) {
 
         //กำหนดชื่อให้ปีศาจแต่ละตัว
         String name = "Ghost";
         for (int i = 1; i <= 5; i++) {
             if (!listMonsterName.contains(name + i)) {
-                ghost.setType(name + i);
+                mMonster.setType(name + i);
                 listMonsterName.add(name + i);
                 break;
             }
         }
 
-        final Marker mGhost = mMap.addMarker(getRandomMarker(playground, mMonster).title(ghost.getType()));
+        final Marker markerMonster = mMap.addMarker(getRandomMarker(playground, mMonster).title(mMonster.getType()));
         Location location = new Location("Start");
         location.setLatitude(mCurrentLatLng.latitude);
         location.setLongitude(mCurrentLatLng.longitude);
         location.setTime(new Date().getTime());
+        mMonster.setToPosition(mCurrentLatLng);
         allMonsters.add(mMonster);
 
-        animateMarker(allMonsters.get(allMonsters.size() - 1), mGhost, location, true, ghost.getSpeed());
-        listMarkerMonster.add(mGhost);
+        animateMarker(mMonster, markerMonster, true);
+        listMarkerMonster.add(markerMonster);
         updateMonsterId();
     }
 
     private void addItem(Item item) {
-        allItems.add(item);
         Marker mItem = mMap.addMarker(getRandomMarker(playground, item).title(item.getType()));
+        Log.d("AddItem : ", item.getType());
         listMarkerItems.add(mItem);
+        allItems.add(item);
         updateItemId();
     }
 
@@ -1040,19 +1005,29 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
 
         if (Singleton.getAllMonsters() != null && isGameStart && isResumeByAR) {
-            int index = 0;
+            allMonsters = Singleton.getAllMonsters();
             Projection proj = mMap.getProjection();
-                allMonsters = Singleton.getAllMonsters();
-//                for(Monster m : allMonsters){
-//                    Log.d("Point : "+m.getId(),m.getPoint().x+","+m.getPoint().y);
-//                }
-//                for(Monster m : allMonsters){
-//                    LatLng latLng = proj.fromScreenLocation(m.getPoint());
-//                    listMarkerMonster.get(index).setPosition(latLng);
-//                    index++;
-//                }
-            //TODO : all monsters reset point
+            for (Monster m : allMonsters) {
+                for (Marker marker : listMarkerMonster) {
+                    if (m.getId().equals(marker.getId())) {
+                        Point myPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+                        Point newPoint = new Point(m.getPoint().x + myPoint.x, m.getPoint().y + myPoint.y);
+                        m.setStartLatLng(proj.fromScreenLocation(newPoint));
+                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), m.getStartLatLng()) > 10) {
+                            // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
+                            //                                    Log.d("oldElapsed",elapsed+"");
+                            double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), m.getStartLatLng());
+                            m.setElapsed(m.getElapsed() + 1000 * Math.round(distance / m.getSpeed()));
+                            //                                    Log.d("newElapsed",elapsed+"");
+                        }
+                        marker.setPosition(m.getStartLatLng());
+                        // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
+                        break;
+                    }
+                }
             }
+            isResumeByAR = false;
+        }
 
             for (Runnable r : allRunnableMonster) {
                 handler.post(r);
@@ -1242,8 +1217,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
             countDistanceToRotCam += distance;
 
-            if (location.getSpeed() > Me.highestSpeed)
+            if (location.getSpeed() > Me.highestSpeed) {
                 Me.highestSpeed = location.getSpeed();
+            }
 
             distanceGoal -= distance * Me.distanceMultiplier;
             mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
@@ -1268,6 +1244,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 endGameDialog.show();
 
             }
+            // update playground visible view
+            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
 
         }
     }
@@ -1502,6 +1480,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void updateMonsterId() {
+
         for (int i = 0; i < allMonsters.size(); i++) {
             allMonsters.get(i).setId(listMarkerMonster.get(i).getId());
             Log.d("updateMonsterId1st", "" + allMonsters.get(i).getId());
