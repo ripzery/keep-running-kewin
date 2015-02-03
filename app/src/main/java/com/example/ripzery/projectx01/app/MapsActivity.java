@@ -73,6 +73,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -194,6 +195,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        ALL_SELF_ITEM.add("Distancex2");
+        ALL_SELF_ITEM.add("Distancex3");
+        ALL_SELF_ITEM.add("Potion");
+
+        ALL_MONSTER_ITEM.add("Pistol");
+        ALL_MONSTER_ITEM.add("Desert");
+
         // setup class เช็คสถานะการเชื่อม network
         connectivity = new CheckConnectivity(this);
 
@@ -261,12 +269,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private void initVar() {
         ButterKnife.inject(this);
 
-        ALL_SELF_ITEM.add("Distancex2");
-        ALL_SELF_ITEM.add("Distancex3");
-        ALL_SELF_ITEM.add("Potion");
-
-        ALL_MONSTER_ITEM.add("Pistol");
-        ALL_MONSTER_ITEM.add("Desert");
 //        ALL_MONSTER_ITEM.add("Shotgun");
 //        ALL_MONSTER_ITEM.add("Mine");
 
@@ -278,10 +280,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // กำหนดค่าเริ่มต้นให้ item
         Me.guns.add(new Desert(this, 14));
         Me.guns.add(new Pistol(this, 60));
-        Me.guns.add(new Desert(this, 60));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
         Me.items.add(new ItemDistancex2(this));
 
         mMap.setMyLocationEnabled(true);
@@ -341,7 +339,37 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     public void onClick(DialogInterface dialogInterface, int i) {
                         distanceGoal = 1000;
                         Me.myHP = Me.myMaxHP;
-                        registerAllListener();
+                        allItems.clear();
+                        allMonsters.clear();
+                        listMarkerItems.clear();
+                        listMarkerMonster.clear();
+                        listMarkerItems.clear();
+                        Me.items.clear();
+                        Me.guns.clear();
+                        mBagAdapter.notifyDataSetChanged();
+                        mMap.clear();
+                        setPlayerHP();
+                        mPreviousLatLng = mCurrentLatLng;
+                        setCameraPosition(mCurrentLatLng, 18, 0);
+                        myArrow = mMap.addMarker(new MarkerOptions()
+                                .position(mCurrentLatLng)
+                                .anchor((float) 0.5, (float) 0.5)
+                                .flat(false)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                        keepGeneratingGhost();
+                        keepGeneratingItem();
+                        if (sensorManager != null) {
+                            sensorManager.registerListener(MapsActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                            sensorManager.registerListener(MapsActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                        }
+
+                        if (locationManager != null) {
+                            locationManager.addGpsStatusListener(checkLocation);
+                        }
+
+                        if (isGameStart && locationrequest != null)
+                            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+
                     }
                 })
                 .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
@@ -744,7 +772,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         }
 
                     } else { // เลื่อนจนถึงผู้เล่นแล้ว (โจมตีได้)
-
                         if (!((KingKong) monster).isRaged()) {
                             ((KingKong) monster).setIcon(R.drawable.monster_rage_ic);
                             marker.setIcon(monster.getIcon());
@@ -1254,10 +1281,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (Me.myHP > 50) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
             playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-        } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
+        } else if (Me.myHP > 30) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
             playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-        } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
+        } else if (Me.myHP <= 20) {
             playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
             playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
         }
