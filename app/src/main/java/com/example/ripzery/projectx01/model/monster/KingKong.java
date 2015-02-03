@@ -24,7 +24,7 @@ public class KingKong implements Monster {
     private double latitude;
     private double longitude;
     private int x, y;
-    private int attackPower = 20;
+    private int attackPower = 5;
     private int hp = 30;
     private MapsActivity mapsActivity;
     private boolean isRaged = false;

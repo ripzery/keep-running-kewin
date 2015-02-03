@@ -104,6 +104,7 @@ public class BagAdapter extends BaseAdapter {
             Me.selectGun = false;
             final Item item = Me.items.get(position - Me.guns.size());
             image.setImageResource(item.getThumb());
+            number.setText("");
         }
         return convertView;
     }

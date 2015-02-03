@@ -115,18 +115,20 @@ public class StatsDetailActivity extends ActionBarActivity {
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
-                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                if (Singleton.getAllPlayerPositions().size() > 1) {
+                    LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
-                PolylineOptions polylineOptions = new PolylineOptions();
-                polylineOptions.color(getResources().getColor(R.color.hp_good_dark));
-                polylineOptions.width(8);
-                for (LatLng latLng : Singleton.getAllPlayerPositions()) {
-                    polylineOptions.add(latLng);
-                    builder.include(latLng);
+                    PolylineOptions polylineOptions = new PolylineOptions();
+                    polylineOptions.color(getResources().getColor(R.color.hp_good_dark));
+                    polylineOptions.width(10);
+                    for (LatLng latLng : Singleton.getAllPlayerPositions()) {
+                        polylineOptions.add(latLng);
+                        builder.include(latLng);
+                    }
+                    LatLngBounds bounds = builder.build();
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 20));
+                    mMap.addPolyline(polylineOptions);
                 }
-                LatLngBounds bounds = builder.build();
-                mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 20));
-                mMap.addPolyline(polylineOptions);
             }
         });
 

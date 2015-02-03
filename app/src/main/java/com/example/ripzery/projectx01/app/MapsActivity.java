@@ -829,7 +829,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         keepGenerateGhost = new Runnable() {
             @Override
             public void run() {
-
                 if (listMarkerMonster.size() < MAX_GHOST_AT_ONCE) {
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
@@ -839,7 +838,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;
-                }
+            }
                 genGhostHandler.postDelayed(this, timeout);
             }
         };
@@ -1509,7 +1508,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
         int diff = endTotalSec - startTotalSec;
         Me.totalDuration = endTotalSec - startTotalSec;
-        Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
+        Me.averageSpeed = (maxDistance - distanceGoal) * 3.6 / Me.totalDuration;
         return new int[]{diff / 3600, diff / 60, diff % 60};
     }
 
