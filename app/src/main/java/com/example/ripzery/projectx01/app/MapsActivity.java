@@ -369,6 +369,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                         if (isGameStart && locationrequest != null)
                             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+                        startGameTime = Calendar.getInstance();
 
                     }
                 })
