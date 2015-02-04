@@ -98,7 +98,7 @@ import butterknife.InjectView;
 public class MapsActivity extends ActionBarActivity implements SensorEventListener, LocationListener {
 
     public static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
-    public static final double THRESHOLD_ROT_ARROW = 15; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
+    public static final double THRESHOLD_ROT_ARROW = 3; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     public static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
     public static final int DATA_ENABLED_REQ = 1;
     public static final int LOCATION_ENABLED_REQ = 2;
@@ -183,6 +183,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private boolean isResumeByAR = false;
     private ArrayList<LatLng> allPlayerPositions = new ArrayList<>();
     private int[] duration;
+    private float ALPHA = 0.2f;
+    private float[] orientation;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -360,6 +362,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 mMap.clear();
                                 allRunnableMonster.clear();
                                 handler = new Handler();
+                                allPlayerPositions.clear();
                                 setPlayerHP();
                                 mPreviousLatLng = mCurrentLatLng;
                                 setCameraPosition(mCurrentLatLng, 18, 0);
@@ -995,7 +998,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .bearing(bearing)
                 .build();
 
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+        });
     }
 
     // สุ่ม marker monster
@@ -1198,6 +1211,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         Me.items = new ArrayList<Item>();
     }
 
+    protected float[] lowPass(float[] input, float[] output) {
+        if (output == null) return input;
+
+        for (int i = 0; i < input.length; i++) {
+            output[i] = output[i] + ALPHA * (input[i] - output[i]);
+        }
+        return output;
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (myArrow != null) {
@@ -1214,8 +1236,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 boolean success = SensorManager.getRotationMatrix(R, I, accelerometerData,
                         magneticData);
                 if (success) {
-                    float orientation[] = new float[3];
-                    SensorManager.getOrientation(R, orientation);
+                    if (orientation == null)
+                        orientation = new float[3];
+                    orientation = lowPass(SensorManager.getOrientation(R, orientation), orientation);
+
                     azimut = (int) Math.round(Math.toDegrees(orientation[0]));
 //                    Log.d("orientation",orientation[1]+"");
                     if (Math.abs(azimut - oldAzimuth) >= THRESHOLD_ROT_ARROW && isGameStart && orientation[1] > -1.25 && orientation[1] < 1.25) {
@@ -1229,7 +1253,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 .bearing(azimut)
                                 .build();
 
-                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos));
+                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 200, new GoogleMap.CancelableCallback() {
+                            @Override
+                            public void onFinish() {
+
+                            }
+
+                            @Override
+                            public void onCancel() {
+                                Log.d("cancel", "!");
+                            }
+                        });
 
                         oldAzimuth = azimut;
                     }
