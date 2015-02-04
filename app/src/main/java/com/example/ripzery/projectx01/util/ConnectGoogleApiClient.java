@@ -1,5 +1,7 @@
 package com.example.ripzery.projectx01.util;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,6 +32,10 @@ public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbac
     @Override
     public void onConnected(Bundle bundle) {
         Log.d("status", "connected");
+        final Bitmap bp = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.dir),
+                130,
+                130,
+                false);
         if (LocationServices.FusedLocationApi.getLastLocation(mapsActivity.mGoogleApiClient) == null) {
             locationrequest = LocationRequest.create();
             locationrequest.setInterval(1000);
@@ -42,16 +48,18 @@ public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbac
                 @Override
                 public void onLocationChanged(Location location) {
                     numberOfUpdate++;
+
                     if (mapsActivity.checkLocation.isAccuracyAcceptable(location.getAccuracy())) {
                         mapsActivity.mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                         if (mapsActivity.myArrow == null) {
                             mapsActivity.mPreviousLatLng = mapsActivity.mCurrentLatLng;
                             mapsActivity.setCameraPosition(mapsActivity.mCurrentLatLng, 18, 0);
+
                             mapsActivity.myArrow = mapsActivity.mMap.addMarker(new MarkerOptions()
                                     .position(mapsActivity.mCurrentLatLng)
                                     .anchor((float) 0.5, (float) 0.5)
                                     .flat(false)
-                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                                    .icon(BitmapDescriptorFactory.fromBitmap(bp)));
 
                         }
                         LocationServices.FusedLocationApi.removeLocationUpdates(mapsActivity.mGoogleApiClient, this);
@@ -74,7 +82,7 @@ public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbac
                         .position(mapsActivity.mCurrentLatLng)
                         .anchor((float) 0.5, (float) 0.5)
                         .flat(false)
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                        .icon(BitmapDescriptorFactory.fromBitmap(bp)));
 
             }
         }
