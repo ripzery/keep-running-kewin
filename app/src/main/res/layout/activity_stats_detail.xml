@@ -8,6 +8,7 @@
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/my_awesome_toolbar"
+        style="@style/Theme.AppCompat.Light.NoActionBar.StatsDetail.FullScreen"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/circle_view"
@@ -15,9 +16,10 @@
 
 
     <FrameLayout
+        android:id="@+id/layoutMap"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="8">
+        android:layout_weight="4">
 
         <fragment
             android:id="@+id/map"
@@ -27,11 +29,44 @@
             android:alpha="0.8" />
     </FrameLayout>
 
-
     <LinearLayout
+        android:id="@+id/layoutDistance"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:visibility="invisible">
+
+        <TextView
+            android:id="@+id/tvDistance"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Distance"
+            android:textColor="@color/circle_view"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/tvDistanceDetail"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="@color/circle_view"
+            android:textSize="20sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutDuration"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:visibility="invisible">
 
         <TextView
             android:id="@+id/tvTotalDuration"
@@ -47,7 +82,7 @@
             android:id="@+id/tvTotalDurationDetail"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:gravity="center"
             android:textColor="@color/circle_view"
             android:textSize="20sp" />
@@ -55,9 +90,13 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/layoutSpeed"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:visibility="invisible">
 
         <TextView
             android:id="@+id/tvAverageSpeed"
@@ -73,7 +112,7 @@
             android:id="@+id/tvAverageSpeedDetail"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:gravity="center"
             android:textColor="@color/circle_view"
             android:textSize="20sp" />
@@ -81,9 +120,13 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/layoutCalories"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:visibility="invisible">
 
         <TextView
             android:id="@+id/tvBurnCalories"
@@ -99,7 +142,7 @@
             android:id="@+id/tvBurnCaloriesDetail"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:gravity="center"
             android:textColor="@color/circle_view"
             android:textSize="20sp" />
