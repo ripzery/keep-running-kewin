@@ -16,7 +16,7 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public class KingKong implements Monster {
 
-    private int id;
+    private String id;
     private boolean isDie = false;
     private String type;
     private double speed;
@@ -24,10 +24,13 @@ public class KingKong implements Monster {
     private double latitude;
     private double longitude;
     private int x, y;
-    private int attackPower = 1;
+    private int attackPower = 5;
     private int hp = 30;
     private MapsActivity mapsActivity;
     private boolean isRaged = false;
+    private LatLng toPosition;
+    private long elapsed = 0;
+    private LatLng startLatLng;
 
     public KingKong(MapsActivity mapsActivity) {
 
@@ -42,12 +45,12 @@ public class KingKong implements Monster {
     }
 
     @Override
-    public int getId() {
+    public String getId() {
         return id;
     }
 
     @Override
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -59,6 +62,36 @@ public class KingKong implements Monster {
     @Override
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public long getElapsed() {
+        return elapsed;
+    }
+
+    @Override
+    public void setElapsed(long elapsed) {
+        this.elapsed = elapsed;
+    }
+
+    @Override
+    public LatLng getToPosition() {
+        return toPosition;
+    }
+
+    @Override
+    public void setToPosition(LatLng toPosition) {
+        this.toPosition = toPosition;
+    }
+
+    @Override
+    public LatLng getStartLatLng() {
+        return startLatLng;
+    }
+
+    @Override
+    public void setStartLatLng(LatLng startLatLng) {
+        this.startLatLng = startLatLng;
     }
 
     @Override

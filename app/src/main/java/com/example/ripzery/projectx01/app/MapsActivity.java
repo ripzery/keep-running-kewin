@@ -34,6 +34,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.akexorcist.roundcornerprogressbar.IconRoundCornerProgressBar;
@@ -72,6 +73,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -83,6 +85,7 @@ import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -129,9 +132,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
     private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private int max_generate_item_timeout = 10; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int max_generate_item_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int min_generate_ghost_timeout = 10; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
-    private int min_generate_item_timeout = 20; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
+    private int min_generate_item_timeout = 60; // กำหนดระยะเวลาต่ำสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
     private int[] locationDistance, locationItem;
     private LatLngBounds playground;
     private Handler handler = new Handler();
@@ -177,15 +180,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private Item itemUse;
     private KingKong mMonster;
     private Item generatedItem;
-    private float px;
-    private float moveDistance;
-    private AnimatorSet animationGetItemSet;
-    private GoogleMap.OnMarkerClickListener itemMarkerClickListener;
-    private Location mCurrentLocation;
     private AlertDialog.Builder endGameDialog;
     private Calendar startGameTime;
     private Calendar endGameTime;
     private int azimut;
+    private boolean isResumeByAR = false;
+    private ArrayList<LatLng> allPlayerPositions = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -196,6 +196,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        ALL_SELF_ITEM.add("Distancex2");
+        ALL_SELF_ITEM.add("Distancex3");
+        ALL_SELF_ITEM.add("Potion");
+
+        ALL_MONSTER_ITEM.add("Pistol");
+        ALL_MONSTER_ITEM.add("Desert");
 
         // setup class เช็คสถานะการเชื่อม network
         connectivity = new CheckConnectivity(this);
@@ -264,12 +271,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private void initVar() {
         ButterKnife.inject(this);
 
-        ALL_SELF_ITEM.add("Distancex2");
-        ALL_SELF_ITEM.add("Distancex3");
-        ALL_SELF_ITEM.add("Potion");
-
-        ALL_MONSTER_ITEM.add("Pistol");
-        ALL_MONSTER_ITEM.add("Desert");
 //        ALL_MONSTER_ITEM.add("Shotgun");
 //        ALL_MONSTER_ITEM.add("Mine");
 
@@ -281,10 +282,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         // กำหนดค่าเริ่มต้นให้ item
         Me.guns.add(new Desert(this, 14));
         Me.guns.add(new Pistol(this, 60));
-        Me.guns.add(new Desert(this, 60));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
-        Me.items.add(new ItemDistancex2(this));
         Me.items.add(new ItemDistancex2(this));
 
         mMap.setMyLocationEnabled(true);
@@ -310,8 +307,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         animationItemBagSet.setDuration(500);
 
-        animationGetItemSet = new AnimatorSet();
-
         mBagAdapter = new BagAdapter(this);
         gView = (GridView) findViewById(R.id.gvBag);
         gView.setAdapter(mBagAdapter);
@@ -319,9 +314,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         revealColorView = (RevealColorView) findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
 
-        optionBar = (RelativeLayout)findViewById(R.id.option_bar);
+        optionBar = (RelativeLayout) findViewById(R.id.option_bar);
         //เมื่อกดดู detail ของ item
-        dropItemBtn = (Button)findViewById(R.id.dropItemBtn);
+        dropItemBtn = (Button) findViewById(R.id.dropItemBtn);
 
         detailItemBtn = (Button) findViewById(R.id.detailItemBtn);
 
@@ -333,23 +328,66 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
 
+        // TODO : Manage button in dialog
         endGameDialog = new AlertDialog.Builder(MapsActivity.this)
                 .setPositiveButton("Result", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
+                        Intent detailIntent = new Intent(MapsActivity.this, StatsDetailActivity.class);
+                        int[] duration = calculateGameDuration();
+                        String totalDuration = duration[0] + " : " + duration[1] + " : " + duration[2];
+                        String averageSpeed = new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr.";
+                        String burnCalories = new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight);
+                        detailIntent.putExtra("totalDuration", totalDuration);
+                        detailIntent.putExtra("averageSpeed", averageSpeed);
+                        detailIntent.putExtra("burnCalories", burnCalories);
+                        Singleton.setAllPlayerPositions(allPlayerPositions);
+                        startActivity(detailIntent);
                     }
                 })
                 .setNeutralButton("Play again", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        distanceGoal = 1000;
+                        Me.myHP = Me.myMaxHP;
+                        allItems.clear();
+                        allMonsters.clear();
+                        listMarkerItems.clear();
+                        listMarkerMonster.clear();
+                        listMarkerItems.clear();
+                        Me.items.clear();
+                        Me.guns.clear();
+                        mBagAdapter.notifyDataSetChanged();
+                        mMap.clear();
+                        setPlayerHP();
+                        mPreviousLatLng = mCurrentLatLng;
+                        setCameraPosition(mCurrentLatLng, 18, 0);
+                        myArrow = mMap.addMarker(new MarkerOptions()
+                                .position(mCurrentLatLng)
+                                .anchor((float) 0.5, (float) 0.5)
+                                .flat(false)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                        keepGeneratingGhost();
+                        keepGeneratingItem();
+                        if (sensorManager != null) {
+                            sensorManager.registerListener(MapsActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                            sensorManager.registerListener(MapsActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                        }
+
+                        if (locationManager != null) {
+                            locationManager.addGpsStatusListener(checkLocation);
+                        }
+
+                        if (isGameStart && locationrequest != null)
+                            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+                        startGameTime = Calendar.getInstance();
 
                     }
                 })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
+                        MapsActivity.this.finish();
                     }
                 })
                 .setCancelable(false);
@@ -376,25 +414,31 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
         });
 
-        // TODO : support all self-items 1.Distancex2 2.Distancex3 3.Shield
-        // TODO : support all monster-items 1.Pistol 2.Desert 3.Shotgun 4.Mine
-
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
-                    // Handle self-items
-                    if (ALL_SELF_ITEM.contains(marker.getTitle())) {
-                        Me.items.add(allItems.get(listMarkerItems.indexOf(marker)));
+                // TODO : fix item crash
+                if (Me.items.size() + Me.guns.size() >= Me.bagMaxCapacity) {
+                    Toast.makeText(MapsActivity.this, "Your bag is full", Toast.LENGTH_SHORT).show();
+                } else if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
+                    for (int i = 0; i < allItems.size(); i++) {
+                        if (allItems.get(i).getId().equals(marker.getId())) {
+                            // Handle self-items
+                            if (ALL_SELF_ITEM.contains(marker.getTitle())) {
+                                Me.items.add(allItems.get(i));
+                            }
+                            //Handle Monster-items
+                            else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
+                                Me.guns.add((Gun) allItems.get(i));
+                            }
+                            allItems.remove(i);
+                            listMarkerItems.remove(i);
+                            marker.remove();
+                            mBagAdapter.notifyDataSetChanged();
+                            Log.d("Remove : ", i + "," + i);
+                            break;
+                        }
                     }
-                    //Handle Monster-items
-                    else if (ALL_MONSTER_ITEM.contains(marker.getTitle())) {
-                        Me.guns.add((Gun) allItems.get(listMarkerItems.indexOf(marker)));
-                    }
-                    allItems.remove(listMarkerItems.indexOf(marker));
-                    listMarkerItems.remove(marker);
-                    marker.remove();
-                    mBagAdapter.notifyDataSetChanged();
                 }
                 return true;
             }
@@ -403,7 +447,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         dropItemBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO drop item
                 if (Me.chosenGun < Me.guns.size()) {
                     Me.guns.remove(Me.chosenGun);
                 } else {
@@ -511,6 +554,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         else {
                             Me.myHP = Me.myMaxHP;
                         }
+                        setPlayerHP();
                     }
                 }
             }
@@ -620,9 +664,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         return new Point(l1[0], l1[1]);
     }
 
-    // TODO : Bug marker move away from player
-    public void animateMarker(final Monster monster, final Marker marker, final Location toPosition,
-                              final boolean hideMarker, final double speed) {
+    public void animateMarker(final Monster monster, final Marker marker,
+                              final boolean hideMarker) {
 
         // กำหนดเวลาเริ่มต้น
 //        final long start = SystemClock.uptimeMillis();
@@ -631,13 +674,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         final LatLngInterpolator.Linear spherical = new LatLngInterpolator.Linear();
 
         // แปลงตำแหน่งของ marker จาก Location เป็น onScreen
-        Projection proj = mMap.getProjection();
+        final Projection proj = mMap.getProjection();
         Point startPoint = proj.toScreenLocation(marker.getPosition());
         monster.setPoint(startPoint);
         final LatLng startLatLng = proj.fromScreenLocation(startPoint);
 
         // กำหนดระยะเวลาที่จะ animate โดยขึ้นอยู่กับความเร็วของปีศาจนั้นๆ
-        final long initDuration = (long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0));
+        final long initDuration = (long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getToPosition()) / (monster.getSpeed() / 1000.0));
 
         // สร้าง interpolator
         final Interpolator interpolator = new LinearInterpolator();
@@ -650,8 +693,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             // กำหนด flag ว่า marker ตัวนี้ได้แจ้งสั่นผู้ใช้เมื่อเข้าใกล้ไปแล้วหรือยัง
             boolean isVibrate = false;
 
-            LatLng newStartLatLng = startLatLng;
-
             //ปรับเวลาเริ่มต้นการเคลื่อนที่ marker ถ้าผู้ใช้เลื่อนตำแหน่ง
             long adjustStartTime = 0;
 
@@ -661,6 +702,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
             @Override
             public void run() {
+
+                if (monster.getStartLatLng() == null) {
+                    monster.setStartLatLng(startLatLng);
+                }
 
                 // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
                 if (monster.isDie()) {
@@ -684,55 +729,43 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                 } else {
                     // ให้เวลาที่ผ่านไป = เวลาปัจจุบัน - เวลาเริ่มต้น animate
-                    long elapsed = (run_time * 16) - adjustStartTime;
+                    monster.setElapsed((run_time * 16) - adjustStartTime);
 
                     // ถ้าตำแหน่งปัจจุบันของผู้ใช้ != ตำแหน่งที่ปีศาจจะเลื่อนไป
-                    if (mCurrentLatLng.latitude != toPosition.getLatitude() || mCurrentLatLng.longitude != toPosition.getLongitude()) {
+                    if (!mCurrentLatLng.equals(monster.getToPosition())) {
 
                         // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
-                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
+                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getLatLng()) > DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng)) {
 
-                            adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))));
+                            adjustDuration = adjustDuration - (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getToPosition()) / (monster.getSpeed() / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (monster.getSpeed() / 1000.0))));
 
                         } else { // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่ามากขึ้น
 
-                            adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (speed / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker, toPosition) / (speed / 1000.0))));
+                            adjustDuration = adjustDuration + (((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), mCurrentLatLng) / (monster.getSpeed() / 1000.0))) - ((long) (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), monster.getToPosition()) / (monster.getSpeed() / 1000.0))));
                         }
 
                         // ปรับตำแหน่งปัจจุบันของผู้ใช้ == ตำแหน่งที่ปีศาจจะเลื่อนไป
-                        toPosition.setLatitude(mCurrentLatLng.latitude);
-                        toPosition.setLongitude(mCurrentLatLng.longitude);
+                        monster.setToPosition(mCurrentLatLng);
 
                         // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
-                        newStartLatLng = marker.getPosition();
+                        monster.setStartLatLng(marker.getPosition());
                         adjustStartTime = run_time * 16;
-                        adjustDuration = adjustDuration - elapsed;
-                        elapsed = 0;
-//
-//                    Log.d("adjustDuration",""+adjustDuration);
-//                    Log.d("elapse",""+elapsed);
+                        adjustDuration = adjustDuration - monster.getElapsed();
+                        monster.setElapsed(0);
+
                     }
 
-
-                    // แสดงเวลาที่ผีต้องเลื่อนไปหาผู้ใช้
-//                mGhost4Status.setText("time left : " + (adjustDuration - elapsed));
-
                     // คำนวณค่า t ที่ใช้ในการเลื่อนตำแหน่งของผีโดยคำนวณจาก elapsed และ adjustDuration และปรับ tranparency ของผี
-                    float t = interpolator.getInterpolation((float) elapsed
+                    float t = interpolator.getInterpolation((float) monster.getElapsed()
                             / adjustDuration);
-//                Log.d("t",""+t);
-                    marker.setPosition(spherical.interpolate(t, newStartLatLng, new LatLng(toPosition.getLatitude(), toPosition.getLongitude())));
+
+                    marker.setPosition(spherical.interpolate(t, monster.getStartLatLng(), monster.getToPosition()));
                     Point monsterPoint = mMap.getProjection().toScreenLocation(marker.getPosition());
                     Point userPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
-//                Log.d("id",""+monster.getId());
                     monster.setPoint(new Point(monsterPoint.x - userPoint.x, userPoint.y - monsterPoint.y));
                     monster.setLatLng(marker.getPosition());
 
-//                Singleton.getInstance().setAllMonsters(allMonsters);
-//                marker.setSnippet("x:" + (ghostPoint.x - userPoint.x) + ", y: " + (userPoint.y - ghostPoint.y));
-//                marker.showInfoWindow();
-//                marker.setAlpha(t);
-                    int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(toPosition, marker.getPosition());
+                    int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(monster.getToPosition(), marker.getPosition());
 
                     if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
                         Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
@@ -751,25 +784,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         }
 
                     } else { // เลื่อนจนถึงผู้เล่นแล้ว (โจมตีได้)
-
-                    /* ชุดโค้ดที่ทำการลบ marker ออกจาก maps
-                    if (!listMarkerMonster.isEmpty() && !listMonsterName.isEmpty()) {
-
-                            listMarkerMonster.remove(0);
-                            listMonsterName.remove(marker.getTitle());
-                            allMonsters.remove(monster);
-                            updateMonsterId();
-                            allRunnableMonster.remove(this);
-
-                            if (hideMarker) {
-                                marker.setVisible(false);
-                            } else {
-                                marker.setVisible(true);
-                            }
-
-                    }
-                    */
-
                         if (!((KingKong) monster).isRaged()) {
                             ((KingKong) monster).setIcon(R.drawable.monster_rage_ic);
                             marker.setIcon(monster.getIcon());
@@ -777,31 +791,23 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         Log.d("Attack!", "Monster No." + allMonsters.indexOf(monster));
                         if (Me.myHP >= monster.getAttackPower())
                             Me.myHP -= monster.getAttackPower();
+                        else {
+                            Me.myHP = 0;
+                        }
 
-
+                        setPlayerHP();
                         if (Me.myHP <= 0) {
 
+                            // TODO : end game dialog
                             int[] duration = calculateGameDuration();
                             endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
-                                    + "\n Average speed : " + Me.averageSpeed + " km/hr."
-                                    + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
+                                    + "\n Average speed : " + new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr."
+                                    + "\n Burn Calories : " + new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight));
 
                             endGameDialog.show();
                             unRegisterAllListener();
 
                         } else {
-                            if (Me.myHP > 50) {
-                                playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
-                                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-                            } else if (Me.myHP > 30 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
-                                playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
-                                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-                            } else if (Me.myHP <= 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
-                                playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
-                                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
-                            }
-                            playerStatus.setProgress(Me.myHP);
-//                    Log.d("HpProgress",""+playerStatus.getProgress());
                             handler.postDelayed(this, 3000); // หลังจากโจมตีใส่ผู้เล่นแล้ว จะต้องรอ 3 วินาที
                         }
                     }
@@ -823,21 +829,20 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         keepGenerateGhost = new Runnable() {
             @Override
             public void run() {
-
                 if (listMarkerMonster.size() < MAX_GHOST_AT_ONCE) {
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
                     mMonster = new KingKong(MapsActivity.this);
-                    mMonster.setSpeed(5);
+                    mMonster.setSpeed(10);
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;
-                }
+            }
                 genGhostHandler.postDelayed(this, timeout);
             }
         };
-        genGhostHandler.postDelayed(keepGenerateGhost, 30000);
+        genGhostHandler.postDelayed(keepGenerateGhost, min_generate_ghost_timeout * 1000);
     }
 
     public void keepGeneratingItem() {
@@ -978,38 +983,37 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     // เพิ่มปีศาจ
-    private void addMonster(final Monster ghost) {
+    private void addMonster(final Monster mMonster) {
 
         //กำหนดชื่อให้ปีศาจแต่ละตัว
         String name = "Ghost";
         for (int i = 1; i <= 5; i++) {
             if (!listMonsterName.contains(name + i)) {
-                ghost.setType(name + i);
+                mMonster.setType(name + i);
                 listMonsterName.add(name + i);
                 break;
             }
         }
 
-        final Marker mGhost = mMap.addMarker(getRandomMarker(playground, mMonster).title(ghost.getType()));
+        final Marker markerMonster = mMap.addMarker(getRandomMarker(playground, mMonster).title(mMonster.getType()));
         Location location = new Location("Start");
         location.setLatitude(mCurrentLatLng.latitude);
         location.setLongitude(mCurrentLatLng.longitude);
         location.setTime(new Date().getTime());
+        mMonster.setToPosition(mCurrentLatLng);
         allMonsters.add(mMonster);
-        updateMonsterId();
 
-        Log.d("Monster Count", "" + allMonsters.size());
-        for (int i = 0; i < allMonsters.size(); i++) {
-            Log.d("id", allMonsters.get(i).getId() + "");
-        }
-        animateMarker(allMonsters.get(allMonsters.size() - 1), mGhost, location, true, ghost.getSpeed());
-        listMarkerMonster.add(mGhost);
+        animateMarker(mMonster, markerMonster, true);
+        listMarkerMonster.add(markerMonster);
+        updateMonsterId();
     }
 
     private void addItem(Item item) {
-        allItems.add(item);
         Marker mItem = mMap.addMarker(getRandomMarker(playground, item).title(item.getType()));
+        Log.d("AddItem : ", item.getType());
         listMarkerItems.add(mItem);
+        allItems.add(item);
+        updateItemId();
     }
 
     public void unRegisterAllListener() {
@@ -1025,55 +1029,66 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (locationManager != null)
             locationManager.removeGpsStatusListener(checkLocation);
         if (isGameStart)
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
 
     }
 
     public void registerAllListener() {
 
-            if (sensorManager != null) {
-                sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-                sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
-            }
+        if (sensorManager != null) {
+            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
 
-            if (locationManager != null) {
-                locationManager.addGpsStatusListener(checkLocation);
-            }
+        if (locationManager != null) {
+            locationManager.addGpsStatusListener(checkLocation);
+        }
 
-            if (Singleton.getAllMonsters() != null) {
-                allMonsters = Singleton.getAllMonsters();
+        if (Singleton.getAllMonsters() != null && isGameStart && isResumeByAR) {
+            allMonsters = Singleton.getAllMonsters();
+            Projection proj = mMap.getProjection();
+            for (Monster m : allMonsters) {
+                for (Marker marker : listMarkerMonster) {
+                    if (m.getId().equals(marker.getId())) {
+                        Point myPoint = mMap.getProjection().toScreenLocation(myArrow.getPosition());
+                        Point newPoint = new Point(m.getPoint().x + myPoint.x, m.getPoint().y + myPoint.y);
+                        m.setStartLatLng(proj.fromScreenLocation(newPoint));
+                        if (DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), m.getStartLatLng()) > 10) {
+                            // ถ้าระยะห่างของผีกับตำแหน่งที่จะเลื่อนไปหา มากกว่า ระยะห่างของผีกับตำแหน่งผู้ใช้ ให้ปรับ adjustDuration มีค่าน้อยลง
+                            //                                    Log.d("oldElapsed",elapsed+"");
+                            double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(marker.getPosition(), m.getStartLatLng());
+                            m.setElapsed(m.getElapsed() + 1000 * Math.round(distance / m.getSpeed()));
+                            //                                    Log.d("newElapsed",elapsed+"");
+                        }
+                        marker.setPosition(m.getStartLatLng());
+                        // แก้ไขตำแหน่งเริ่มต้นของ marker ปีศาจเมื่อผู้ใช้เคลื่อนที่ ทำการปรับเวลา elapse เป็น 0 (เริ่มต้นใหม่) และปรับ adjustDuration ให้ลดลง
+                        break;
+                    }
+                }
             }
+            isResumeByAR = false;
+        }
 
-            for (Runnable r : allRunnableMonster) {
-                handler.post(r);
-            }
-            Log.d("Timeout", timeout + "");
-            if (keepGenerateGhost != null) {
-                genGhostHandler.postDelayed(keepGenerateGhost, timeout);
-            }
+        for (Runnable r : allRunnableMonster) {
+            handler.post(r);
+        }
+        Log.d("Timeout", timeout + "");
+        if (keepGenerateGhost != null) {
+            genGhostHandler.postDelayed(keepGenerateGhost, timeout);
+        }
 
-            if (keepGenerateItem != null)
-                genItemHandler.postDelayed(keepGenerateItem, 1000);
+        if (keepGenerateItem != null)
+            genItemHandler.postDelayed(keepGenerateItem, 1000);
 
-            if (mBagAdapter != null) {
-                mBagAdapter.notifyDataSetChanged();
-            }
+        if (mBagAdapter != null) {
+            mBagAdapter.notifyDataSetChanged();
+        }
 
-            if (isGameStart && locationrequest != null)
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+        if (isGameStart && locationrequest != null)
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
 
-        if(isGameStart) {
-            if (Me.myHP > 50) {
-                playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
-                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
-            } else if (Me.myHP > 20 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_good)) {
-                playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
-                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
-            } else if (Me.myHP <= 10 && playerStatus.getProgressColor() == getResources().getColor(R.color.hp_fair)) {
-                playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
-                playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
-            }
-            playerStatus.setProgress(Me.myHP);
+        if (isGameStart) {
+            setPlayerHP();
         }
 
     }
@@ -1198,7 +1213,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     @Override
     public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
         // แสดงความเร็วและความแม่นยำ
 //        mGhost1Status.setText("v : " + location.getSpeed());
 //        mGhost2Status.setText("Acc : " + location.getAccuracy() + " m.");
@@ -1243,14 +1257,18 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             double distance = DistanceCalculator.getDistanceBetweenMarkersInMetres(mCurrentLatLng, mPreviousLatLng);
             countDistanceToRotCam += distance;
 
-            if (location.getSpeed() > Me.highestSpeed)
+            if (location.getSpeed() > Me.highestSpeed) {
                 Me.highestSpeed = location.getSpeed();
+            }
 
             distanceGoal -= distance * Me.distanceMultiplier;
             mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
 
             // เลื่อนตำแหน่งของลูกษรใหม่
             myArrow.setPosition(mCurrentLatLng);
+
+            // เก็บตำแหน่งของผู้ใช้ เพื่อวาดเส้นทางที่ผ่านในตอนจบ
+            allPlayerPositions.add(mCurrentLatLng);
 
             // กำหนดตำแหน่งของกล้องใหม่
             setCameraPosition(mCurrentLatLng, 18, 0, azimut);
@@ -1263,23 +1281,40 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 unRegisterAllListener();
                 int[] duration = calculateGameDuration();
                 endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
-                        + "\n Average speed : " + Me.averageSpeed + " km/hr."
-                        + "\n Burn Calories : " + Me.averageSpeed * Me.averageSpeed * Me.weight);
+                        + "\n Average speed : " + new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr."
+                        + "\n Burn Calories : " + new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight));
+                // TODO : end game dialog
                 endGameDialog.show();
 
             }
+            // update playground visible view
+            playground = mMap.getProjection().getVisibleRegion().latLngBounds;
 
         }
     }
 
-    public void passAllMonster(boolean isChecked,ToggleButton toggleButton) {
+    public void setPlayerHP() {
+        if (Me.myHP > 50) {
+            playerStatus.setProgressColor(getResources().getColor(R.color.hp_good));
+            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_good_dark));
+        } else if (Me.myHP > 30) {
+            playerStatus.setProgressColor(getResources().getColor(R.color.hp_fair));
+            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_fair_dark));
+        } else if (Me.myHP <= 20) {
+            playerStatus.setProgressColor(getResources().getColor(R.color.hp_poor));
+            playerStatus.setHeaderColor(getResources().getColor(R.color.hp_poor_dark));
+        }
+        playerStatus.setProgress(Me.myHP);
+    }
 
-        if(isChecked){
+    public void passAllMonster(boolean isChecked, ToggleButton toggleButton) {
+
+        if (isChecked) {
             uncheckAllChildrenCascade(gView);
             toggleButton.setChecked(true);
             optionBar.setVisibility(View.VISIBLE);
 
-        }else{
+        } else {
             optionBar.setVisibility(View.GONE);
 
         }
@@ -1287,7 +1322,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     private void uncheckAllChildrenCascade(ViewGroup vg) {
         for (int i = 0; i < vg.getChildCount(); i++) {
-            ViewGroup v = (ViewGroup)vg.getChildAt(i);
+            ViewGroup v = (ViewGroup) vg.getChildAt(i);
             View vv = v.getChildAt(0);
             if (vv instanceof ToggleButton) {
                 ((ToggleButton) vv).setChecked(false);
@@ -1477,27 +1512,37 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public int[] calculateGameDuration() {
-        if (endGameTime == null) {
-            endGameTime = Calendar.getInstance();
-        }
+        endGameTime = Calendar.getInstance();
         int endTotalSec = endGameTime.get(Calendar.HOUR) * 3600 + endGameTime.get(Calendar.MINUTE) * 60 + endGameTime.get(Calendar.SECOND);
         int startTotalSec = startGameTime.get(Calendar.HOUR) * 3600 + startGameTime.get(Calendar.MINUTE) * 60 + startGameTime.get(Calendar.SECOND);
         int diff = endTotalSec - startTotalSec;
         Me.totalDuration = endTotalSec - startTotalSec;
-        Me.averageSpeed = maxDistance * 3.6 / Me.totalDuration;
+        Me.averageSpeed = (maxDistance - distanceGoal) * 3.6 / Me.totalDuration;
         return new int[]{diff / 3600, diff / 60, diff % 60};
     }
 
     public void passAllMonster() {
         Intent i = new Intent(this, MainActivity.class);
         Singleton.getInstance().setAllMonsters(allMonsters);
+        for (Monster m : allMonsters) {
+            Log.d("Before Point : " + m.getId(), m.getPoint().x + "," + m.getPoint().y);
+        }
+        isResumeByAR = true;
         startActivity(i);
     }
 
     public void updateMonsterId() {
+
         for (int i = 0; i < allMonsters.size(); i++) {
-            allMonsters.get(i).setId(i);
+            allMonsters.get(i).setId(listMarkerMonster.get(i).getId());
             Log.d("updateMonsterId1st", "" + allMonsters.get(i).getId());
+        }
+    }
+
+    public void updateItemId() {
+        for (int i = 0; i < allItems.size(); i++) {
+            allItems.get(i).setId(listMarkerItems.get(i).getId());
+            Log.d("updateItemId1st", "" + allItems.get(i).getId());
         }
     }
 
@@ -1573,5 +1618,5 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             }
         }
     }
-}
 
+}

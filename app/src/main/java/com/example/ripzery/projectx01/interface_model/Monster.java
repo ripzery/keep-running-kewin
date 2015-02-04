@@ -10,13 +10,25 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public interface Monster {
 
-    int getId();
+    String getId();
 
-    void setId(int id);
+    void setId(String id);
 
     String getType();
 
     void setType(String type);
+
+    long getElapsed();
+
+    void setElapsed(long elapsed);
+
+    LatLng getToPosition();
+
+    void setToPosition(LatLng toPosition);
+
+    LatLng getStartLatLng();
+
+    void setStartLatLng(LatLng startLatLng);
 
     double getSpeed();
 
@@ -36,7 +48,7 @@ public interface Monster {
 
     void setPoint(Point xy);
 
-    public void setDie(boolean isDie);
-
     public boolean isDie();
+
+    public void setDie(boolean isDie);
 }

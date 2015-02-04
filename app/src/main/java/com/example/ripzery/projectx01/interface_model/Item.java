@@ -18,6 +18,10 @@ public interface Item {
 
     public void setLatLng(LatLng latLng);
 
+    public String getId();
+
+    public void setId(String id);
+
     public String getType();
 
     public BitmapDescriptor getMarkerIcon();

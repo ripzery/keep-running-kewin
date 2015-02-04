@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.ripzery.projectx01"
-        minSdkVersion 17
+        minSdkVersion 21
         targetSdkVersion 21
         versionCode 1
         versionName "1.0"
@@ -43,6 +43,5 @@ dependencies {
     compile 'it.sephiroth.android.library.horizontallistview:hlistview:1.2.2'
     compile 'com.github.lzyzsd:circleprogress:1.0.1@aar'
     compile 'com.akexorcist:RoundCornerProgressBar:1.0.0'
-    compile 'com.androidmapsextensions:android-maps-extensions:2.2.0'
     compile project(':rajawali')
 }

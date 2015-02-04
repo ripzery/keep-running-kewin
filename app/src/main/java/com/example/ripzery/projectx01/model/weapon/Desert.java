@@ -15,9 +15,9 @@ import com.google.android.gms.maps.model.LatLng;
  */
 public class Desert extends Gun {
     public static final String type = "Desert";
-    public static final int id = R.drawable.pin_dessert;
     private final BitmapDescriptor icon;
     private LatLng latLng;
+    private String id;
 
     public Desert(Context mContext, int bullet) {
         super(mContext, "Desert", bullet, 7, 25f, 1200);
@@ -50,6 +50,16 @@ public class Desert extends Gun {
     @Override
     public void setLatLng(LatLng latLng) {
         this.latLng = latLng;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override
