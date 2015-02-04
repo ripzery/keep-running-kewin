@@ -1319,6 +1319,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         ImageView image = (ImageView) dialog.findViewById(R.id.detail_img);
         image.setImageResource(selected.getThumb());
 
+        ImageView exit = (ImageView) dialog.findViewById(R.id.detail_exit);
+        exit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+
         TextView name = (TextView) dialog.findViewById(R.id.detail_name);
         name.setText(selected.getName());
 
