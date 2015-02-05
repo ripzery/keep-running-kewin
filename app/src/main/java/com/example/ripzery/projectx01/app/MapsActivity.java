@@ -6,6 +6,8 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.hardware.Sensor;
@@ -366,11 +368,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 setPlayerHP();
                                 mPreviousLatLng = mCurrentLatLng;
                                 setCameraPosition(mCurrentLatLng, 18, 0);
+                                final Bitmap bp = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.dir),
+                                        130,
+                                        130,
+                                        false);
                                 myArrow = mMap.addMarker(new MarkerOptions()
                                         .position(mCurrentLatLng)
                                         .anchor((float) 0.5, (float) 0.5)
                                         .flat(false)
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dir)));
+                                        .icon(BitmapDescriptorFactory.fromBitmap(bp)));
                                 keepGeneratingGhost();
                                 keepGeneratingItem();
                                 isGameStart = true;
@@ -909,7 +915,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     addMonster(mMonster);
                 } else {
                     timeout = 1000;
-            }
+                }
                 genGhostHandler.postDelayed(this, timeout);
             }
         };
@@ -1261,7 +1267,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
                             @Override
                             public void onCancel() {
-                                Log.d("cancel", "!");
+
                             }
                         });
 
