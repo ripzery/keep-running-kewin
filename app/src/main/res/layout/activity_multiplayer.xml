@@ -1,0 +1,16 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragment_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.ripzery.projectx01.app.MultiplayerActivity">
+
+    <!-- SIGN-IN SCREEN -->
+    <fragment
+        android:id="@+id/fragment_sign_in"
+        android:name="com.example.ripzery.projectx01.app.SignInFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:layout="@layout/fragment_sign_in"></fragment>
+
+</FrameLayout>

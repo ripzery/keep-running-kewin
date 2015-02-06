@@ -10,5 +10,13 @@
     <string name="title_activity_campaign">CampaignActivity</string>
     <string name="title_activity_main_activity2">MainActivity2</string>
     <string name="title_activity_stats_detail">StatsDetail</string>
+    <string name="title_activity_multiplayer">MultiplayerActivity</string>
+    <string name="signin_failure">Signin failure</string>
+    <string name="signin_other_error">Signin error</string>
+    <string name="app_id">874411941683</string>
+    <string name="title_activity_game">GameActivity</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

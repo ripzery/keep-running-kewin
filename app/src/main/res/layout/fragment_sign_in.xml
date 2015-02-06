@@ -1,0 +1,44 @@
+<!-- SIGN-IN SCREEN -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/blur">
+
+    <android.support.v7.widget.Toolbar
+        style="@style/toolbar"
+        android:background="@color/transparent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@id/my_awesome_toolbar"
+        android:orientation="vertical">
+
+        <View
+            style="@style/empty_view"
+            android:layout_weight="0.5"></View>
+
+        <TextView
+            android:id="@+id/tvMotivated1"
+            style="@style/motivation_text"
+            android:text=" More players" />
+
+        <TextView
+            android:id="@+id/tvMotivated2"
+            style="@style/motivation_text"
+            android:text="More fun ! " />
+
+
+        <com.google.android.gms.common.SignInButton
+            android:id="@+id/button_sign_in"
+            style="@style/SignInButton"
+            android:layout_gravity="center" />
+
+        <View
+            style="@style/empty_view"
+            android:layout_weight="1"></View>
+
+    </LinearLayout>
+
+
+</RelativeLayout>

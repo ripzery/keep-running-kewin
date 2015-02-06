@@ -1,0 +1,142 @@
+package com.example.ripzery.projectx01.app;
+
+import android.app.Activity;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.util.TypefaceSpan;
+import com.google.android.gms.common.SignInButton;
+
+/**
+ * A simple {@link Fragment} subclass.
+ * Activities that contain this fragment must implement the
+ * {@link SignInFragment.OnFragmentInteractionListener} interface
+ * to handle interaction events.
+ * Use the {@link SignInFragment#newInstance} factory method to
+ * create an instance of this fragment.
+ */
+public class SignInFragment extends Fragment {
+    // TODO: Rename parameter arguments, choose names that match
+    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+    private static final String ARG_PARAM1 = "param1";
+    private static final String ARG_PARAM2 = "param2";
+
+
+    private OnFragmentInteractionListener mListener;
+    private SignInButton signInButton;
+    private TextView tvMotivated1;
+    private TextView tvMotivated2;
+    private ActionBar mActionBar;
+
+    public SignInFragment() {
+        // Required empty public constructor
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @param param1 Parameter 1.
+     * @param param2 Parameter 2.
+     * @return A new instance of fragment SignInFragment.
+     */
+    // TODO: Rename and change types and number of parameters
+    public static SignInFragment newInstance(String param1, String param2) {
+        SignInFragment fragment = new SignInFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_PARAM1, param1);
+        args.putString(ARG_PARAM2, param2);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            // TODO : get argument here
+        }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View rootView = inflater.inflate(R.layout.fragment_sign_in, container, false);
+
+        Toolbar toolbar = (Toolbar) rootView.findViewById(R.id.my_awesome_toolbar);
+        ((ActionBarActivity) getActivity()).setSupportActionBar(toolbar);
+        mActionBar = ((ActionBarActivity) getActivity()).getSupportActionBar();
+        SpannableString mStringTitle = new SpannableString("Sign-In");
+        mStringTitle.setSpan(new TypefaceSpan(getActivity(), "Roboto-Light.ttf"), 0, mStringTitle.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        mActionBar.setTitle(mStringTitle);
+        mActionBar.setHomeButtonEnabled(true);
+        mActionBar.setDisplayHomeAsUpEnabled(true);
+
+        signInButton = (SignInButton) rootView.findViewById(R.id.button_sign_in);
+        tvMotivated1 = (TextView) rootView.findViewById(R.id.tvMotivated1);
+        tvMotivated2 = (TextView) rootView.findViewById(R.id.tvMotivated2);
+        Typeface light = Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf");
+        tvMotivated1.setTypeface(light);
+        tvMotivated2.setTypeface(light);
+
+        signInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onButtonPressed();
+            }
+        });
+        return rootView;
+    }
+
+    // TODO: Rename method, update argument and hook method into UI event
+    public void onButtonPressed() {
+        if (mListener != null) {
+            mListener.onSignInPressed();
+        }
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mListener = (OnFragmentInteractionListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
+    }
+
+    /**
+     * This interface must be implemented by activities that contain this
+     * fragment to allow an interaction in this fragment to be communicated
+     * to the activity and potentially other fragments contained in that
+     * activity.
+     * <p/>
+     * See the Android Training lesson <a href=
+     * "http://developer.android.com/training/basics/fragments/communicating.html"
+     * >Communicating with Other Fragments</a> for more information.
+     */
+    public interface OnFragmentInteractionListener {
+        // TODO: Update argument type and name
+        public void onSignInPressed();
+    }
+
+}

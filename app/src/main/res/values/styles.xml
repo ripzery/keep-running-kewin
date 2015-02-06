@@ -69,4 +69,33 @@
         <item name="android:src">@drawable/ic_ab_overflow_compat</item>
     </style>
 
+    <style name="toolbar" parent="Theme.AppCompat.Light.NoActionBar.StatsDetail.FullScreen">
+        <item name="android:id">@id/my_awesome_toolbar</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:background">@color/circle_view</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+    <!-- Style for Multiplayer Mode -->
+
+    <style name="SignInButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="motivation_text">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:layout_weight">0.3</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textColor">@color/circle_view</item>
+    </style>
+
+    <style name="empty_view">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+    </style>
+
 </resources>
