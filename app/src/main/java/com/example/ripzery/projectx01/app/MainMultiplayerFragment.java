@@ -30,6 +30,7 @@ public class MainMultiplayerFragment extends Fragment {
 
     private OnFragmentInteractionListener mListener;
     private Button signOutButton;
+    private Button inviteButton;
 
     public MainMultiplayerFragment() {
         // Required empty public constructor
@@ -68,19 +69,26 @@ public class MainMultiplayerFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_main_multiplayer, container, false);
         signOutButton = (Button) rootView.findViewById(R.id.signOutButton);
+        inviteButton = (Button) rootView.findViewById(R.id.inviteButton);
+        inviteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onButtonPressed(R.id.inviteButton);
+            }
+        });
         signOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                onButtonPressed();
+                onButtonPressed(R.id.signOutButton);
             }
         });
         return rootView;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed() {
+    public void onButtonPressed(int id) {
         if (mListener != null) {
-            mListener.onSignOut();
+            mListener.onMainMultiplayerButtonClicked(id);
         }
     }
 
@@ -113,7 +121,7 @@ public class MainMultiplayerFragment extends Fragment {
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onSignOut();
+        public void onMainMultiplayerButtonClicked(int id);
     }
 
 }

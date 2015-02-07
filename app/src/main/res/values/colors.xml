@@ -32,4 +32,9 @@
     <color name="light_sub">#598bb2</color>
     <color name="dark_sub">#364776</color>
 
+    <!-- Multiplayer -->
+    <color name="BlurbColor">#a0a0a0</color>
+    <color name="AccentColor">#cc0000</color>
+    <color name="PopupColor">@color/AccentColor</color>
+
 </resources>

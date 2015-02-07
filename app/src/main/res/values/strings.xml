@@ -15,8 +15,10 @@
     <string name="signin_other_error">Signin error</string>
     <string name="app_id">874411941683</string>
     <string name="title_activity_game">GameActivity</string>
+    <string name="game_problem">An error occurred while starting the game. Please try again.</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_multiplayer_maps">MultiplayerMapsActivity</string>
 
 </resources>

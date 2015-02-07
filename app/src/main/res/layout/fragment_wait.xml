@@ -1,0 +1,13 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/LLScreen"
+    tools:context="com.example.ripzery.projectx01.app.WaitFragment">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please wait..."
+        android:textColor="@color/BlurbColor"
+        android:textSize="24sp" />
+
+</LinearLayout>

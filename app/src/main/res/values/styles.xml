@@ -98,4 +98,45 @@
         <item name="android:layout_height">0dp</item>
     </style>
 
+    <style name="LLScreen">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">30dp</item>
+    </style>
+
+    <style name="InvPopup" parent="@style/LLScreen">
+        <item name="android:background">@color/PopupColor</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:layout_gravity">top|right</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="InvPopupButton" parent="@style/GameButton">
+        <item name="android:background">@color/circle_view</item>
+        <item name="android:textColor">@color/AccentColor</item>
+    </style>
+
+    <style name="GameButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/AccentColor</item>
+        <item name="android:textColor">@color/circle_view</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:paddingRight">10dp</item>
+    </style>
+
+    <style name="InvPopupText">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">@color/circle_view</item>
+        <item name="android:text">"Incoming Invitation!"</item>
+        <item name="android:gravity">center</item>
+    </style>
+
 </resources>

@@ -6,6 +6,14 @@
     tools:context="com.example.ripzery.projectx01.app.MainMultiplayerFragment">
 
     <Button
+        android:id="@+id/inviteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="invite"
+        android:textSize="18sp" />
+
+    <Button
         android:id="@+id/signOutButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
