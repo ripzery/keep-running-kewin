@@ -60,7 +60,6 @@ import com.example.ripzery.projectx01.model.weapon.Gun;
 import com.example.ripzery.projectx01.model.weapon.Pistol;
 import com.example.ripzery.projectx01.util.CheckConnectivity;
 import com.example.ripzery.projectx01.util.CheckLocation;
-import com.example.ripzery.projectx01.util.ConnectGoogleApiClient;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -97,10 +96,10 @@ import at.markushi.ui.RevealColorView;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
-public class MapsActivity extends ActionBarActivity implements SensorEventListener, LocationListener {
+public class MapsMultiplayerActivity extends ActionBarActivity implements SensorEventListener, LocationListener {
 
     public static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
-    public static final double THRESHOLD_ROT_ARROW = 3; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
+    public static final double THRESHOLD_ROT_ARROW = 10; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     public static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
     public static final int DATA_ENABLED_REQ = 1;
     public static final int LOCATION_ENABLED_REQ = 2;
@@ -225,7 +224,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            MapsActivity.this.finish();
+                            MapsMultiplayerActivity.this.finish();
                         }
                     })
                     .setNeutralButton("Wifi", new DialogInterface.OnClickListener() {
@@ -250,7 +249,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            MapsActivity.this.finish();
+                            MapsMultiplayerActivity.this.finish();
                         }
                     })
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -330,13 +329,13 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
 
         // TODO : Manage button in dialog
-        endGameDialog = new AlertDialog.Builder(MapsActivity.this)
+        endGameDialog = new AlertDialog.Builder(MapsMultiplayerActivity.this)
                 .setItems(new String[]{"Detail", "Play again", "Exit game"}, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int which) {
                         switch (which) {
                             case 0:
-                                Intent detailIntent = new Intent(MapsActivity.this, StatsDetailActivity.class);
+                                Intent detailIntent = new Intent(MapsMultiplayerActivity.this, StatsDetailActivity.class);
                                 if (duration != null) {
                                     String totalDuration = duration[0] + " : " + duration[1] + " : " + duration[2];
                                     String averageSpeed = new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr.";
@@ -381,8 +380,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 keepGeneratingItem();
                                 isGameStart = true;
                                 if (sensorManager != null) {
-                                    sensorManager.registerListener(MapsActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-                                    sensorManager.registerListener(MapsActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                                    sensorManager.registerListener(MapsMultiplayerActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                                    sensorManager.registerListener(MapsMultiplayerActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
                                 }
 
                                 if (locationManager != null) {
@@ -390,11 +389,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 }
 
                                 if (isGameStart && locationrequest != null)
-                                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+                                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsMultiplayerActivity.this);
                                 startGameTime = Calendar.getInstance();
                                 break;
                             case 2:
-                                MapsActivity.this.finish();
+                                MapsMultiplayerActivity.this.finish();
                                 break;
                         }
                     }
@@ -402,7 +401,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                .setPositiveButton("Result", new DialogInterface.OnClickListener() {
 //                    @Override
 //                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        Intent detailIntent = new Intent(MapsActivity.this, StatsDetailActivity.class);
+//                        Intent detailIntent = new Intent(MapsMultiplayerActivity.this, StatsDetailActivity.class);
 //                        if (duration != null) {
 //                            String totalDuration = duration[0] + " : " + duration[1] + " : " + duration[2];
 //                            String averageSpeed = new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr.";
@@ -441,8 +440,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                        keepGeneratingGhost();
 //                        keepGeneratingItem();
 //                        if (sensorManager != null) {
-//                            sensorManager.registerListener(MapsActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-//                            sensorManager.registerListener(MapsActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//                            sensorManager.registerListener(MapsMultiplayerActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//                            sensorManager.registerListener(MapsMultiplayerActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
 //                        }
 //
 //                        if (locationManager != null) {
@@ -450,7 +449,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                        }
 //
 //                        if (isGameStart && locationrequest != null)
-//                            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+//                            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsMultiplayerActivity.this);
 //                        startGameTime = Calendar.getInstance();
 //
 //                    }
@@ -458,7 +457,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
 //                    @Override
 //                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        MapsActivity.this.finish();
+//                        MapsMultiplayerActivity.this.finish();
 //                    }
 //                })
                 .setCancelable(false);
@@ -474,9 +473,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             @Override
             public void onMapLoaded() {
                 progress.setMessage("Waiting for GPS ...");
-                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
+                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsMultiplayerActivity.this);
                 if (response == ConnectionResult.SUCCESS) {
-                    mGoogleApiClient = new GoogleApiClient.Builder(MapsActivity.this)
+                    mGoogleApiClient = new GoogleApiClient.Builder(MapsMultiplayerActivity.this)
                             .addApi(LocationServices.API)
                             .addConnectionCallbacks(connectGoogleApiClient)
                             .addOnConnectionFailedListener(connectGoogleApiClient)
@@ -491,7 +490,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public boolean onMarkerClick(Marker marker) {
                 // TODO : fix item crash
                 if (Me.items.size() + Me.guns.size() >= Me.bagMaxCapacity) {
-                    Toast.makeText(MapsActivity.this, "Your bag is full", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MapsMultiplayerActivity.this, "Your bag is full", Toast.LENGTH_SHORT).show();
                 } else if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
                     for (int i = 0; i < allItems.size(); i++) {
                         if (allItems.get(i).getId().equals(marker.getId())) {
@@ -697,10 +696,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         cbHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsMultiplayerActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        MapsActivity.this.finish();
+                        MapsMultiplayerActivity.this.finish();
                     }
                 }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
@@ -842,7 +841,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(monster.getToPosition(), marker.getPosition());
 
                         if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
-                            Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
+                            Vibrator v = (Vibrator) MapsMultiplayerActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
                             // Vibrate for 500 milliseconds
                             v.vibrate(500);
                             isVibrate = true;
@@ -910,7 +909,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
-                    mMonster = new KingKong(MapsActivity.this);
+                    mMonster = new KingKong(MapsMultiplayerActivity.this);
                     mMonster.setSpeed(10);
                     addMonster(mMonster);
                 } else {
@@ -939,22 +938,22 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     if (random_item < ALL_SELF_ITEM.size()) {
                         switch (ALL_SELF_ITEM.get(random_item)) {
                             case "Distancex2":
-                                generatedItem = new ItemDistancex2(MapsActivity.this);
+                                generatedItem = new ItemDistancex2(MapsMultiplayerActivity.this);
                                 break;
                             case "Distancex3":
-                                generatedItem = new ItemDistancex3(MapsActivity.this);
+                                generatedItem = new ItemDistancex3(MapsMultiplayerActivity.this);
                                 break;
                             case "Potion":
-                                generatedItem = new Potion(MapsActivity.this);
+                                generatedItem = new Potion(MapsMultiplayerActivity.this);
                                 break;
                         }
                     } else {
                         switch (ALL_MONSTER_ITEM.get(random_item - ALL_SELF_ITEM.size())) {
                             case "Pistol":
-                                generatedItem = new Pistol(MapsActivity.this, 20);
+                                generatedItem = new Pistol(MapsMultiplayerActivity.this, 20);
                                 break;
                             case "Desert":
-                                generatedItem = new Desert(MapsActivity.this, 20);
+                                generatedItem = new Desert(MapsMultiplayerActivity.this, 20);
                                 break;
                         }
                     }
@@ -983,7 +982,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     locationrequest = LocationRequest.create();
                     locationrequest.setInterval(1000);
                     locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsMultiplayerActivity.this);
                 }
             }
 
@@ -1047,11 +1046,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-//                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+//                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsMultiplayerActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
 //                    @Override
 //                    public void onClick(DialogInterface dialog, int which) {
-////                        locationClient.removeLocationUpdates(MapsActivity.this);
-//                        MapsActivity.this.finish();
+////                        locationClient.removeLocationUpdates(MapsMultiplayerActivity.this);
+//                        MapsMultiplayerActivity.this.finish();
 //                    }
 //                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 //                    @Override
@@ -1172,7 +1171,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         if (isGameStart && locationrequest != null)
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsMultiplayerActivity.this);
 
         if (isGameStart) {
             setPlayerHP();
@@ -1290,10 +1289,12 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onBackPressed() {
 
-        AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(MapsMultiplayerActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                MapsActivity.super.onBackPressed();
+                finish();
+                MapsMultiplayerActivity.super.onBackPressed();
+
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
@@ -1331,7 +1332,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
         if (progress.isShowing() && builder == null) {
-            builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            builder = new AlertDialog.Builder(MapsMultiplayerActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                 @Override
 
                 public void onClick(DialogInterface dialog, int which) {
@@ -1668,7 +1669,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        MapsActivity.this.finish();
+                        MapsMultiplayerActivity.this.finish();
                     }
                 })
                 .setNeutralButton("Wifi", new DialogInterface.OnClickListener() {
@@ -1691,7 +1692,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        MapsActivity.this.finish();
+                        MapsMultiplayerActivity.this.finish();
                     }
                 })
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -1728,6 +1729,86 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 initVar();
                 initListener();
             }
+        }
+
+    }
+
+    public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+        private MapsMultiplayerActivity mapsActivity;
+        private LocationRequest locationrequest;
+
+        public ConnectGoogleApiClient(MapsMultiplayerActivity mapsActivity) {
+            this.mapsActivity = mapsActivity;
+        }
+
+        @Override
+        public void onConnected(Bundle bundle) {
+            Log.d("status", "connected");
+            final Bitmap bp = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.dir),
+                    130,
+                    130,
+                    false);
+            if (LocationServices.FusedLocationApi.getLastLocation(mapsActivity.mGoogleApiClient) == null) {
+                locationrequest = LocationRequest.create();
+                locationrequest.setInterval(1000);
+//            locationrequest.setExpirationTime(60000);
+                locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+                final LocationListener firstGetLocation = new LocationListener() {
+                    int numberOfUpdate = 0;
+
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        numberOfUpdate++;
+
+                        if (mapsActivity.checkLocation.isAccuracyAcceptable(location.getAccuracy())) {
+                            mapsActivity.mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                            if (mapsActivity.myArrow == null) {
+                                mapsActivity.mPreviousLatLng = mapsActivity.mCurrentLatLng;
+                                mapsActivity.setCameraPosition(mapsActivity.mCurrentLatLng, 18, 0);
+
+                                mapsActivity.myArrow = mapsActivity.mMap.addMarker(new MarkerOptions()
+                                        .position(mapsActivity.mCurrentLatLng)
+                                        .anchor((float) 0.5, (float) 0.5)
+                                        .flat(false)
+                                        .icon(BitmapDescriptorFactory.fromBitmap(bp)));
+
+                            }
+                            LocationServices.FusedLocationApi.removeLocationUpdates(mapsActivity.mGoogleApiClient, this);
+                        } else {
+                            mapsActivity.progress.setMessage("Waiting for gps accuracy lower than " + mapsActivity.THRESHOLD_ACC + " metres");
+                            Log.d("numupdate", numberOfUpdate + "");
+                            if (numberOfUpdate > 5) {
+                                mapsActivity.progress.setMessage("You may be have to go outside or fix your gps by using gps fix application");
+                            }
+                        }
+                    }
+                };
+                LocationServices.FusedLocationApi.requestLocationUpdates(mapsActivity.mGoogleApiClient, locationrequest, firstGetLocation);
+            } else {
+                mapsActivity.mCurrentLatLng = new LatLng(LocationServices.FusedLocationApi.getLastLocation(mapsActivity.mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi.getLastLocation(mapsActivity.mGoogleApiClient).getLongitude());
+                if (mapsActivity.myArrow == null) {
+                    mapsActivity.mPreviousLatLng = mapsActivity.mCurrentLatLng;
+                    mapsActivity.setCameraPosition(mapsActivity.mCurrentLatLng, 18, 0);
+                    mapsActivity.myArrow = mapsActivity.mMap.addMarker(new MarkerOptions()
+                            .position(mapsActivity.mCurrentLatLng)
+                            .anchor((float) 0.5, (float) 0.5)
+                            .flat(false)
+                            .icon(BitmapDescriptorFactory.fromBitmap(bp)));
+
+                }
+            }
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+
+        }
+
+        @Override
+        public void onConnectionFailed(ConnectionResult connectionResult) {
+
         }
     }
 

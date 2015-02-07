@@ -1,0 +1,286 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    xmlns:foobar="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/motherView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:sothree="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/sliding_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom"
+        sothree:fadeColor="@android:color/transparent"
+        sothree:overlay="true"
+        sothree:panelHeight="64dp"
+        sothree:shadowHeight="8dp">
+
+        <LinearLayout
+            android:id="@+id/test1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!--<android.support.v7.widget.Toolbar-->
+            <!--android:id="@+id/my_awesome_toolbar"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:background="@color/primary"-->
+            <!--android:minHeight="56dp"-->
+            <!--app:theme="@style/KeepRunningKewinThemeToolbar" />-->
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="fill_parent"
+                android:fitsSystemWindows="true">
+
+
+                <fragment
+                    android:id="@+id/map"
+                    class="com.google.android.gms.maps.MapFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    tools:layout="@layout/fragment_maps" />
+
+                <RelativeLayout
+                    android:id="@+id/layoutCircleView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <at.markushi.ui.CircleButton
+                        android:id="@+id/cbHome"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_alignParentLeft="true"
+                        android:layout_marginLeft="@dimen/row_left_right_margin"
+                        android:layout_marginTop="@dimen/row_left_right_margin"
+                        android:elevation="16dp"
+                        android:src="@drawable/home_ic"
+                        android:visibility="gone"
+                        app:cb_color="@color/circle_view" />
+
+                    <com.akexorcist.roundcornerprogressbar.IconRoundCornerProgressBar
+                        android:id="@+id/playerStatus"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/row_left_right_margin"
+                        android:layout_toRightOf="@+id/cbHome"
+                        android:alpha="0.6"
+                        android:elevation="16dp"
+                        android:visibility="invisible"
+                        app:backgroundColor="@color/circle_view_dark"
+                        app:headerColor="#388E3D"
+                        app:iconSize="40dp"
+                        app:iconSrc="@drawable/ic_person"
+                        app:max="100"
+                        app:progress="100"
+                        app:progressColor="#4CAF50" />
+
+                    <com.github.pavlospt.CircleView xmlns:app="http://schemas.android.com/apk/res-auto"
+                        android:id="@+id/cvTextM"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_alignParentLeft="true"
+                        android:layout_below="@+id/cbHome"
+                        android:layout_margin="16dp"
+                        android:elevation="16dp"
+                        android:visibility="gone"
+                        app:backgroundColorValue="#00f44336"
+                        app:fillColor="@color/circle_view"
+                        app:strokeColorValue="#00f44336"
+                        app:strokeWidthSize="0"
+                        app:subtitleSize="9dp"
+                        app:subtitleText=""
+                        app:titleColor="@color/primary_text"
+                        app:titleSize="16sp"
+                        app:titleText="DIS" />
+
+                    <com.akexorcist.roundcornerprogressbar.IconRoundCornerProgressBar
+                        android:id="@+id/itemStatus"
+                        android:layout_width="200dp"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_below="@+id/cvTextM"
+                        android:layout_marginLeft="@dimen/row_left_right_margin"
+                        android:alpha="0.5"
+                        android:elevation="16dp"
+                        android:visibility="invisible"
+                        app:backgroundColor="@color/circle_view"
+                        app:headerColor="#607D8B"
+                        app:iconSize="40dp"
+                        app:iconSrc="@drawable/speed_x2"
+                        app:max="15"
+                        app:progress="15"
+                        app:progressColor="#90A4AE" />
+
+
+                </RelativeLayout>
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/test"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:id="@+id/test2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <RelativeLayout
+                    android:id="@+id/sliding_layout_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:background="@color/sliding_bar"
+                    android:minHeight="64dp">
+
+                    <com.ctrlplusz.anytextview.AnyTextView
+                        android:id="@+id/tvItemCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_centerHorizontal="true"
+                        android:gravity="center"
+                        android:text="Accuracy : Unknown"
+                        android:textColor="@color/primary_text"
+                        android:textSize="@dimen/medium_text_size"
+                        foobar:typeface="Roboto-Light.ttf" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginLeft="@dimen/row_left_right_margin"
+                        android:layout_marginRight="@dimen/row_left_right_margin"
+                        android:src="@drawable/chevron_down" />
+
+                </RelativeLayout>
+
+
+                <FrameLayout
+                    android:id="@+id/sliding_layout_parent"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_below="@+id/sliding_layout_title">
+
+                    <FrameLayout
+                        android:id="@+id/sliding_layout_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/sliding_bar">
+
+                        <at.markushi.ui.RevealColorView
+                            android:id="@+id/reveal"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@color/sliding_content" />
+
+                        <GridView
+                            android:id="@+id/gvBag"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginLeft="10dp"
+                            android:layout_marginRight="10dp"
+                            android:clipToPadding="false"
+                            android:columnWidth="90dp"
+                            android:gravity="center"
+                            android:horizontalSpacing="10dp"
+                            android:numColumns="auto_fit"
+                            android:paddingBottom="20dp"
+                            android:paddingTop="20dp"
+                            android:stretchMode="columnWidth"
+                            android:verticalSpacing="10dp"
+                            android:visibility="gone" />
+
+
+                    </FrameLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/option_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="84dp"
+                        android:layout_gravity="bottom"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:id="@+id/option"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:layout_alignParentBottom="true"
+                            android:background="@color/sliding_bar"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/dropItemBtn"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/trans_square_btn"
+                                android:padding="15dp"
+                                android:text="DROP"
+                                android:textColor="@color/primary"
+                                android:textSize="15sp" />
+
+                            <Button
+                                android:id="@+id/detailItemBtn"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/trans_square_btn"
+                                android:padding="15dp"
+                                android:text="DETAIL"
+                                android:textColor="@color/primary_dark_material_light"
+                                android:textSize="15sp" />
+
+                        </LinearLayout>
+
+                        <com.getbase.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/use_btn"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_alignParentRight="true"
+                            android:layout_alignTop="@id/option"
+                            android:layout_gravity="bottom|right"
+                            android:layout_marginRight="20dp"
+                            android:layout_marginTop="-28dp"
+                            fab:fab_colorNormal="@color/primary_dark"
+                            fab:fab_colorPressed="@color/primary_light"
+                            fab:fab_icon="@drawable/use_ic" />
+
+                    </RelativeLayout>
+
+
+                </FrameLayout>
+
+
+            </RelativeLayout>
+
+            <at.markushi.ui.CircleButton
+                android:id="@+id/btnBag"
+                android:layout_width="62dp"
+                android:layout_height="62dp"
+                android:layout_gravity="top"
+                android:layout_marginBottom="30dp"
+                android:layout_marginLeft="@dimen/row_left_right_margin"
+                android:layout_marginRight="@dimen/row_left_right_margin"
+                android:background="#00000000"
+                android:elevation="25dp"
+                android:src="@drawable/bag_flat_ic"
+                android:tag="@color/dark_sub"
+                android:visibility="gone"
+                app:cb_color="@color/primary" />
+
+
+        </FrameLayout>
+
+    </com.sothree.slidinguppanel.SlidingUpPanelLayout>
+
+</FrameLayout>
+
+
+

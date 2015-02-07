@@ -1,11 +1,11 @@
 package com.example.ripzery.projectx01.model.monster;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
 import com.example.ripzery.projectx01.R;
-import com.example.ripzery.projectx01.app.MapsActivity;
 import com.example.ripzery.projectx01.interface_model.Monster;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -26,13 +26,13 @@ public class KingKong implements Monster {
     private int x, y;
     private int attackPower = 5;
     private int hp = 30;
-    private MapsActivity mapsActivity;
+    private Activity mapsActivity;
     private boolean isRaged = false;
     private LatLng toPosition;
     private long elapsed = 0;
     private LatLng startLatLng;
 
-    public KingKong(MapsActivity mapsActivity) {
+    public KingKong(Activity mapsActivity) {
 
         this.mapsActivity = mapsActivity;
 

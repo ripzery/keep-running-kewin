@@ -1,6 +1,9 @@
 package com.example.ripzery.projectx01.app;
 
 import com.example.ripzery.projectx01.interface_model.Monster;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.games.multiplayer.Participant;
+import com.google.android.gms.games.multiplayer.realtime.Room;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
@@ -9,6 +12,10 @@ import java.util.ArrayList;
  * Created by visit on 1/15/15 AD.
  */
 public class Singleton {
+    public static ArrayList<Participant> mParticipants = null;
+    public static GoogleApiClient mGoogleApiClient;
+    public static String myId = null;
+    public static String mRoomId;
     private static Singleton mSing = new Singleton();
     private static ArrayList<Monster> allMonsters;
     private static ArrayList<LatLng> allPlayerPositions;
@@ -38,5 +45,10 @@ public class Singleton {
         allPlayerPositions = allPositions;
     }
 
+    public static void updateRoom(Room room) {
+        if (room != null) {
+            mParticipants = room.getParticipants();
+        }
+    }
 
 }

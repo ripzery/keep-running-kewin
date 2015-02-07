@@ -1,10 +1,9 @@
 package com.example.ripzery.projectx01.util;
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-
-import com.example.ripzery.projectx01.app.MapsActivity;
 
 import java.lang.reflect.Method;
 
@@ -12,9 +11,9 @@ import java.lang.reflect.Method;
  * Created by visit on 1/24/15 AD.
  */
 public class CheckConnectivity {
-    MapsActivity mapsActivity;
+    Activity mapsActivity;
 
-    public CheckConnectivity(MapsActivity mapsActivity) {
+    public CheckConnectivity(Activity mapsActivity) {
         this.mapsActivity = mapsActivity;
     }
 

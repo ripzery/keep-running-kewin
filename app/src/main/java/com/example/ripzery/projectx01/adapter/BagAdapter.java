@@ -12,6 +12,7 @@ import android.widget.ToggleButton;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.app.MapsActivity;
+import com.example.ripzery.projectx01.app.MapsMultiplayerActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.interface_model.Item;
 
@@ -22,6 +23,7 @@ import com.example.ripzery.projectx01.interface_model.Item;
 public class BagAdapter extends BaseAdapter {
     //private final Desert gun;
     private MapsActivity mContext;
+    private MapsMultiplayerActivity mContextMultiplayer;
     /*private Integer[] mThumbIds = {
             R.drawable.desert_eagle, R.drawable.pistol, R.drawable.knife
     };*/
@@ -29,6 +31,10 @@ public class BagAdapter extends BaseAdapter {
     public BagAdapter(MapsActivity c) {
         mContext = c;
         //gun = new Desert(mContext, 40);
+    }
+
+    public BagAdapter(MapsMultiplayerActivity c) {
+        mContextMultiplayer = c;
     }
 
     @Override
@@ -61,7 +67,7 @@ public class BagAdapter extends BaseAdapter {
             imageButton.setPadding(8, 8, 8, 8);
             imageButton.setBackgroundResource(R.drawable.round_corner_btn);
             imageButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);*/
-            LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LayoutInflater inflater = mContext != null ? (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE) : (LayoutInflater) mContextMultiplayer.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.slot_bag, parent, false);
         }
 
@@ -75,12 +81,18 @@ public class BagAdapter extends BaseAdapter {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     Me.chosenGun = position;
-                    ((MapsActivity) mContext).passAllMonster(true, toggleButton);
-
+                    if (mContext == null) {
+                        mContextMultiplayer.passAllMonster(true, toggleButton);
+                    } else {
+                        mContext.passAllMonster(true, toggleButton);
+                    }
                 } else {
                     Me.selectGun = false;
-                    ((MapsActivity) mContext).passAllMonster(false, null);
-
+                    if (mContext == null) {
+                        mContextMultiplayer.passAllMonster(false, null);
+                    } else {
+                        mContext.passAllMonster(false, null);
+                    }
                 }
             }
         });
@@ -108,7 +120,4 @@ public class BagAdapter extends BaseAdapter {
         }
         return convertView;
     }
-
-
-
 }

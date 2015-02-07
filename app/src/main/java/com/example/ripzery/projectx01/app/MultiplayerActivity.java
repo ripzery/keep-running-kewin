@@ -1,11 +1,15 @@
 package com.example.ripzery.projectx01.app;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,7 +39,9 @@ import com.google.example.games.basegameutils.BaseGameUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MultiplayerActivity extends ActionBarActivity implements SignInFragment.OnFragmentInteractionListener, MainMultiplayerFragment.OnFragmentInteractionListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, RealTimeMessageReceivedListener, OnInvitationReceivedListener, RoomStatusUpdateListener, RoomUpdateListener {
+public class MultiplayerActivity extends ActionBarActivity implements SignInFragment.OnFragmentInteractionListener, MainMultiplayerFragment.OnFragmentInteractionListener, MapsFragment.OnFragmentInteractionListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+        RealTimeMessageReceivedListener, OnInvitationReceivedListener, RoomStatusUpdateListener, RoomUpdateListener
+        , FragmentGameMultiplayerStatus.OnFragmentInteractionListener {
 
     // Request codes for the UIs that we show with startActivityForResult:
     final static int RC_SELECT_PLAYERS = 10000;
@@ -45,7 +51,9 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     private static final int SCREEN_MAIN = 0;
     private static final int SCREEN_SIGN_IN = 1;
     private static final int SCREEN_WAIT = 2;
+    private static final int SCREEN_GAME = 3;
     private static final int RC_WAITING_ROOM = 10002;
+    private static final int REQ_PLAY_GAME = 10003;
     GoogleApiClient mGoogleApiClient;
     String mIncomingInvitationId = null;
     // The participants in the currently active game
@@ -68,17 +76,22 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     private WaitFragment waitFragment;
     private int mCurScreen = -1;
     private Button btnAcceptInvitation;
+    private FragmentGame fragmentGame;
+    private MapsFragment mapsFragment;
+    private FragmentGameMultiplayerStatus fragmentGameMultiplayerStatus;
+    private Singleton mSing;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_multiplayer);
+
+//        mSing = Singleton.getInstance();
 
         if (signInFragment == null)
             signInFragment = SignInFragment.newInstance("signIn", "signIn");
         transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, signInFragment);
-//        transaction.addToBackStack(null);
         transaction.commit();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -88,14 +101,16 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 .addApi(Games.API).addScope(Games.SCOPE_GAMES)
                 .build();
 
+        Singleton.mGoogleApiClient = mGoogleApiClient;
+
         btnAcceptInvitation = (Button) findViewById(R.id.button_accept_popup_invitation);
         btnAcceptInvitation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 acceptInviteToRoom(mIncomingInvitationId);
-                mIncomingInvitationId = null;
             }
         });
+
 
     }
 
@@ -175,7 +190,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 transaction = getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.fragment_container, mainPlayerFragment);
 //                transaction.addToBackStack(null);
-                transaction.commit();
+                transaction.commitAllowingStateLoss();
                 break;
             case SCREEN_SIGN_IN:
 
@@ -184,15 +199,22 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 transaction = getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.fragment_container, signInFragment);
 //                transaction.addToBackStack(null);
-                transaction.commit();
+                transaction.commitAllowingStateLoss();
                 break;
             case SCREEN_WAIT:
                 if (waitFragment == null)
                     waitFragment = WaitFragment.newInstance("wait", "wait");
                 transaction = getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.fragment_container, waitFragment);
-//                transaction.addToBackStack(null);
-                transaction.commit();
+                transaction.commitAllowingStateLoss();
+                break;
+            case SCREEN_GAME:
+//                if (fragmentGame == null)
+//                    mapsFragment = MapsFragment.newInstance("test","das");
+//                transaction = getSupportFragmentManager().beginTransaction();
+//                transaction.replace(R.id.fragment_container, mapsFragment);
+//                transaction.commit();
+                startActivityForResult(new Intent(this, MapsMultiplayerActivity.class), REQ_PLAY_GAME);
                 break;
         }
         // should we show the invitation popup?
@@ -205,6 +227,10 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
             showInvPopup = (mCurScreen == SCREEN_MAIN);
         }
         findViewById(R.id.invitation_popup).setVisibility(showInvPopup ? View.VISIBLE : View.GONE);
+    }
+
+    public void startGame() {
+        switchToScreen(SCREEN_GAME);
     }
 
     @Override
@@ -222,7 +248,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 if (responseCode == Activity.RESULT_OK) {
                     // ready to start playing
                     Log.d(TAG, "Starting game (waiting room returned OK).");
-//                    startGame(true);
+                    startGame();
                 } else if (responseCode == GamesActivityResultCodes.RESULT_LEFT_ROOM) {
                     // player indicated that they want to leave the room
                     leaveRoom();
@@ -243,6 +269,9 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 } else {
                     BaseGameUtils.showActivityResultError(this, requestCode, responseCode, R.string.signin_other_error);
                 }
+                break;
+            case REQ_PLAY_GAME:
+                switchToMainScreen();
                 break;
         }
         super.onActivityResult(requestCode, responseCode, intent);
@@ -301,6 +330,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         switchToScreen(SCREEN_WAIT);
         keepScreenOn();
         Games.RealTimeMultiplayer.join(mGoogleApiClient, roomConfigBuilder.build());
+        mIncomingInvitationId = null;
     }
 
     // Show the waiting room UI to track the progress of other players as they enter the
@@ -328,15 +358,14 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         Log.d(TAG, "**** got onStop");
 
         // if we're in a room, leave it.
-        leaveRoom();
+        if (mCurScreen != SCREEN_GAME)
+            leaveRoom();
 
         // stop trying to keep the screen on
         stopKeepingScreenOn();
 
         if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()) {
             switchToScreen(SCREEN_SIGN_IN);
-        } else {
-            switchToScreen(SCREEN_WAIT);
         }
         super.onStop();
     }
@@ -347,7 +376,8 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     // this flow simply succeeds and is imperceptible).
     @Override
     public void onStart() {
-        switchToScreen(SCREEN_WAIT);
+        if (mCurScreen != SCREEN_GAME)
+//            switchToScreen(SCREEN_WAIT);
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             Log.w(TAG,
                     "GameHelper: client was already connected on onStart()");
@@ -414,9 +444,9 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     void leaveRoom() {
         Log.d(TAG, "Leaving room.");
         stopKeepingScreenOn();
-        if (mRoomId != null) {
-            Games.RealTimeMultiplayer.leave(mGoogleApiClient, this, mRoomId);
-            mRoomId = null;
+        if (Singleton.mRoomId != null) {
+            Games.RealTimeMultiplayer.leave(mGoogleApiClient, this, Singleton.mRoomId);
+            Singleton.mRoomId = null;
             switchToScreen(SCREEN_WAIT);
         } else {
             switchToMainScreen();
@@ -425,32 +455,32 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 
     @Override
     public void onRoomConnecting(Room room) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
     public void onRoomAutoMatching(Room room) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
     public void onPeerInvitedToRoom(Room room, List<String> strings) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
     public void onPeerDeclined(Room room, List<String> strings) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
     public void onPeerJoined(Room room, List<String> strings) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
     public void onPeerLeft(Room room, List<String> strings) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
@@ -458,19 +488,20 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         Log.d(TAG, "onConnectedToRoom.");
 
         // get room ID, participants and my ID:
-        mRoomId = room.getRoomId();
+        Singleton.mRoomId = room.getRoomId();
         mParticipants = room.getParticipants();
-        mMyId = room.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient));
+        Singleton.mParticipants = room.getParticipants();
+        Singleton.myId = room.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient));
 
         // print out the list of participants (for debug purposes)
-        Log.d(TAG, "Room ID: " + mRoomId);
-        Log.d(TAG, "My ID " + mMyId);
+        Log.d(TAG, "Room ID: " + Singleton.mRoomId);
+        Log.d(TAG, "My ID " + Singleton.myId);
         Log.d(TAG, "<< CONNECTED TO ROOM>>");
     }
 
     @Override
     public void onDisconnectedFromRoom(Room room) {
-        mRoomId = null;
+        Singleton.mRoomId = null;
         showGameError();
     }
 
@@ -488,12 +519,12 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 
     @Override
     public void onPeersConnected(Room room, List<String> strings) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
     public void onPeersDisconnected(Room room, List<String> strings) {
-        updateRoom(room);
+        Singleton.updateRoom(room);
     }
 
     @Override
@@ -547,7 +578,36 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
             showGameError();
             return;
         }
-        updateRoom(room);
+        Singleton.updateRoom(room);
+    }
+
+    // Handle back key to make sure we cleanly leave a game if we are in the middle of one
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent e) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && mCurScreen == SCREEN_GAME) {
+            AlertDialog.Builder dialog = new AlertDialog.Builder(this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    leaveRoom();
+                }
+            }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            dialog.setTitle("Stop playing?");
+            dialog.setMessage("Your current progress won't saved");
+            dialog.show();
+
+            return true;
+        }
+        return super.onKeyDown(keyCode, e);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     @Override
@@ -569,5 +629,15 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 startActivityForResult(intent, RC_SELECT_PLAYERS);
                 break;
         }
+    }
+
+    @Override
+    public void onUpdate() {
+
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
     }
 }

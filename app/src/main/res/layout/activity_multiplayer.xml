@@ -14,7 +14,8 @@
     <!-- INVITATION POPUP -->
     <LinearLayout
         android:id="@+id/invitation_popup"
-        style="@style/InvPopup">
+        style="@style/InvPopup"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/incoming_invitation_text"

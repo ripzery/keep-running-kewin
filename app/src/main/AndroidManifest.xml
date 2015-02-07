@@ -65,8 +65,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".app.MultiplayerMapsActivity"
-            android:label="@string/title_activity_multiplayer_maps"></activity>
+            android:name=".app.MapsMultiplayerActivity"
+            android:screenOrientation="portrait"></activity>
     </application>
 
 </manifest>

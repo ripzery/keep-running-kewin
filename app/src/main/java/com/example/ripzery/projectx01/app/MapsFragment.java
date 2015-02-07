@@ -1,5 +1,6 @@
 package com.example.ripzery.projectx01.app;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -16,13 +17,15 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Settings;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +33,9 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -46,7 +51,6 @@ import com.daimajia.androidanimations.library.YoYo;
 import com.daimajia.easing.Glider;
 import com.daimajia.easing.Skill;
 import com.example.ripzery.projectx01.R;
-import com.example.ripzery.projectx01.adapter.BagAdapter;
 import com.example.ripzery.projectx01.ar.MainActivity;
 import com.example.ripzery.projectx01.ar.detail.Me;
 import com.example.ripzery.projectx01.interface_model.Item;
@@ -60,7 +64,6 @@ import com.example.ripzery.projectx01.model.weapon.Gun;
 import com.example.ripzery.projectx01.model.weapon.Pistol;
 import com.example.ripzery.projectx01.util.CheckConnectivity;
 import com.example.ripzery.projectx01.util.CheckLocation;
-import com.example.ripzery.projectx01.util.ConnectGoogleApiClient;
 import com.example.ripzery.projectx01.util.DistanceCalculator;
 import com.example.ripzery.projectx01.util.LatLngInterpolator;
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -73,8 +76,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.Projection;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -94,10 +97,16 @@ import java.util.Date;
 
 import at.markushi.ui.CircleButton;
 import at.markushi.ui.RevealColorView;
-import butterknife.ButterKnife;
-import butterknife.InjectView;
 
-public class MapsActivity extends ActionBarActivity implements SensorEventListener, LocationListener {
+/**
+ * A simple {@link Fragment} subclass.
+ * Activities that contain mapsActivity fragment must implement the
+ * {@link MapsFragment.OnFragmentInteractionListener} interface
+ * to handle interaction events.
+ * Use the {@link MapsFragment#newInstance} factory method to
+ * create an instance of mapsActivity fragment.
+ */
+public class MapsFragment extends Fragment implements SensorEventListener, LocationListener {
 
     public static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
     public static final double THRESHOLD_ROT_ARROW = 3; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
@@ -116,21 +125,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public CheckLocation checkLocation;
     public boolean isExpanded = false, isUseItem = false;
     public SlidingUpPanelLayout itemBagLayout;
-    SensorManager sensorManager;
-    @InjectView(R.id.motherView)
-    FrameLayout motherView;
-    @InjectView(R.id.btnBag)
-    CircleButton mBag;
-    @InjectView(R.id.cvTextM)
-    CircleView mCvDistanceStatus;
-    @InjectView(R.id.tvItemCount)
-    AnyTextView tvItemCount;
-    @InjectView(R.id.cbHome)
-    CircleButton cbHome;
-    @InjectView(R.id.playerStatus)
-    IconRoundCornerProgressBar playerStatus;
-    @InjectView(R.id.itemStatus)
-    IconRoundCornerProgressBar itemStatus;
+    public SensorManager sensorManager;
+    public FrameLayout motherView;
+    public CircleButton mBag;
+    public CircleView mCvDistanceStatus;
+    public AnyTextView tvItemCount;
+    public CircleButton cbHome;
+    public IconRoundCornerProgressBar playerStatus;
+    public IconRoundCornerProgressBar itemStatus;
     private ArrayList<String> ALL_SELF_ITEM = new ArrayList<>();
     private ArrayList<String> ALL_MONSTER_ITEM = new ArrayList<>();
     private int max_generate_ghost_timeout = 30; // กำหนดระยะเวลาสูงสุดที่ปีศาจจะโผล่ขึ้นมา หน่วยเป็นวินาที
@@ -187,14 +189,33 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     private int[] duration;
     private float ALPHA = 0.2f;
     private float[] orientation;
+    private OnFragmentInteractionListener mListener;
+    private Activity mapsActivity;
+    private View rootView;
+
+    public MapsFragment() {
+        // Required empty public constructor
+    }
+
+    // TODO: Rename and change types and number of parameters
+    public static MapsFragment newInstance(String param1, String param2) {
+        MapsFragment fragment = new MapsFragment();
+        return fragment;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
+        mapsActivity = getActivity();
+    }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for mapsActivity fragment
+        rootView = inflater.inflate(R.layout.fragment_maps, container, false);
         // setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensorManager = (SensorManager) mapsActivity.getSystemService(mapsActivity.SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
@@ -206,26 +227,26 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         ALL_MONSTER_ITEM.add("Desert");
 
         // setup class เช็คสถานะการเชื่อม network
-        connectivity = new CheckConnectivity(this);
+        connectivity = new CheckConnectivity(mapsActivity);
 
         // setup class เช็คสถานะ Location
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        checkLocation = new CheckLocation(this, locationManager);
+        locationManager = (LocationManager) mapsActivity.getSystemService(Context.LOCATION_SERVICE);
+        checkLocation = new CheckLocation(mapsActivity, locationManager);
         locationManager.addGpsStatusListener(checkLocation);
 
         // กำหนดให้ screen always on
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        mapsActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Log.d("Location Enabled", checkLocation.isLocationEnabled() + "");
         if (!connectivity.is3gConnected() && !connectivity.isWifiConnected()) {
-            AlertDialog.Builder setting = new AlertDialog.Builder(this)
+            AlertDialog.Builder setting = new AlertDialog.Builder(mapsActivity)
                     .setTitle("Please enable mobile data or wifi")
                     .setMessage("Go to setting")
                     .setCancelable(false)
                     .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            MapsActivity.this.finish();
+                            mapsActivity.finish();
                         }
                     })
                     .setNeutralButton("Wifi", new DialogInterface.OnClickListener() {
@@ -243,14 +264,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             setting.show();
         } else if (!checkLocation.isLocationEnabled()) {
             Log.d("Enter", "No?");
-            AlertDialog.Builder setting = new AlertDialog.Builder(this)
+            AlertDialog.Builder setting = new AlertDialog.Builder(mapsActivity)
                     .setTitle("Set location mode to high accuracy")
                     .setMessage("Go to setting")
                     .setCancelable(false)
                     .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            MapsActivity.this.finish();
+                            mapsActivity.finish();
                         }
                     })
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -267,10 +288,17 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             initVar();
             initListener();
         }
+        return rootView;
     }
 
     protected void initVar() {
-        ButterKnife.inject(this);
+        motherView = (FrameLayout) rootView.findViewById(R.id.motherView);
+        mBag = (CircleButton) rootView.findViewById(R.id.btnBag);
+        mCvDistanceStatus = (CircleView) rootView.findViewById(R.id.cvTextM);
+        tvItemCount = (AnyTextView) rootView.findViewById(R.id.tvItemCount);
+        cbHome = (CircleButton) rootView.findViewById(R.id.cbHome);
+        playerStatus = (IconRoundCornerProgressBar) rootView.findViewById(R.id.playerStatus);
+        itemStatus = (IconRoundCornerProgressBar) rootView.findViewById(R.id.itemStatus);
 
 //        ALL_MONSTER_ITEM.add("Shotgun");
 //        ALL_MONSTER_ITEM.add("Mine");
@@ -281,9 +309,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         Me.distanceMultiplier = 1;
 
         // กำหนดค่าเริ่มต้นให้ item
-        Me.guns.add(new Desert(this, 14));
-        Me.guns.add(new Pistol(this, 60));
-        Me.items.add(new ItemDistancex2(this));
+        Me.guns.add(new Desert(mapsActivity, 14));
+        Me.guns.add(new Pistol(mapsActivity, 60));
+        Me.items.add(new ItemDistancex2(mapsActivity));
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -293,10 +321,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         mMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap.getUiSettings().setScrollGesturesEnabled(false);
 
-        progress = new ProgressDialog(this);
-        progress = ProgressDialog.show(this, "Loading", "Wait while loading map...");
+        progress = new ProgressDialog(mapsActivity);
+        progress = ProgressDialog.show(mapsActivity, "Loading", "Wait while loading map...");
 
-        final DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
+        final DisplayMetrics displayMetrics = mapsActivity.getResources().getDisplayMetrics();
         final float pHeight = displayMetrics.heightPixels;
         final float pWidth = displayMetrics.widthPixels;
 
@@ -308,35 +336,35 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
         animationItemBagSet.setDuration(500);
 
-        mBagAdapter = new BagAdapter(this);
-        gView = (GridView) findViewById(R.id.gvBag);
+        mBagAdapter = new BagAdapter();
+        gView = (GridView) rootView.findViewById(R.id.gvBag);
         gView.setAdapter(mBagAdapter);
 
-        revealColorView = (RevealColorView) findViewById(R.id.reveal);
+        revealColorView = (RevealColorView) rootView.findViewById(R.id.reveal);
         backgroundColor = Color.parseColor("#bdbdbd");
 
-        optionBar = (RelativeLayout) findViewById(R.id.option_bar);
+        optionBar = (RelativeLayout) rootView.findViewById(R.id.option_bar);
         //เมื่อกดดู detail ของ item
-        dropItemBtn = (Button) findViewById(R.id.dropItemBtn);
+        dropItemBtn = (Button) rootView.findViewById(R.id.dropItemBtn);
 
-        detailItemBtn = (Button) findViewById(R.id.detailItemBtn);
+        detailItemBtn = (Button) rootView.findViewById(R.id.detailItemBtn);
 
-        useBtn = (FloatingActionButton) findViewById(R.id.use_btn);
+        useBtn = (FloatingActionButton) rootView.findViewById(R.id.use_btn);
 
         handlerItemStatus = new Handler();
-        //facUseBtn = (FloatingActionButton)findViewById(R.id.use_btn);
+        //facUseBtn = (FloatingActionButton)rootView.findViewById(R.id.use_btn);
 
 
-        itemBagLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        itemBagLayout = (SlidingUpPanelLayout) rootView.findViewById(R.id.sliding_layout);
 
         // TODO : Manage button in dialog
-        endGameDialog = new AlertDialog.Builder(MapsActivity.this)
+        endGameDialog = new AlertDialog.Builder(mapsActivity)
                 .setItems(new String[]{"Detail", "Play again", "Exit game"}, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int which) {
                         switch (which) {
                             case 0:
-                                Intent detailIntent = new Intent(MapsActivity.this, StatsDetailActivity.class);
+                                Intent detailIntent = new Intent(mapsActivity, StatsDetailActivity.class);
                                 if (duration != null) {
                                     String totalDuration = duration[0] + " : " + duration[1] + " : " + duration[2];
                                     String averageSpeed = new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr.";
@@ -381,8 +409,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 keepGeneratingItem();
                                 isGameStart = true;
                                 if (sensorManager != null) {
-                                    sensorManager.registerListener(MapsActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-                                    sensorManager.registerListener(MapsActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                                    sensorManager.registerListener(MapsFragment.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                                    sensorManager.registerListener(MapsFragment.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
                                 }
 
                                 if (locationManager != null) {
@@ -390,11 +418,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                                 }
 
                                 if (isGameStart && locationrequest != null)
-                                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+                                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsFragment.this);
                                 startGameTime = Calendar.getInstance();
                                 break;
                             case 2:
-                                MapsActivity.this.finish();
+                                mapsActivity.finish();
                                 break;
                         }
                     }
@@ -402,7 +430,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                .setPositiveButton("Result", new DialogInterface.OnClickListener() {
 //                    @Override
 //                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        Intent detailIntent = new Intent(MapsActivity.this, StatsDetailActivity.class);
+//                        Intent detailIntent = new Intent(mapsActivity, StatsDetailActivity.class);
 //                        if (duration != null) {
 //                            String totalDuration = duration[0] + " : " + duration[1] + " : " + duration[2];
 //                            String averageSpeed = new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr.";
@@ -441,8 +469,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                        keepGeneratingGhost();
 //                        keepGeneratingItem();
 //                        if (sensorManager != null) {
-//                            sensorManager.registerListener(MapsActivity.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-//                            sensorManager.registerListener(MapsActivity.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//                            sensorManager.registerListener(mapsActivity, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+//                            sensorManager.registerListener(mapsActivity, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
 //                        }
 //
 //                        if (locationManager != null) {
@@ -450,7 +478,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                        }
 //
 //                        if (isGameStart && locationrequest != null)
-//                            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+//                            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, mapsActivity);
 //                        startGameTime = Calendar.getInstance();
 //
 //                    }
@@ -458,7 +486,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //                .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
 //                    @Override
 //                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        MapsActivity.this.finish();
+//                        mapsActivity.finish();
 //                    }
 //                })
                 .setCancelable(false);
@@ -467,16 +495,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
     protected void initListener() {
 
-        connectGoogleApiClient = new ConnectGoogleApiClient(this);
+        connectGoogleApiClient = new ConnectGoogleApiClient();
 
         // เมื่อแผนที่โหลดเสร็จเรียบร้อยให้เปลี่ยนข้อความ progress จาก Wait while loading map... เป็น Wait while getting your location
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
                 progress.setMessage("Waiting for GPS ...");
-                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MapsActivity.this);
+                int response = GooglePlayServicesUtil.isGooglePlayServicesAvailable(mapsActivity);
                 if (response == ConnectionResult.SUCCESS) {
-                    mGoogleApiClient = new GoogleApiClient.Builder(MapsActivity.this)
+                    mGoogleApiClient = new GoogleApiClient.Builder(mapsActivity)
                             .addApi(LocationServices.API)
                             .addConnectionCallbacks(connectGoogleApiClient)
                             .addOnConnectionFailedListener(connectGoogleApiClient)
@@ -491,7 +519,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
             public boolean onMarkerClick(Marker marker) {
                 // TODO : fix item crash
                 if (Me.items.size() + Me.guns.size() >= Me.bagMaxCapacity) {
-                    Toast.makeText(MapsActivity.this, "Your bag is full", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mapsActivity, "Your bag is full", Toast.LENGTH_SHORT).show();
                 } else if (!listMarkerMonster.contains(marker) && Me.items.size() + Me.guns.size() < Me.bagMaxCapacity) {
                     for (int i = 0; i < allItems.size(); i++) {
                         if (allItems.get(i).getId().equals(marker.getId())) {
@@ -697,10 +725,10 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         cbHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(mapsActivity).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        MapsActivity.this.finish();
+                        mapsActivity.finish();
                     }
                 }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
@@ -718,6 +746,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 //        previousUpdateTime = System.currentTimeMillis();
 
     }
+
 
     protected int getColor(View view) {
         return Color.parseColor((String) view.getTag());
@@ -842,7 +871,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                         int distanceBetweenMonsterAndPlayer = (int) DistanceCalculator.getDistanceBetweenMarkersInMetres(monster.getToPosition(), marker.getPosition());
 
                         if (distanceBetweenMonsterAndPlayer < 50 && !isVibrate) {
-                            Vibrator v = (Vibrator) MapsActivity.this.getSystemService(Context.VIBRATOR_SERVICE);
+                            Vibrator v = (Vibrator) mapsActivity.getSystemService(Context.VIBRATOR_SERVICE);
                             // Vibrate for 500 milliseconds
                             v.vibrate(500);
                             isVibrate = true;
@@ -910,7 +939,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     int range = max_generate_ghost_timeout - min_generate_ghost_timeout + 1;
                     timeout = (int) ((Math.random() * range) + min_generate_ghost_timeout);
                     timeout = timeout * 1000; // convert to millisec
-                    mMonster = new KingKong(MapsActivity.this);
+                    mMonster = new KingKong(mapsActivity);
                     mMonster.setSpeed(10);
                     addMonster(mMonster);
                 } else {
@@ -939,22 +968,22 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     if (random_item < ALL_SELF_ITEM.size()) {
                         switch (ALL_SELF_ITEM.get(random_item)) {
                             case "Distancex2":
-                                generatedItem = new ItemDistancex2(MapsActivity.this);
+                                generatedItem = new ItemDistancex2(mapsActivity);
                                 break;
                             case "Distancex3":
-                                generatedItem = new ItemDistancex3(MapsActivity.this);
+                                generatedItem = new ItemDistancex3(mapsActivity);
                                 break;
                             case "Potion":
-                                generatedItem = new Potion(MapsActivity.this);
+                                generatedItem = new Potion(mapsActivity);
                                 break;
                         }
                     } else {
                         switch (ALL_MONSTER_ITEM.get(random_item - ALL_SELF_ITEM.size())) {
                             case "Pistol":
-                                generatedItem = new Pistol(MapsActivity.this, 20);
+                                generatedItem = new Pistol(mapsActivity, 20);
                                 break;
                             case "Desert":
-                                generatedItem = new Desert(MapsActivity.this, 20);
+                                generatedItem = new Desert(mapsActivity, 20);
                                 break;
                         }
                     }
@@ -983,7 +1012,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     locationrequest = LocationRequest.create();
                     locationrequest.setInterval(1000);
                     locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+                    LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsFragment.this);
                 }
             }
 
@@ -1047,11 +1076,11 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-//                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+//                AlertDialog.Builder dialog = new AlertDialog.Builder(mapsActivity).setPositiveButton("YES", new DialogInterface.OnClickListener() {
 //                    @Override
 //                    public void onClick(DialogInterface dialog, int which) {
-////                        locationClient.removeLocationUpdates(MapsActivity.this);
-//                        MapsActivity.this.finish();
+////                        locationClient.removeLocationUpdates(mapsActivity);
+//                        mapsActivity.finish();
 //                    }
 //                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 //                    @Override
@@ -1104,8 +1133,9 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void unRegisterAllListener() {
-        sensorManager.unregisterListener(this, accelerometerSensor);
-        sensorManager.unregisterListener(this, magneticFieldSensor);
+        Log.d("test", "unregister");
+        sensorManager.unregisterListener(MapsFragment.this, accelerometerSensor);
+        sensorManager.unregisterListener(MapsFragment.this, magneticFieldSensor);
         for (Runnable r : allRunnableMonster) {
             handler.removeCallbacks(r);
         }
@@ -1116,15 +1146,15 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         if (locationManager != null)
             locationManager.removeGpsStatusListener(checkLocation);
         if (isGameStart)
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, MapsFragment.this);
 
     }
 
     public void registerAllListener() {
 
         if (sensorManager != null) {
-            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-            sensorManager.registerListener(this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(MapsFragment.this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(MapsFragment.this, magneticFieldSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
 
         if (locationManager != null) {
@@ -1172,7 +1202,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
 
         if (isGameStart && locationrequest != null)
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsActivity.this);
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationrequest, MapsFragment.this);
 
         if (isGameStart) {
             setPlayerHP();
@@ -1193,9 +1223,8 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
+    public void onDestroyView() {
+        super.onDestroyView();
         if (allRunnableMonster.size() > 0 && keepGenerateGhost != null) {
             for (Runnable r : allRunnableMonster) {
                 handler.removeCallbacks(r);
@@ -1204,13 +1233,21 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
         }
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(
-                    mGoogleApiClient, this);
+                    mGoogleApiClient, MapsFragment.this);
             mGoogleApiClient.disconnect();
         }
 
         if (locationManager != null) {
             locationManager.removeGpsStatusListener(checkLocation);
         }
+
+        if (progress.isShowing()) {
+            progress.dismiss();
+        }
+
+        MapsFragment f = (MapsFragment) getFragmentManager().findFragmentById(R.id.map);
+        if (f != null)
+            getFragmentManager().beginTransaction().remove(f).commit();
 
 
         Me.guns = new ArrayList<Gun>();
@@ -1288,25 +1325,6 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     @Override
-    public void onBackPressed() {
-
-        AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                MapsActivity.super.onBackPressed();
-            }
-        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-        dialog.setTitle("Stop playing?");
-        dialog.setMessage("Your current progress won't saved");
-        dialog.show();
-    }
-
-    @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
@@ -1314,7 +1332,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     protected void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map. instance
         if (mMap == null) {
-            mMap = (((SupportMapFragment) this.getSupportFragmentManager().findFragmentById(R.id.map)).getMap());
+            mMap = (((MapFragment) mapsActivity.getFragmentManager().findFragmentById(R.id.map)).getMap());
             // Check if we were successful in obtaining the map.
         }
     }
@@ -1331,7 +1349,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
 
 
         if (progress.isShowing() && builder == null) {
-            builder = new AlertDialog.Builder(MapsActivity.this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            builder = new AlertDialog.Builder(mapsActivity).setPositiveButton("YES", new DialogInterface.OnClickListener() {
                 @Override
 
                 public void onClick(DialogInterface dialog, int which) {
@@ -1457,7 +1475,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     protected void showDetailItemDialog() {
         Item selected = getItemFromPosition(Me.chosenGun);
 
-        final Dialog dialog = new Dialog(this);
+        final Dialog dialog = new Dialog(mapsActivity);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.detail_item_dialog);
         dialog.setCancelable(true);
@@ -1634,7 +1652,7 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     public void passAllMonster() {
-        Intent i = new Intent(this, MainActivity.class);
+        Intent i = new Intent(mapsActivity, MainActivity.class);
         Singleton.getInstance().setAllMonsters(allMonsters);
         for (Monster m : allMonsters) {
             Log.d("Before Point : " + m.getId(), m.getPoint().x + "," + m.getPoint().y);
@@ -1659,16 +1677,16 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        AlertDialog.Builder setting_mobile_data = new AlertDialog.Builder(this)
+        AlertDialog.Builder setting_mobile_data = new AlertDialog.Builder(mapsActivity)
                 .setTitle("Mobile data or Wifi is not enabled yet")
                 .setMessage("Go to setting again")
                 .setCancelable(false)
                 .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        MapsActivity.this.finish();
+                        mapsActivity.finish();
                     }
                 })
                 .setNeutralButton("Wifi", new DialogInterface.OnClickListener() {
@@ -1684,14 +1702,14 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                     }
                 });
 
-        AlertDialog.Builder setting_location = new AlertDialog.Builder(this)
+        AlertDialog.Builder setting_location = new AlertDialog.Builder(mapsActivity)
                 .setTitle("Set location mode to high accuracy")
                 .setMessage("Go to setting again")
                 .setCancelable(false)
                 .setNegativeButton("Exit game", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        MapsActivity.this.finish();
+                        mapsActivity.finish();
                     }
                 })
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -1728,6 +1746,212 @@ public class MapsActivity extends ActionBarActivity implements SensorEventListen
                 initVar();
                 initListener();
             }
+        }
+    }
+
+    // TODO: Rename method, update argument and hook method into UI event
+    public void onButtonPressed(Uri uri) {
+        if (mListener != null) {
+            mListener.onFragmentInteraction(uri);
+        }
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mListener = (OnFragmentInteractionListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
+    }
+
+    /**
+     * This interface must be implemented by activities that contain mapsActivity
+     * fragment to allow an interaction in mapsActivity fragment to be communicated
+     * to the activity and potentially other fragments contained in that
+     * activity.
+     * <p/>
+     * See the Android Training lesson <a href=
+     * "http://developer.android.com/training/basics/fragments/communicating.html"
+     * >Communicating with Other Fragments</a> for more information.
+     */
+    public interface OnFragmentInteractionListener {
+        // TODO: Update argument type and name
+        public void onFragmentInteraction(Uri uri);
+    }
+
+    public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+        private LocationRequest locationrequest;
+
+        public ConnectGoogleApiClient() {
+
+        }
+
+        @Override
+        public void onConnected(Bundle bundle) {
+            Log.d("status", "connected");
+            final Bitmap bp = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(MapsFragment.this.getResources(), R.drawable.dir),
+                    130,
+                    130,
+                    false);
+            if (LocationServices.FusedLocationApi.getLastLocation(MapsFragment.this.mGoogleApiClient) == null) {
+                locationrequest = LocationRequest.create();
+                locationrequest.setInterval(1000);
+//            locationrequest.setExpirationTime(60000);
+                locationrequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+                final LocationListener firstGetLocation = new LocationListener() {
+                    int numberOfUpdate = 0;
+
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        numberOfUpdate++;
+
+                        if (MapsFragment.this.checkLocation.isAccuracyAcceptable(location.getAccuracy())) {
+                            MapsFragment.this.mCurrentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                            if (MapsFragment.this.myArrow == null) {
+                                MapsFragment.this.mPreviousLatLng = MapsFragment.this.mCurrentLatLng;
+                                MapsFragment.this.setCameraPosition(MapsFragment.this.mCurrentLatLng, 18, 0);
+
+                                MapsFragment.this.myArrow = MapsFragment.this.mMap.addMarker(new MarkerOptions()
+                                        .position(MapsFragment.this.mCurrentLatLng)
+                                        .anchor((float) 0.5, (float) 0.5)
+                                        .flat(false)
+                                        .icon(BitmapDescriptorFactory.fromBitmap(bp)));
+
+                            }
+                            LocationServices.FusedLocationApi.removeLocationUpdates(MapsFragment.this.mGoogleApiClient, this);
+                        } else {
+                            MapsFragment.this.progress.setMessage("Waiting for gps accuracy lower than " + MapsFragment.this.THRESHOLD_ACC + " metres");
+                            Log.d("numupdate", numberOfUpdate + "");
+                            if (numberOfUpdate > 5) {
+                                MapsFragment.this.progress.setMessage("You may be have to go outside or fix your gps by using gps fix application");
+                            }
+                        }
+                    }
+                };
+                LocationServices.FusedLocationApi.requestLocationUpdates(MapsFragment.this.mGoogleApiClient, locationrequest, firstGetLocation);
+            } else {
+                MapsFragment.this.mCurrentLatLng = new LatLng(LocationServices.FusedLocationApi.getLastLocation(MapsFragment.this.mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi.getLastLocation(MapsFragment.this.mGoogleApiClient).getLongitude());
+                if (MapsFragment.this.myArrow == null) {
+                    MapsFragment.this.mPreviousLatLng = MapsFragment.this.mCurrentLatLng;
+                    MapsFragment.this.setCameraPosition(MapsFragment.this.mCurrentLatLng, 18, 0);
+                    MapsFragment.this.myArrow = MapsFragment.this.mMap.addMarker(new MarkerOptions()
+                            .position(MapsFragment.this.mCurrentLatLng)
+                            .anchor((float) 0.5, (float) 0.5)
+                            .flat(false)
+                            .icon(BitmapDescriptorFactory.fromBitmap(bp)));
+
+                }
+            }
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+
+        }
+
+        @Override
+        public void onConnectionFailed(ConnectionResult connectionResult) {
+
+        }
+    }
+
+    public class BagAdapter extends BaseAdapter {
+        //private final Desert gun;
+    /*private Integer[] mThumbIds = {
+            R.drawable.desert_eagle, R.drawable.pistol, R.drawable.knife
+    };*/
+
+        public BagAdapter() {
+            //gun = new Desert(mContext, 40);
+        }
+
+        @Override
+        public int getCount() {
+
+            if (Me.guns.size() + Me.items.size() >= 12)
+                return 12;
+            else
+                return Me.guns.size() + Me.items.size();
+
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return position;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+
+            if (convertView == null) {
+           /* imageButton = new SquareImageButton(mContext);
+            imageButton.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            imageButton.setPadding(8, 8, 8, 8);
+            imageButton.setBackgroundResource(R.drawable.round_corner_btn);
+            imageButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);*/
+                LayoutInflater inflater = (LayoutInflater) mapsActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = inflater.inflate(R.layout.slot_bag, parent, false);
+            }
+
+            ImageView image = (ImageView) convertView.findViewById(R.id.img);
+            final ToggleButton toggleButton = (ToggleButton) convertView.findViewById(R.id.toggleButton);
+            TextView number = (TextView) convertView.findViewById(R.id.number_weapon);
+
+
+            toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        Me.chosenGun = position;
+                        MapsFragment.this.passAllMonster(true, toggleButton);
+
+                    } else {
+                        Me.selectGun = false;
+                        MapsFragment.this.passAllMonster(false, null);
+
+                    }
+                }
+            });
+            // ถ้าเป็นปืน
+            if (position < Me.guns.size()) {
+
+                image.setImageResource(Me.guns.get(position).getThumb());
+                number.setText(Me.guns.get(position).getBullet() + Me.guns.get(position).getRemain_bullet() + "");
+                Me.selectGun = true;
+
+              /*      .setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Me.chosenGun = position;
+                    ((MapsActivity) mContext).passAllMonster();
+
+                }
+            });*/
+                //ถ้าเป็นไอเทม
+            } else {
+                Me.selectGun = false;
+                final Item item = Me.items.get(position - Me.guns.size());
+                image.setImageResource(item.getThumb());
+                number.setText("");
+            }
+            return convertView;
         }
     }
 

@@ -1,10 +1,10 @@
 package com.example.ripzery.projectx01.model.item;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.example.ripzery.projectx01.R;
-import com.example.ripzery.projectx01.app.MapsActivity;
 import com.example.ripzery.projectx01.interface_model.Item;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -22,7 +22,7 @@ public class ItemDistancex2 implements Item {
     private String id;
 
 
-    public ItemDistancex2(MapsActivity mapsActivity) {
+    public ItemDistancex2(Activity mapsActivity) {
         Bitmap resize = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(mapsActivity.getResources(), R.drawable.pin_speedx2),
                 240,
                 240,

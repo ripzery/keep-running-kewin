@@ -1,5 +1,6 @@
 package com.example.ripzery.projectx01.util;
 
+import android.app.Activity;
 import android.location.GpsStatus;
 import android.location.LocationManager;
 import android.os.Build;
@@ -7,20 +8,18 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.example.ripzery.projectx01.app.MapsActivity;
-
 /**
  * Created by visit on 1/25/15 AD.
  */
 public class CheckLocation implements GpsStatus.Listener {
     private static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
     private static final long DURATION_TO_FIX_LOST_MS = 10000;
-    private MapsActivity mapsActivity;
+    private Activity mapsActivity;
     private LocationManager locationManager;
     private boolean gpsFix;
     private long locationTime = 0;
 
-    public CheckLocation(MapsActivity mapsActivity, LocationManager locationManager) {
+    public CheckLocation(Activity mapsActivity, LocationManager locationManager) {
         this.mapsActivity = mapsActivity;
         this.locationManager = locationManager;
     }
