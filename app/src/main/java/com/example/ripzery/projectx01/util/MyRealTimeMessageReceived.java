@@ -61,6 +61,13 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
             time = "Time : " + byteArrayToInt(hour) + " H " + byteArrayToInt(min) + " M " + byteArrayToInt(sec) + " S ";
         }
 
+        byte[] killed = new byte[4];
+        for (int i = 0; i < damage.length; i++) {
+            killed[i] = buf[i + 21];
+        }
+
+        String kill = "Killed : " + byteArrayToInt(killed);
+
 
         //TODO : Who is sender ?
         Log.d(TAG, " All participants : " + Singleton.mParticipants.size());
@@ -76,6 +83,7 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
             if (Singleton.mParticipants.get(i).getParticipantId().equals(sender)) {
                 multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 1).setText(distance);
                 multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 0).setText(damaged);
+                multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 3).setText(kill);
                 if (header == 'F') {
                     multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 2).setText(time);
                 }

@@ -819,6 +819,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                     if (monster.isDie()) {
                         handler.removeCallbacks(this);
                         countKilled++;
+                        mapsActivity.getFragmentMultiplayerStatus().getTextView("p1", 3).setText("Killed : " + countKilled);
                         if (!listMarkerMonster.isEmpty()) {
                             listMarkerMonster.remove(marker);
                         }
@@ -1783,7 +1784,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
     /*  Multiplayer Section  */
     // Broadcast my score to everybody else.
     void broadcastPlayerStatus(boolean finalScore) {
-        byte[] mMsgBuf = new byte[21];
+        byte[] mMsgBuf = new byte[25];
 
         // First byte in message indicates whether it's a final score or not
         mMsgBuf[0] = (byte) (finalScore ? 'F' : 'U');
@@ -1823,6 +1824,12 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
             for (int i = 0; i < byteBufferS.capacity(); i++) {
                 mMsgBuf[i + 17] = byteBufferS.array()[i];
             }
+        }
+
+        ByteBuffer byteBufferKill = ByteBuffer.allocate(4);
+        byteBufferKill.putInt(countKilled);
+        for (int i = 0; i < byteBufferKill.capacity(); i++) {
+            mMsgBuf[i + 21] = byteBufferKill.array()[i];
         }
 
 

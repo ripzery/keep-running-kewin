@@ -31,7 +31,7 @@
             <TextView
                 android:id="@+id/tvPlayer1"
                 style="@style/textPlayer"
-                android:text="Player 1" />
+                android:text="Me" />
 
             <TextView
                 android:id="@+id/tvPlayer1Info1"

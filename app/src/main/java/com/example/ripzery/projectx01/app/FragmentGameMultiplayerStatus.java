@@ -96,6 +96,22 @@ public class FragmentGameMultiplayerStatus extends Fragment {
             count++;
         }
 
+        int otherPlayerIndex = 2; // use for set text at the correct place
+
+        for (int i = 0; i < Singleton.mParticipants.size(); i++) {
+
+            if (!Singleton.mParticipants.get(i).getParticipantId().equals(Singleton.myId)) {
+                String name = Singleton.mParticipants.get(i).getDisplayName();
+                if (name.contains(" ")) {
+                    getTextView(otherPlayerIndex).setText(name.split(" ")[0]);
+                } else {
+                    getTextView(otherPlayerIndex).setText(name);
+                }
+
+                otherPlayerIndex++;
+            }
+        }
+
         return rootView;
     }
 
@@ -110,6 +126,7 @@ public class FragmentGameMultiplayerStatus extends Fragment {
         }
     }
 
+    // index 0 is except
     public TextView getTextView(int index) {
         return allPlayersText.get(index);
     }
