@@ -67,6 +67,8 @@ import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -86,6 +88,7 @@ import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
+import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -271,6 +274,7 @@ public class MapsMultiplayerActivity extends ActionBarActivity implements Sensor
     protected void initVar() {
         ButterKnife.inject(this);
 
+        Singleton.myRealTimeMessageReceived.setMapsMultiplayerActivity(this);
 //        ALL_MONSTER_ITEM.add("Shotgun");
 //        ALL_MONSTER_ITEM.add("Mine");
 
@@ -1402,6 +1406,7 @@ public class MapsMultiplayerActivity extends ActionBarActivity implements Sensor
             // update playground visible view
             playground = mMap.getProjection().getVisibleRegion().latLngBounds;
 
+            broadcastPlayerStatus(false);
         }
     }
 
@@ -1732,6 +1737,44 @@ public class MapsMultiplayerActivity extends ActionBarActivity implements Sensor
         }
 
     }
+
+    /*  Multiplayer Section  */
+    // Broadcast my score to everybody else.
+    void broadcastPlayerStatus(boolean finalScore) {
+        byte[] mMsgBuf = new byte[5];
+
+        // First byte in message indicates whether it's a final score or not
+        mMsgBuf[0] = (byte) (finalScore ? 'F' : 'U');
+
+        // Second byte is the score.
+//        mMsgBuf[1] = (byte) (255 & (0xff));
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
+        byteBuffer.putInt((int) distanceGoal);
+        mMsgBuf[1] = byteBuffer.array()[0];
+        mMsgBuf[2] = byteBuffer.array()[1];
+        mMsgBuf[3] = byteBuffer.array()[2];
+        mMsgBuf[4] = byteBuffer.array()[3];
+
+
+        // Send to every other participant.
+        for (Participant p : Singleton.mParticipants) {
+            if (p.getParticipantId().equals(Singleton.myId))
+                continue;
+            if (p.getStatus() != Participant.STATUS_JOINED)
+                continue;
+            if (finalScore) {
+                // final score notification must be sent via reliable message
+                Games.RealTimeMultiplayer.sendReliableMessage(Singleton.mGoogleApiClient, null, mMsgBuf,
+                        Singleton.mRoomId, p.getParticipantId());
+            } else {
+                // it's an interim score notification, so we can use unreliable
+                Games.RealTimeMultiplayer.sendUnreliableMessage(Singleton.mGoogleApiClient, mMsgBuf, Singleton.mRoomId,
+                        p.getParticipantId());
+            }
+        }
+    }
+
 
     public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 

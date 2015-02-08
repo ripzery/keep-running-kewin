@@ -1,6 +1,7 @@
 package com.example.ripzery.projectx01.app;
 
 import com.example.ripzery.projectx01.interface_model.Monster;
+import com.example.ripzery.projectx01.util.MyRealTimeMessageReceived;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.games.multiplayer.realtime.Room;
@@ -16,6 +17,7 @@ public class Singleton {
     public static GoogleApiClient mGoogleApiClient;
     public static String myId = null;
     public static String mRoomId;
+    public static MyRealTimeMessageReceived myRealTimeMessageReceived;
     private static Singleton mSing = new Singleton();
     private static ArrayList<Monster> allMonsters;
     private static ArrayList<LatLng> allPlayerPositions;

@@ -18,30 +18,25 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.ripzery.projectx01.R;
+import com.example.ripzery.projectx01.util.MyRealTimeMessageReceived;
+import com.example.ripzery.projectx01.util.MyRoomUpdateListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesActivityResultCodes;
-import com.google.android.gms.games.GamesStatusCodes;
 import com.google.android.gms.games.multiplayer.Invitation;
 import com.google.android.gms.games.multiplayer.Multiplayer;
 import com.google.android.gms.games.multiplayer.OnInvitationReceivedListener;
 import com.google.android.gms.games.multiplayer.Participant;
-import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
-import com.google.android.gms.games.multiplayer.realtime.RealTimeMessageReceivedListener;
 import com.google.android.gms.games.multiplayer.realtime.Room;
 import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
-import com.google.android.gms.games.multiplayer.realtime.RoomStatusUpdateListener;
-import com.google.android.gms.games.multiplayer.realtime.RoomUpdateListener;
 import com.google.android.gms.plus.Plus;
 import com.google.example.games.basegameutils.BaseGameUtils;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MultiplayerActivity extends ActionBarActivity implements SignInFragment.OnFragmentInteractionListener, MainMultiplayerFragment.OnFragmentInteractionListener, MapsFragment.OnFragmentInteractionListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
-        RealTimeMessageReceivedListener, OnInvitationReceivedListener, RoomStatusUpdateListener, RoomUpdateListener
-        , FragmentGameMultiplayerStatus.OnFragmentInteractionListener {
+        OnInvitationReceivedListener, FragmentGameMultiplayerStatus.OnFragmentInteractionListener {
 
     // Request codes for the UIs that we show with startActivityForResult:
     final static int RC_SELECT_PLAYERS = 10000;
@@ -54,10 +49,10 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     private static final int SCREEN_GAME = 3;
     private static final int RC_WAITING_ROOM = 10002;
     private static final int REQ_PLAY_GAME = 10003;
+    // The participants in the currently active game
+    public ArrayList<Participant> mParticipants = null;
     GoogleApiClient mGoogleApiClient;
     String mIncomingInvitationId = null;
-    // The participants in the currently active game
-    ArrayList<Participant> mParticipants = null;
     // Room ID where the currently active game is taking place; null if we're
     // not playing.
     String mRoomId = null;
@@ -80,6 +75,9 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     private MapsFragment mapsFragment;
     private FragmentGameMultiplayerStatus fragmentGameMultiplayerStatus;
     private Singleton mSing;
+    private MyRoomUpdateListener roomUpdateListener;
+    private MyRealTimeMessageReceived myRealTimeMessageReceived;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -93,6 +91,9 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, signInFragment);
         transaction.commit();
+
+        roomUpdateListener = new MyRoomUpdateListener(this);
+        Singleton.myRealTimeMessageReceived = new MyRealTimeMessageReceived();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -110,7 +111,6 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 acceptInviteToRoom(mIncomingInvitationId);
             }
         });
-
 
     }
 
@@ -172,7 +172,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         switchToMainScreen();
     }
 
-    void switchToMainScreen() {
+    public void switchToMainScreen() {
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             switchToScreen(SCREEN_MAIN);
         } else {
@@ -304,10 +304,10 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 
         // create the room
         Log.d(TAG, "Creating room...");
-        RoomConfig.Builder rtmConfigBuilder = RoomConfig.builder(this);
+        RoomConfig.Builder rtmConfigBuilder = RoomConfig.builder(roomUpdateListener);
         rtmConfigBuilder.addPlayersToInvite(invitees);
-        rtmConfigBuilder.setMessageReceivedListener(this);
-        rtmConfigBuilder.setRoomStatusUpdateListener(this);
+        rtmConfigBuilder.setMessageReceivedListener(Singleton.myRealTimeMessageReceived);
+        rtmConfigBuilder.setRoomStatusUpdateListener(roomUpdateListener);
         if (autoMatchCriteria != null) {
             rtmConfigBuilder.setAutoMatchCriteria(autoMatchCriteria);
         }
@@ -323,10 +323,10 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     void acceptInviteToRoom(String invId) {
         // accept the invitation
         Log.d(TAG, "Accepting invitation: " + invId);
-        RoomConfig.Builder roomConfigBuilder = RoomConfig.builder(this);
+        RoomConfig.Builder roomConfigBuilder = RoomConfig.builder(roomUpdateListener);
         roomConfigBuilder.setInvitationIdToAccept(invId)
-                .setMessageReceivedListener(this)
-                .setRoomStatusUpdateListener(this);
+                .setMessageReceivedListener(Singleton.myRealTimeMessageReceived)
+                .setRoomStatusUpdateListener(roomUpdateListener);
         switchToScreen(SCREEN_WAIT);
         keepScreenOn();
         Games.RealTimeMultiplayer.join(mGoogleApiClient, roomConfigBuilder.build());
@@ -335,7 +335,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 
     // Show the waiting room UI to track the progress of other players as they enter the
     // room and get connected.
-    void showWaitingRoom(Room room) {
+    public void showWaitingRoom(Room room) {
         // minimum number of players required for our game
         // For simplicity, we require everyone to join the game before we start it
         // (this is signaled by Integer.MAX_VALUE).
@@ -417,16 +417,13 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     }
 
     @Override
-    public void onRealTimeMessageReceived(RealTimeMessage realTimeMessage) {
-
-    }
-
-    @Override
     public void onInvitationReceived(Invitation invitation) {
         // We got an invitation to play a game! So, store it in
         // mIncomingInvitationId
         // and show the popup on the screen.
+
         mIncomingInvitationId = invitation.getInvitationId();
+        Log.d(TAG, "Recieved Invitation : " + mIncomingInvitationId);
         ((TextView) findViewById(R.id.incoming_invitation_text)).setText(
                 invitation.getInviter().getDisplayName() + " is challenging you into the game!");
         switchToScreen(mCurScreen); // This will show the invitation popup
@@ -434,6 +431,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 
     @Override
     public void onInvitationRemoved(String invitationId) {
+        Log.d(TAG, "Removed Invitation : " + mIncomingInvitationId);
         if (mIncomingInvitationId.equals(invitationId)) {
             mIncomingInvitationId = null;
             switchToScreen(mCurScreen); // This will hide the invitation popup
@@ -445,7 +443,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         Log.d(TAG, "Leaving room.");
         stopKeepingScreenOn();
         if (Singleton.mRoomId != null) {
-            Games.RealTimeMultiplayer.leave(mGoogleApiClient, this, Singleton.mRoomId);
+            Games.RealTimeMultiplayer.leave(mGoogleApiClient, roomUpdateListener, Singleton.mRoomId);
             Singleton.mRoomId = null;
             switchToScreen(SCREEN_WAIT);
         } else {
@@ -453,132 +451,10 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         }
     }
 
-    @Override
-    public void onRoomConnecting(Room room) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onRoomAutoMatching(Room room) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onPeerInvitedToRoom(Room room, List<String> strings) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onPeerDeclined(Room room, List<String> strings) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onPeerJoined(Room room, List<String> strings) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onPeerLeft(Room room, List<String> strings) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onConnectedToRoom(Room room) {
-        Log.d(TAG, "onConnectedToRoom.");
-
-        // get room ID, participants and my ID:
-        Singleton.mRoomId = room.getRoomId();
-        mParticipants = room.getParticipants();
-        Singleton.mParticipants = room.getParticipants();
-        Singleton.myId = room.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient));
-
-        // print out the list of participants (for debug purposes)
-        Log.d(TAG, "Room ID: " + Singleton.mRoomId);
-        Log.d(TAG, "My ID " + Singleton.myId);
-        Log.d(TAG, "<< CONNECTED TO ROOM>>");
-    }
-
-    @Override
-    public void onDisconnectedFromRoom(Room room) {
-        Singleton.mRoomId = null;
-        showGameError();
-    }
-
-    void updateRoom(Room room) {
-        if (room != null) {
-            mParticipants = room.getParticipants();
-        }
-    }
-
     // Show error message about game being cancelled and return to main screen.
-    void showGameError() {
+    public void showGameError() {
         BaseGameUtils.makeSimpleDialog(this, getString(R.string.game_problem));
         switchToMainScreen();
-    }
-
-    @Override
-    public void onPeersConnected(Room room, List<String> strings) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onPeersDisconnected(Room room, List<String> strings) {
-        Singleton.updateRoom(room);
-    }
-
-    @Override
-    public void onP2PConnected(String s) {
-
-    }
-
-    @Override
-    public void onP2PDisconnected(String s) {
-
-    }
-
-    @Override
-    public void onRoomCreated(int statusCode, Room room) {
-        Log.d(TAG, "onRoomCreated(" + statusCode + ", " + room + ")");
-        if (statusCode != GamesStatusCodes.STATUS_OK) {
-            Log.e(TAG, "*** Error: onRoomCreated, status " + statusCode);
-            showGameError();
-            return;
-        }
-
-        // show the waiting room UI
-        showWaitingRoom(room);
-    }
-
-    @Override
-    public void onJoinedRoom(int statusCode, Room room) {
-        Log.d(TAG, "onJoinedRoom(" + statusCode + ", " + room + ")");
-        if (statusCode != GamesStatusCodes.STATUS_OK) {
-            Log.e(TAG, "*** Error: onRoomConnected, status " + statusCode);
-            showGameError();
-            return;
-        }
-
-        // show the waiting room UI
-        showWaitingRoom(room);
-    }
-
-    @Override
-    public void onLeftRoom(int statusCode, String s) {
-        // we have left the room; return to main screen.
-        Log.d(TAG, "onLeftRoom, code " + statusCode);
-        switchToMainScreen();
-    }
-
-    @Override
-    public void onRoomConnected(int statusCode, Room room) {
-        Log.d(TAG, "onRoomConnected(" + statusCode + ", " + room + ")");
-        if (statusCode != GamesStatusCodes.STATUS_OK) {
-            Log.e(TAG, "*** Error: onRoomConnected, status " + statusCode);
-            showGameError();
-            return;
-        }
-        Singleton.updateRoom(room);
     }
 
     // Handle back key to make sure we cleanly leave a game if we are in the middle of one
