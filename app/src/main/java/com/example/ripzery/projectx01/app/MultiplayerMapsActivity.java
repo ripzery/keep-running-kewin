@@ -85,7 +85,7 @@ public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFr
             }
         });
         dialog.setTitle("Stop playing?");
-        dialog.setMessage("Your current progress won't saved");
+        dialog.setMessage("Good bye ลาก่อย!");
         dialog.show();
     }
 

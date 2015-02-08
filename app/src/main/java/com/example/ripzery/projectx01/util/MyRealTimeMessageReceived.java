@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.ripzery.projectx01.app.MapsMultiplayerActivity;
 import com.example.ripzery.projectx01.app.MultiplayerMapsActivity;
 import com.example.ripzery.projectx01.app.Singleton;
+import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeMessageReceivedListener;
 
@@ -29,6 +30,7 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
     public void onRealTimeMessageReceived(RealTimeMessage realTimeMessage) {
         byte[] buf = realTimeMessage.getMessageData();
         String sender = realTimeMessage.getSenderParticipantId();
+
         byte[] distanceByte = new byte[4];
         char header = (char) buf[0];
         for (int i = 0; i < distanceByte.length; i++)
@@ -58,7 +60,12 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
                 sec[i] = buf[i + 17];
             }
 
-            time = "Time : " + byteArrayToInt(hour) + " H " + byteArrayToInt(min) + " M " + byteArrayToInt(sec) + " S ";
+            int h = byteArrayToInt(hour);
+            int m = byteArrayToInt(min);
+            int s = byteArrayToInt(sec);
+            multiplayerMapsActivity.getFragmentMultiplayerStatus().addFinishedPlayer(getSenderParticipant(sender));
+            time = "Time : " + h + " H " + m + " M " + s + " S ";
+
         }
 
         byte[] killed = new byte[4];
@@ -93,6 +100,15 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
                 otherPlayerIndex++;
             }
         }
+    }
+
+    public Participant getSenderParticipant(String sender) {
+        for (int i = 0; i < Singleton.mParticipants.size(); i++) {
+            if (Singleton.mParticipants.get(i).getParticipantId().equals(sender)) {
+                return Singleton.mParticipants.get(i);
+            }
+        }
+        return null;
     }
 
     public void setMapsMultiplayerActivity(MapsMultiplayerActivity mapsMultiplayerActivity) {

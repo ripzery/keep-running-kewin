@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -912,13 +913,50 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                                 // TODO : end game dialog
                                 if (duration == null)
                                     duration = calculateGameDuration();
+                                mapsActivity.getFragmentMultiplayerStatus().getTextView("p1", 2).setText("Time : " + duration[0] + " H " + duration[1] + " M " + duration[2] + " S");
+                                mapsActivity.getFragmentMultiplayerStatus().addFinishedPlayer(Singleton.getParticipantFromId(Singleton.myId));
                                 broadcastPlayerStatus(true);
-//                            endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
-//                                    + "\n Average speed : " + new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr."
-//                                    + "\n Burn Calories : " + new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight));
 
-                                endGameDialog.setTitle("Mission Failed");
-                                endGameDialog.show();
+                                TextView tvResult = (TextView) rootView.findViewById(R.id.tvResult);
+                                tvResult.setTypeface(Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf"));
+                                ArrayList<Participant> allFinishPlayer = mapsActivity.getFragmentMultiplayerStatus().getFinishedPlayer();
+                                if (allFinishPlayer.size() == Singleton.mParticipants.size()) {
+                                    tvResult.setText("You are the Winner !!");
+                                } else if ((Singleton.mParticipants.size() - allFinishPlayer.size() + 1) == 2) {
+                                    tvResult.setText("ส่วนมึงได้ที่ " + (Singleton.mParticipants.size() - allFinishPlayer.size() + 1));
+                                } else {
+                                    tvResult.setText("มึงได้ที่ " + (Singleton.mParticipants.size() - allFinishPlayer.size() + 1));
+                                }
+
+                                YoYo.with(Techniques.FadeOut)
+                                        .withListener(new Animator.AnimatorListener() {
+                                            @Override
+                                            public void onAnimationStart(Animator animation) {
+
+                                            }
+
+                                            @Override
+                                            public void onAnimationEnd(Animator animation) {
+                                                rootView.findViewById(R.id.match_result).setVisibility(View.VISIBLE);
+                                                YoYo.with(Techniques.FadeIn)
+                                                        .duration(2000)
+                                                        .playOn(rootView.findViewById(R.id.match_result));
+                                            }
+
+                                            @Override
+                                            public void onAnimationCancel(Animator animation) {
+
+                                            }
+
+                                            @Override
+                                            public void onAnimationRepeat(Animator animation) {
+
+                                            }
+                                        })
+                                        .duration(3000)
+                                        .playOn(rootView.findViewById(R.id.sliding_layout));
+//                                endGameDialog.setTitle("Mission Failed");
+//                                endGameDialog.show();
                                 unRegisterAllListener();
                                 isGameStart = false;
 

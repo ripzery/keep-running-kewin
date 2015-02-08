@@ -53,4 +53,13 @@ public class Singleton {
         }
     }
 
+    public static Participant getParticipantFromId(String id) {
+        for (int i = 0; i < Singleton.mParticipants.size(); i++) {
+            if (Singleton.mParticipants.get(i).getParticipantId().equals(id)) {
+                return Singleton.mParticipants.get(i);
+            }
+        }
+        return null;
+    }
+
 }

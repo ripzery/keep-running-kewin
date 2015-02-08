@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.ripzery.projectx01.R;
+import com.google.android.gms.games.multiplayer.Participant;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +41,8 @@ public class FragmentGameMultiplayerStatus extends Fragment {
     private OnFragmentInteractionListener mListener;
     private View rootView;
     private ArrayList<TextView> infoPlayer = new ArrayList<>();
+    private int[] otherPlayerDurationSecs = new int[2];
+    private ArrayList<Participant> finishedPlayer = new ArrayList<>();
 
     public FragmentGameMultiplayerStatus() {
         // Required empty public constructor
@@ -113,6 +116,18 @@ public class FragmentGameMultiplayerStatus extends Fragment {
         }
 
         return rootView;
+    }
+
+    public void addFinishedPlayer(Participant p) {
+        finishedPlayer.add(p);
+    }
+
+    public ArrayList<Participant> getFinishedPlayer() {
+        return finishedPlayer;
+    }
+
+    public void setOtherPlayerDurationSecs(int[] durationSecs) {
+        otherPlayerDurationSecs = durationSecs;
     }
 
     public TextView getTextView(String key, int index) {
