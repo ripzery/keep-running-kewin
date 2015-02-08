@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 
 import com.example.ripzery.projectx01.R;
 
@@ -45,11 +46,34 @@ public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFr
     }
 
     @Override
+    protected void onPause() {
+//        mapsFragment.unRegisterAllListener();
+        Log.d("MultiplayerMaps", "Paused");
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+//        mapsFragment.registerAllListener();
+        Log.d("MultiplayerMaps", "Resume");
+        super.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d("MultiplayerMaps", "Destroy");
+//        mapsFragment.destroyAllPending();
+        super.onDestroy();
+    }
+
+    @Override
     public void onBackPressed() {
 
         AlertDialog.Builder dialog = new AlertDialog.Builder(this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                mapsFragment.unRegisterAllListener();
+                mapsFragment.destroyAllPending();
                 finish();
                 MultiplayerMapsActivity.super.onBackPressed();
 

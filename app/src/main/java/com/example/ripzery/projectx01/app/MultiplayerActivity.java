@@ -108,6 +108,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
             @Override
             public void onClick(View view) {
                 acceptInviteToRoom(mIncomingInvitationId);
+                mIncomingInvitationId = null;
             }
         });
 
@@ -323,14 +324,17 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     void acceptInviteToRoom(String invId) {
         // accept the invitation
         Log.d(TAG, "Accepting invitation: " + invId);
-        RoomConfig.Builder roomConfigBuilder = RoomConfig.builder(roomUpdateListener);
-        roomConfigBuilder.setInvitationIdToAccept(invId)
-                .setMessageReceivedListener(Singleton.myRealTimeMessageReceived)
-                .setRoomStatusUpdateListener(roomUpdateListener);
-        switchToScreen(SCREEN_WAIT);
-        keepScreenOn();
-        Games.RealTimeMultiplayer.join(mGoogleApiClient, roomConfigBuilder.build());
-        mIncomingInvitationId = null;
+        if (invId != null) {
+            RoomConfig.Builder roomConfigBuilder = RoomConfig.builder(roomUpdateListener);
+            // TODO : invitation id is null don't know why!
+            roomConfigBuilder.setInvitationIdToAccept(invId)
+                    .setMessageReceivedListener(Singleton.myRealTimeMessageReceived)
+                    .setRoomStatusUpdateListener(roomUpdateListener);
+            switchToScreen(SCREEN_WAIT);
+            keepScreenOn();
+            Games.RealTimeMultiplayer.join(mGoogleApiClient, roomConfigBuilder.build());
+        }
+
     }
 
     // Show the waiting room UI to track the progress of other players as they enter the

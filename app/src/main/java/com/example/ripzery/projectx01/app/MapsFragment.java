@@ -426,6 +426,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                                 startGameTime = Calendar.getInstance();
                                 break;
                             case 2:
+                                destroyAllPending();
                                 mapsActivity.finish();
                                 break;
                         }
@@ -808,7 +809,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
             @Override
             public void run() {
 
-                if (marker != null) {
+                if (marker != null && MapsFragment.this.isAdded() && !MapsFragment.this.isDetached() && !MapsFragment.this.isRemoving()) {
 
                     if (monster.getStartLatLng() == null) {
                         monster.setStartLatLng(startLatLng);
@@ -817,6 +818,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                     // ถ้าปีศาจตายก็ให้ลบออกจากแผนที่
                     if (monster.isDie()) {
                         handler.removeCallbacks(this);
+                        countKilled++;
                         if (!listMarkerMonster.isEmpty()) {
                             listMarkerMonster.remove(marker);
                         }
@@ -903,7 +905,6 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                             else {
                                 Me.myHP = 0;
                             }
-
                             setPlayerHP();
                             if (Me.myHP <= 0) {
 
@@ -1152,7 +1153,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
             genItemHandler.removeCallbacks(keepGenerateItem);
         if (locationManager != null)
             locationManager.removeGpsStatusListener(checkLocation);
-        if (isGameStart)
+        if (isGameStart && mGoogleApiClient != null && mGoogleApiClient.isConnected())
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, MapsFragment.this);
 
     }
@@ -1231,14 +1232,19 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
 
     @Override
     public void onDestroyView() {
+        destroyAllPending();
         super.onDestroyView();
+
+    }
+
+    public void destroyAllPending() {
         if (allRunnableMonster.size() > 0 && keepGenerateGhost != null) {
             for (Runnable r : allRunnableMonster) {
                 handler.removeCallbacks(r);
             }
             genGhostHandler.removeCallbacks(keepGenerateGhost);
         }
-        if (mGoogleApiClient != null) {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(
                     mGoogleApiClient, MapsFragment.this);
             mGoogleApiClient.disconnect();
@@ -1252,10 +1258,9 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
             progress.dismiss();
         }
 
-        MapsFragment f = (MapsFragment) getFragmentManager().findFragmentById(R.id.map);
-        if (f != null)
-            getFragmentManager().beginTransaction().remove(f).commit();
-
+        if (mMap != null) {
+            mMap.clear();
+        }
 
         Me.guns = new ArrayList<Gun>();
         Me.items = new ArrayList<Item>();
@@ -1456,6 +1461,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
 
         }
     }
+
 
     private void uncheckAllChildrenCascade(ViewGroup vg) {
         for (int i = 0; i < vg.getChildCount(); i++) {

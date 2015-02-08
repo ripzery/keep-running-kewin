@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.example.ripzery.projectx01.app.MapsMultiplayerActivity;
 import com.example.ripzery.projectx01.app.MultiplayerMapsActivity;
+import com.example.ripzery.projectx01.app.Singleton;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeMessageReceivedListener;
 
@@ -50,6 +51,7 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
                 sec[i] = buf[i + 17];
             }
 
+
             String time = "Time : " + byteArrayToInt(hour) + " H " + byteArrayToInt(min) + " M " + byteArrayToInt(sec) + " S ";
             multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 2).setText(time);
             // DEAD
@@ -58,6 +60,13 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
         String distance = "Distance : " + byteArrayToInt(distanceByte);
         String damaged = "Damaged : " + byteArrayToInt(damage);
         Log.d(TAG, "Message received: " + (char) buf[0] + "/" + byteArrayToInt(distanceByte));
+
+        //TODO : Who is sender ?
+        Log.d(TAG, " All participants : " + Singleton.mParticipants.size());
+        Log.d(TAG, " Player 0 : " + Singleton.mParticipants.get(0).getDisplayName());
+        Log.d(TAG, " Player 1 : " + Singleton.mParticipants.get(1).getDisplayName());
+
+
 
         multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 1).setText(distance);
         multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 0).setText(damaged);
