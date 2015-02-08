@@ -36,7 +36,7 @@ public class FragmentGameMultiplayerStatus extends Fragment {
             , R.id.tvPlayer4Info1, R.id.tvPlayer4Info2, R.id.tvPlayer4Info3, R.id.tvPlayer4Info4};
 
     private HashMap<String, ArrayList<TextView>> allInfoTexts = new HashMap<>();
-
+    private ArrayList<TextView> allPlayersText = new ArrayList<>();
     private OnFragmentInteractionListener mListener;
     private View rootView;
     private ArrayList<TextView> infoPlayer = new ArrayList<>();
@@ -80,7 +80,9 @@ public class FragmentGameMultiplayerStatus extends Fragment {
         Typeface light = Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf");
 
         for (int id : ALL_TEXT) {
-            ((TextView) rootView.findViewById(id)).setTypeface(light);
+            TextView tv = (TextView) rootView.findViewById(id);
+            tv.setTypeface(light);
+            allPlayersText.add(tv);
         }
 
         int count = 1;
@@ -94,12 +96,6 @@ public class FragmentGameMultiplayerStatus extends Fragment {
             count++;
         }
 
-
-//        TextView tvInfo = (TextView)rootView.findViewById(R.id.tvInfo);
-//        TextView tvPlayer1 = (TextView)rootView.findViewById(R.id.tvPlayer1);
-//        TextView tvPlayer2 = (TextView)rootView.findViewById(R.id.tvPlayer2);
-//        TextView tvPlayer3 = (TextView)rootView.findViewById(R.id.tvPlayer3);
-//        TextView tvPlayer4 = (TextView)rootView.findViewById(R.id.tvPlayer4);
         return rootView;
     }
 
@@ -112,6 +108,10 @@ public class FragmentGameMultiplayerStatus extends Fragment {
         if (mListener != null) {
             mListener.onUpdate();
         }
+    }
+
+    public TextView getTextView(int index) {
+        return allPlayersText.get(index);
     }
 
     @Override

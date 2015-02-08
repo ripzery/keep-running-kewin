@@ -16,6 +16,7 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
     private static final String TAG = "MyRealtimeMessage";
     private MapsMultiplayerActivity mapsMultiplayerActivity;
     private MultiplayerMapsActivity multiplayerMapsActivity;
+    private String time = "Time : ";
 
     public static int byteArrayToInt(byte[] b) {
         return b[3] & 0xFF |
@@ -29,6 +30,7 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
         byte[] buf = realTimeMessage.getMessageData();
         String sender = realTimeMessage.getSenderParticipantId();
         byte[] distanceByte = new byte[4];
+        char header = (char) buf[0];
         for (int i = 0; i < distanceByte.length; i++)
             distanceByte[i] = buf[i + 1];
 
@@ -37,7 +39,12 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
             damage[i] = buf[i + 5];
         }
 
-        if ((char) buf[0] == 'F') {
+        String distance = "Distance : " + byteArrayToInt(distanceByte);
+        String damaged = "Damaged : " + byteArrayToInt(damage);
+        Log.d(TAG, "Message received: " + (char) buf[0] + "/" + byteArrayToInt(distanceByte));
+
+        // Final result
+        if (header == 'F') {
             byte[] hour = new byte[4];
             byte[] min = new byte[4];
             byte[] sec = new byte[4];
@@ -51,25 +58,33 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
                 sec[i] = buf[i + 17];
             }
 
-
-            String time = "Time : " + byteArrayToInt(hour) + " H " + byteArrayToInt(min) + " M " + byteArrayToInt(sec) + " S ";
-            multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 2).setText(time);
-            // DEAD
+            time = "Time : " + byteArrayToInt(hour) + " H " + byteArrayToInt(min) + " M " + byteArrayToInt(sec) + " S ";
         }
 
-        String distance = "Distance : " + byteArrayToInt(distanceByte);
-        String damaged = "Damaged : " + byteArrayToInt(damage);
-        Log.d(TAG, "Message received: " + (char) buf[0] + "/" + byteArrayToInt(distanceByte));
 
         //TODO : Who is sender ?
         Log.d(TAG, " All participants : " + Singleton.mParticipants.size());
         Log.d(TAG, " Player 0 : " + Singleton.mParticipants.get(0).getDisplayName());
         Log.d(TAG, " Player 1 : " + Singleton.mParticipants.get(1).getDisplayName());
+        Log.d(TAG, " Player 2 : " + Singleton.mParticipants.get(2).getDisplayName());
 
+        int otherPlayerIndex = 2; // use for set text at the correct place
 
+        for (int i = 0; i < Singleton.mParticipants.size(); i++) {
 
-        multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 1).setText(distance);
-        multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 0).setText(damaged);
+            //find sender
+            if (Singleton.mParticipants.get(i).getParticipantId().equals(sender)) {
+                multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 1).setText(distance);
+                multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 0).setText(damaged);
+                if (header == 'F') {
+                    multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p" + otherPlayerIndex, 2).setText(time);
+                }
+            }
+
+            if (!Singleton.mParticipants.get(i).getParticipantId().equals(Singleton.myId)) {
+                otherPlayerIndex++;
+            }
+        }
     }
 
     public void setMapsMultiplayerActivity(MapsMultiplayerActivity mapsMultiplayerActivity) {
