@@ -17,7 +17,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
@@ -71,6 +70,8 @@ import com.github.pavlospt.CircleView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -90,6 +91,7 @@ import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
+import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -1418,7 +1420,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
             }
             // update playground visible view
             playground = mMap.getProjection().getVisibleRegion().latLngBounds;
-
+            broadcastPlayerStatus(false);
         }
     }
 
@@ -1749,13 +1751,6 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         }
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -1773,19 +1768,49 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain mapsActivity
-     * fragment to allow an interaction in mapsActivity fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
+    /*  Multiplayer Section  */
+    // Broadcast my score to everybody else.
+    void broadcastPlayerStatus(boolean finalScore) {
+        byte[] mMsgBuf = new byte[5];
+
+        // First byte in message indicates whether it's a final score or not
+        mMsgBuf[0] = (byte) (finalScore ? 'F' : 'U');
+
+        // Second byte is the score.
+//        mMsgBuf[1] = (byte) (255 & (0xff));
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
+        byteBuffer.putInt((int) distanceGoal);
+        mMsgBuf[1] = byteBuffer.array()[0];
+        mMsgBuf[2] = byteBuffer.array()[1];
+        mMsgBuf[3] = byteBuffer.array()[2];
+        mMsgBuf[4] = byteBuffer.array()[3];
+
+
+        // Send to every other participant.
+        for (Participant p : Singleton.mParticipants) {
+            if (p.getParticipantId().equals(Singleton.myId))
+                continue;
+            if (p.getStatus() != Participant.STATUS_JOINED)
+                continue;
+            if (finalScore) {
+                // final score notification must be sent via reliable message
+                Games.RealTimeMultiplayer.sendReliableMessage(Singleton.mGoogleApiClient, null, mMsgBuf,
+                        Singleton.mRoomId, p.getParticipantId());
+            } else {
+                // it's an interim score notification, so we can use unreliable
+                Games.RealTimeMultiplayer.sendUnreliableMessage(Singleton.mGoogleApiClient, mMsgBuf, Singleton.mRoomId,
+                        p.getParticipantId());
+            }
+        }
+        if (mListener != null) {
+            mListener.onBroadcastPlayerStatus();
+        }
+    }
+
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onFragmentInteraction(Uri uri);
+        public void onBroadcastPlayerStatus();
     }
 
     public class ConnectGoogleApiClient implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {

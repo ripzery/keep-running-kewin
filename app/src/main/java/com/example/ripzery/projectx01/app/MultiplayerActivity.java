@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
@@ -214,7 +213,8 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 //                transaction = getSupportFragmentManager().beginTransaction();
 //                transaction.replace(R.id.fragment_container, mapsFragment);
 //                transaction.commit();
-                startActivityForResult(new Intent(this, MapsMultiplayerActivity.class), REQ_PLAY_GAME);
+//                startActivityForResult(new Intent(this, MapsMultiplayerActivity.class), REQ_PLAY_GAME);
+                startActivityForResult(new Intent(this, MultiplayerMapsActivity.class), REQ_PLAY_GAME);
                 break;
         }
         // should we show the invitation popup?
@@ -513,7 +513,12 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     }
 
     @Override
-    public void onFragmentInteraction(Uri uri) {
+    public void onBroadcastPlayerStatus() {
 
     }
+
+//    @Override
+//    public void onFragmentInteraction(Uri uri) {
+//
+//    }
 }

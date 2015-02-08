@@ -9,7 +9,6 @@
     android:orientation="vertical"
     tools:context="com.example.ripzery.projectx01.app.MapsActivity">
 
-
     <com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:sothree="http://schemas.android.com/apk/res-auto"
         android:id="@+id/sliding_layout"
         android:layout_width="match_parent"

@@ -67,6 +67,9 @@
         <activity
             android:name=".app.MapsMultiplayerActivity"
             android:screenOrientation="portrait"></activity>
+        <activity
+            android:name=".app.MultiplayerMapsActivity"
+            android:screenOrientation="portrait"></activity>
     </application>
 
 </manifest>

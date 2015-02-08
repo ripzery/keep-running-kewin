@@ -1,45 +1,35 @@
 package com.example.ripzery.projectx01.app;
 
-
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.support.v7.app.ActionBarActivity;
 
 import com.example.ripzery.projectx01.R;
 
 /**
- * A simple {@link Fragment} subclass.
+ * Created by visit on 2/8/15 AD.
  */
-public class FragmentGame extends Fragment {
-
-
+public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFragment.OnFragmentInteractionListener, FragmentGameMultiplayerStatus.OnFragmentInteractionListener {
     private static final int NUM_PAGES = 2;
-    private View rootView;
     private MapsFragment mapsFragment;
     private FragmentGameMultiplayerStatus fragmentGameMultiplayerStatus;
     private ViewPager mPager;
     private ScreenSlidePagerAdapter mPagerAdapter;
     private ViewPager.SimpleOnPageChangeListener viewPagerListener;
 
-    public FragmentGame() {
-        // Required empty public constructor
-    }
-
-
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        rootView = inflater.inflate(R.layout.fragment_game, container, false);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_multiplayer_maps);
+        mPager = (ViewPager) findViewById(R.id.pager);
         mapsFragment = MapsFragment.newInstance("maps", "maps");
         fragmentGameMultiplayerStatus = FragmentGameMultiplayerStatus.newInstance("multiplayer status", "test");
-        mPager = (ViewPager) rootView.findViewById(R.id.pager);
-        mPagerAdapter = new ScreenSlidePagerAdapter(getActivity().getSupportFragmentManager());
+        mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
         viewPagerListener = new ViewPager.SimpleOnPageChangeListener() {
             @Override
@@ -48,25 +38,42 @@ public class FragmentGame extends Fragment {
             }
         };
         mPager.setOnPageChangeListener(viewPagerListener);
-        return rootView;
-    }
-
-    @Override
-    public void onStop() {
-        mapsFragment.onStop();
-        fragmentGameMultiplayerStatus.onStop();
-        super.onStop();
 
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void onBackPressed() {
+
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this).setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+                MultiplayerMapsActivity.super.onBackPressed();
+
+            }
+        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        dialog.setTitle("Stop playing?");
+        dialog.setMessage("Your current progress won't saved");
+        dialog.show();
+    }
+
+    @Override
+    public void onBroadcastPlayerStatus() {
+
+    }
+
+    @Override
+    public void onUpdate() {
+
     }
 
     private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
 
-        private long baseId = 0;
 
         public ScreenSlidePagerAdapter(FragmentManager fm) {
             super(fm);
@@ -84,24 +91,10 @@ public class FragmentGame extends Fragment {
         }
 
         @Override
-        public int getItemPosition(Object object) {
-            return PagerAdapter.POSITION_NONE;
-        }
-
-        @Override
         public int getCount() {
             return NUM_PAGES;
         }
 
-        /**
-         * Notify that the position of a fragment has been changed.
-         * Create a new ID for each position to force recreation of the fragment
-         *
-         * @param n number of items which have been changed
-         */
-        public void notifyChangeInPosition(int n) {
-            // shift the ID returned by getItemId outside the range of all previous fragments
-            baseId += getCount() + n;
-        }
+
     }
 }

@@ -193,7 +193,7 @@ public class MapsMultiplayerActivity extends ActionBarActivity implements Sensor
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
+        setContentView(R.layout.activity_multiplayer_maps);
 
         // setup sensor เพื่อทำให้ลูกศรหมุนตามทิศที่หัน
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
