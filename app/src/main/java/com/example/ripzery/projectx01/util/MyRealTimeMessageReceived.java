@@ -31,10 +31,36 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
         for (int i = 0; i < distanceByte.length; i++)
             distanceByte[i] = buf[i + 1];
 
+        byte[] damage = new byte[4];
+        for (int i = 0; i < damage.length; i++) {
+            damage[i] = buf[i + 5];
+        }
+
+        if ((char) buf[0] == 'F') {
+            byte[] hour = new byte[4];
+            byte[] min = new byte[4];
+            byte[] sec = new byte[4];
+            for (int i = 0; i < hour.length; i++) {
+                hour[i] = buf[i + 9];
+            }
+            for (int i = 0; i < min.length; i++) {
+                min[i] = buf[i + 13];
+            }
+            for (int i = 0; i < sec.length; i++) {
+                sec[i] = buf[i + 17];
+            }
+
+            String time = "Time : " + byteArrayToInt(hour) + " H " + byteArrayToInt(min) + " M " + byteArrayToInt(sec) + " S ";
+            multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 2).setText(time);
+            // DEAD
+        }
+
         String distance = "Distance : " + byteArrayToInt(distanceByte);
+        String damaged = "Damaged : " + byteArrayToInt(damage);
         Log.d(TAG, "Message received: " + (char) buf[0] + "/" + byteArrayToInt(distanceByte));
 
         multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 1).setText(distance);
+        multiplayerMapsActivity.getFragmentMultiplayerStatus().getTextView("p2", 0).setText(damaged);
     }
 
     public void setMapsMultiplayerActivity(MapsMultiplayerActivity mapsMultiplayerActivity) {

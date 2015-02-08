@@ -194,6 +194,8 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
     private OnFragmentInteractionListener mListener;
     private MultiplayerMapsActivity mapsActivity;
     private View rootView;
+    private int damageTaken = 0;
+    private int countKilled = 0;
 
     public MapsFragment() {
         // Required empty public constructor
@@ -894,8 +896,10 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                                 marker.setIcon(monster.getIcon());
                             }
                             Log.d("Attack!", "Monster No." + allMonsters.indexOf(monster));
-                            if (Me.myHP >= monster.getAttackPower())
+                            damageTaken += monster.getAttackPower();
+                            if (Me.myHP >= monster.getAttackPower()) {
                                 Me.myHP -= monster.getAttackPower();
+                            }
                             else {
                                 Me.myHP = 0;
                             }
@@ -906,6 +910,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                                 // TODO : end game dialog
                                 if (duration == null)
                                     duration = calculateGameDuration();
+                                broadcastPlayerStatus(true);
 //                            endGameDialog.setMessage("Total duration : " + duration[0] + " : " + duration[1] + " : " + duration[2]
 //                                    + "\n Average speed : " + new DecimalFormat("#.##").format(Me.averageSpeed) + " km/hr."
 //                                    + "\n Burn Calories : " + new DecimalFormat("#.##").format(Me.averageSpeed * Me.averageSpeed * Me.weight));
@@ -1772,7 +1777,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
     /*  Multiplayer Section  */
     // Broadcast my score to everybody else.
     void broadcastPlayerStatus(boolean finalScore) {
-        byte[] mMsgBuf = new byte[5];
+        byte[] mMsgBuf = new byte[21];
 
         // First byte in message indicates whether it's a final score or not
         mMsgBuf[0] = (byte) (finalScore ? 'F' : 'U');
@@ -1782,10 +1787,37 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(4);
         byteBuffer.putInt((int) distanceGoal);
-        mMsgBuf[1] = byteBuffer.array()[0];
-        mMsgBuf[2] = byteBuffer.array()[1];
-        mMsgBuf[3] = byteBuffer.array()[2];
-        mMsgBuf[4] = byteBuffer.array()[3];
+        for (int i = 0; i < byteBuffer.capacity(); i++) {
+            mMsgBuf[i + 1] = byteBuffer.array()[i];
+        }
+
+        ByteBuffer byteBuffer2 = ByteBuffer.allocate(4);
+        byteBuffer2.putInt(damageTaken);
+        for (int i = 0; i < byteBuffer2.capacity(); i++) {
+            mMsgBuf[i + 5] = byteBuffer2.array()[i];
+        }
+
+        mapsActivity.getFragmentMultiplayerStatus().getTextView("p1", 0).setText("Damaged : " + damageTaken);
+
+        if (finalScore) {
+            ByteBuffer byteBufferH = ByteBuffer.allocate(4);
+            byteBufferH.putInt(duration[0]);
+            for (int i = 0; i < byteBufferH.capacity(); i++) {
+                mMsgBuf[i + 9] = byteBufferH.array()[i];
+            }
+
+            ByteBuffer byteBufferM = ByteBuffer.allocate(4);
+            byteBufferM.putInt(duration[1]);
+            for (int i = 0; i < byteBufferM.capacity(); i++) {
+                mMsgBuf[i + 13] = byteBufferM.array()[i];
+            }
+
+            ByteBuffer byteBufferS = ByteBuffer.allocate(4);
+            byteBufferS.putInt(duration[2]);
+            for (int i = 0; i < byteBufferS.capacity(); i++) {
+                mMsgBuf[i + 17] = byteBufferS.array()[i];
+            }
+        }
 
 
         // Send to every other participant.
