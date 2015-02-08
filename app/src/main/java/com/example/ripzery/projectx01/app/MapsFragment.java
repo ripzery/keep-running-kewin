@@ -112,7 +112,7 @@ import at.markushi.ui.RevealColorView;
 public class MapsFragment extends Fragment implements SensorEventListener, LocationListener {
 
     public static final double THRESHOLD_ROT_CAM = 10; // กำหนดระยะทางที่จะต้องวิ่งอย่างต่ำก่อนที่จะหันกล้องไปในทิศที่เราวิ่ง
-    public static final double THRESHOLD_ROT_ARROW = 3; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
+    public static final double THRESHOLD_ROT_ARROW = 10; // กำหนดองศาที่หมุนโทรศัพท์อย่างน้อย ก่อนที่จะหมุนลูกศรตามทิศที่หัน (ป้องกันลูกศรสั่น)
     public static final double THRESHOLD_ACC = 300; // กำหนด Accuracy ที่ยอมรับได้
     public static final int DATA_ENABLED_REQ = 1;
     public static final int LOCATION_ENABLED_REQ = 2;
@@ -197,6 +197,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
     private View rootView;
     private int damageTaken = 0;
     private int countKilled = 0;
+    private TextView tvResult;
 
     public MapsFragment() {
         // Required empty public constructor
@@ -304,6 +305,8 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         cbHome = (CircleButton) rootView.findViewById(R.id.cbHome);
         playerStatus = (IconRoundCornerProgressBar) rootView.findViewById(R.id.playerStatus);
         itemStatus = (IconRoundCornerProgressBar) rootView.findViewById(R.id.itemStatus);
+        tvResult = (TextView) rootView.findViewById(R.id.tvResult);
+        tvResult.setTypeface(Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf"));
 
 //        ALL_MONSTER_ITEM.add("Shotgun");
 //        ALL_MONSTER_ITEM.add("Mine");
@@ -810,7 +813,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
             @Override
             public void run() {
 
-                if (marker != null && MapsFragment.this.isAdded() && !MapsFragment.this.isDetached() && !MapsFragment.this.isRemoving()) {
+                if (marker != null && MapsFragment.this.isAdded() && !MapsFragment.this.isDetached() && !MapsFragment.this.isRemoving() && isGameStart) {
 
                     if (monster.getStartLatLng() == null) {
                         monster.setStartLatLng(startLatLng);
@@ -917,12 +920,10 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
                                 mapsActivity.getFragmentMultiplayerStatus().addFinishedPlayer(Singleton.getParticipantFromId(Singleton.myId));
                                 broadcastPlayerStatus(true);
 
-                                TextView tvResult = (TextView) rootView.findViewById(R.id.tvResult);
-                                tvResult.setTypeface(Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf"));
                                 ArrayList<Participant> allFinishPlayer = mapsActivity.getFragmentMultiplayerStatus().getFinishedPlayer();
                                 if (allFinishPlayer.size() == Singleton.mParticipants.size()) {
                                     tvResult.setText("You are the Winner !!");
-                                } else if ((Singleton.mParticipants.size() - allFinishPlayer.size() + 1) == 2) {
+                                } else if ((Singleton.mParticipants.size() - allFinishPlayer.size() + 1) == 2 && Singleton.mParticipants.size() > 2) {
                                     tvResult.setText("ส่วนมึงได้ที่ " + (Singleton.mParticipants.size() - allFinishPlayer.size() + 1));
                                 } else {
                                     tvResult.setText("มึงได้ที่ " + (Singleton.mParticipants.size() - allFinishPlayer.size() + 1));
@@ -975,6 +976,87 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         allRunnableMonster.add(runnable);
 
         handler.post(runnable);
+    }
+
+    public void justKidding() {
+        YoYo.with(Techniques.FadeOut)
+                .withListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        tvResult.setText("มึงไม่ต้องเล่นละสัส");
+                        rootView.findViewById(R.id.match_result).setVisibility(View.VISIBLE);
+                        YoYo.with(Techniques.FadeIn)
+                                .duration(2000)
+                                .withListener(new Animator.AnimatorListener() {
+                                    @Override
+                                    public void onAnimationStart(Animator animation) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationEnd(Animator animation) {
+
+                                        YoYo.with(Techniques.FadeOut)
+                                                .duration(1000)
+                                                .delay(2000)
+                                                .withListener(new Animator.AnimatorListener() {
+                                                    @Override
+                                                    public void onAnimationStart(Animator animation) {
+                                                        tvResult.setText("เก๊าาล้อเล่นนะะ :p");
+                                                    }
+
+                                                    @Override
+                                                    public void onAnimationEnd(Animator animation) {
+                                                        rootView.findViewById(R.id.match_result).setVisibility(View.GONE);
+                                                        YoYo.with(Techniques.FadeIn)
+                                                                .duration(3000)
+                                                                .playOn(rootView.findViewById(R.id.sliding_layout));
+                                                    }
+
+                                                    @Override
+                                                    public void onAnimationCancel(Animator animation) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onAnimationRepeat(Animator animation) {
+
+                                                    }
+                                                })
+                                                .playOn(rootView.findViewById(R.id.match_result));
+                                    }
+
+                                    @Override
+                                    public void onAnimationCancel(Animator animation) {
+
+                                    }
+
+                                    @Override
+                                    public void onAnimationRepeat(Animator animation) {
+
+                                    }
+                                })
+                                .playOn(rootView.findViewById(R.id.match_result));
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                })
+                .delay(2000)
+                .duration(3000)
+                .playOn(rootView.findViewById(R.id.sliding_layout));
     }
 
     public void keepGeneratingGhost() {

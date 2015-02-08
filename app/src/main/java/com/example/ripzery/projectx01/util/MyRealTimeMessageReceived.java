@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.ripzery.projectx01.app.MapsMultiplayerActivity;
 import com.example.ripzery.projectx01.app.MultiplayerMapsActivity;
 import com.example.ripzery.projectx01.app.Singleton;
+import com.example.ripzery.projectx01.ar.detail.Me;
 import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeMessage;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeMessageReceivedListener;
@@ -64,6 +65,12 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
             int m = byteArrayToInt(min);
             int s = byteArrayToInt(sec);
             multiplayerMapsActivity.getFragmentMultiplayerStatus().addFinishedPlayer(getSenderParticipant(sender));
+
+            // TODO : คลายเครียดให้ user
+            if ((Singleton.mParticipants.size() - multiplayerMapsActivity.getFragmentMultiplayerStatus().getFinishedPlayer().size() + 1) == 2 && Me.myHP > 0) {
+                multiplayerMapsActivity.getMapsFragment().justKidding();
+            }
+
             time = "Time : " + h + " H " + m + " M " + s + " S ";
 
         }

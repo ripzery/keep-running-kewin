@@ -85,12 +85,16 @@ public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFr
             }
         });
         dialog.setTitle("Stop playing?");
-        dialog.setMessage("Good bye ลาก่อย!");
+        dialog.setMessage("Good bye " + Singleton.getParticipantFromId(Singleton.myId).getDisplayName() + " ลาก่อย!");
         dialog.show();
     }
 
     public FragmentGameMultiplayerStatus getFragmentMultiplayerStatus() {
         return fragmentGameMultiplayerStatus;
+    }
+
+    public MapsFragment getMapsFragment() {
+        return mapsFragment;
     }
 
     @Override
