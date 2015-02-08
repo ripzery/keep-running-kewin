@@ -37,4 +37,7 @@
     <color name="AccentColor">#cc0000</color>
     <color name="PopupColor">@color/AccentColor</color>
 
+    <!-- Multiplayer Statistics -->
+    <!--<color name=""-->
+
 </resources>

@@ -26,6 +26,7 @@ public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFr
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_multiplayer_maps);
+
         mPager = (ViewPager) findViewById(R.id.pager);
         mapsFragment = MapsFragment.newInstance("maps", "maps");
         fragmentGameMultiplayerStatus = FragmentGameMultiplayerStatus.newInstance("multiplayer status", "test");
@@ -38,6 +39,8 @@ public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFr
             }
         };
         mPager.setOnPageChangeListener(viewPagerListener);
+
+        Singleton.myRealTimeMessageReceived.setMultiplayerMapsActivity(this);
 
     }
 
@@ -60,6 +63,10 @@ public class MultiplayerMapsActivity extends ActionBarActivity implements MapsFr
         dialog.setTitle("Stop playing?");
         dialog.setMessage("Your current progress won't saved");
         dialog.show();
+    }
+
+    public FragmentGameMultiplayerStatus getFragmentMultiplayerStatus() {
+        return fragmentGameMultiplayerStatus;
     }
 
     @Override

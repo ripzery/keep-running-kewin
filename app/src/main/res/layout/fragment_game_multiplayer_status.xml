@@ -2,93 +2,174 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/blur_sky"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="horizontal">
+        android:layout_weight="0.3">
 
-        <FrameLayout
-            android:id="@+id/layoutPlayer1"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvInfo"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/hp_poor_dark">
+            android:gravity="center"
+            android:text="Current stats"
+            android:textColor="@color/circle_view"
+            android:textSize="28sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center|top"
-                android:layout_margin="20dp"
-                android:text="Player 1"
-                android:textColor="@color/circle_view"
-                android:textSize="28sp" />
-
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/layoutPlayer2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/hp_good_dark">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center|top"
-                android:layout_margin="20dp"
-                android:text="Player 2"
-                android:textColor="@color/circle_view"
-                android:textSize="28sp" />
-
-        </FrameLayout>
 
     </LinearLayout>
 
-    <LinearLayout
+    <LinearLayout style="@style/VerticalLinearLayout">
+
+        <LinearLayout
+            android:id="@+id/layoutPlayer1"
+            style="@style/HorizontalLinearLayout">
+
+            <TextView
+                android:id="@+id/tvPlayer1"
+                style="@style/textPlayer"
+                android:text="Player 1" />
+
+            <TextView
+                android:id="@+id/tvPlayer1Info1"
+                style="@style/InfoText"
+                android:text="Damaged : " />
+
+            <TextView
+                android:id="@+id/tvPlayer1Info2"
+                style="@style/InfoText"
+                android:text="Distance : " />
+
+            <TextView
+                android:id="@+id/tvPlayer1Info3"
+                style="@style/InfoText"
+                android:text="Time : " />
+
+            <TextView
+                android:id="@+id/tvPlayer1Info4"
+                style="@style/InfoText"
+                android:text="Killed : " />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="fill_parent"
+            android:layout_marginTop="16dp"
+            android:background="#66CFD8DC" />
+
+        <LinearLayout
+            android:id="@+id/layoutPlayer2"
+            style="@style/HorizontalLinearLayout">
+
+            <TextView
+                android:id="@+id/tvPlayer2"
+                style="@style/textPlayer"
+                android:text="Player 2" />
+
+            <TextView
+                android:id="@+id/tvPlayer2Info1"
+                style="@style/InfoText"
+                android:text="Damaged : " />
+
+            <TextView
+                android:id="@+id/tvPlayer2Info2"
+                style="@style/InfoText"
+                android:text="Distance : " />
+
+            <TextView
+                android:id="@+id/tvPlayer2Info3"
+                style="@style/InfoText"
+                android:text="Time : " />
+
+            <TextView
+                android:id="@+id/tvPlayer2Info4"
+                style="@style/InfoText"
+                android:text="Killed : " />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <View
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="horizontal">
+        android:layout_height="1dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:background="#66CFD8DC" />
 
-        <FrameLayout
+    <LinearLayout style="@style/VerticalLinearLayout">
+
+        <LinearLayout
             android:id="@+id/layoutPlayer3"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/primary">
+            style="@style/HorizontalLinearLayout">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center|top"
-                android:layout_margin="20dp"
-                android:text="Player 3"
-                android:textColor="@color/circle_view"
-                android:textSize="28sp" />
+                android:id="@+id/tvPlayer3"
+                style="@style/textPlayer"
+                android:text="Player 3" />
 
-        </FrameLayout>
+            <TextView
+                android:id="@+id/tvPlayer3Info1"
+                style="@style/InfoText"
+                android:text="Damaged : " />
 
-        <FrameLayout
+            <TextView
+                android:id="@+id/tvPlayer3Info2"
+                style="@style/InfoText"
+                android:text="Distance : " />
+
+            <TextView
+                android:id="@+id/tvPlayer3Info3"
+                style="@style/InfoText"
+                android:text="Time : " />
+
+            <TextView
+                android:id="@+id/tvPlayer3Info4"
+                style="@style/InfoText"
+                android:text="Killed : " />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="fill_parent"
+            android:layout_marginBottom="16dp"
+            android:background="#66CFD8DC" />
+
+        <LinearLayout
             android:id="@+id/layoutPlayer4"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/hp_good">
+            style="@style/HorizontalLinearLayout">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center|top"
-                android:layout_margin="20dp"
-                android:text="Player 4"
-                android:textColor="@color/circle_view"
-                android:textSize="28sp" />
+                android:id="@+id/tvPlayer4"
+                style="@style/textPlayer"
+                android:text="Player 4" />
 
-        </FrameLayout>
+            <TextView
+                android:id="@+id/tvPlayer4Info1"
+                style="@style/InfoText"
+                android:text="Damaged : " />
+
+            <TextView
+                android:id="@+id/tvPlayer4Info2"
+                style="@style/InfoText"
+                android:text="Distance : " />
+
+            <TextView
+                android:id="@+id/tvPlayer4Info3"
+                style="@style/InfoText"
+                android:text="Time : " />
+
+            <TextView
+                android:id="@+id/tvPlayer4Info4"
+                style="@style/InfoText"
+                android:text="Killed : " />
+
+        </LinearLayout>
 
     </LinearLayout>
 

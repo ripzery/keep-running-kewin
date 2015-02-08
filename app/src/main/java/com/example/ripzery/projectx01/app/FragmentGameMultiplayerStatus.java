@@ -1,14 +1,19 @@
 package com.example.ripzery.projectx01.app;
 
 import android.app.Activity;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.example.ripzery.projectx01.R;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -24,12 +29,17 @@ public class FragmentGameMultiplayerStatus extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private static final int ALL_TEXT[] = {R.id.tvInfo, R.id.tvPlayer1, R.id.tvPlayer2, R.id.tvPlayer3, R.id.tvPlayer4};
+    private static final int ALL_INFO_TEXT[] = {R.id.tvPlayer1Info1, R.id.tvPlayer1Info2, R.id.tvPlayer1Info3, R.id.tvPlayer1Info4
+            , R.id.tvPlayer2Info1, R.id.tvPlayer2Info2, R.id.tvPlayer2Info3, R.id.tvPlayer2Info4
+            , R.id.tvPlayer3Info1, R.id.tvPlayer3Info2, R.id.tvPlayer3Info3, R.id.tvPlayer3Info4
+            , R.id.tvPlayer4Info1, R.id.tvPlayer4Info2, R.id.tvPlayer4Info3, R.id.tvPlayer4Info4};
+
+    private HashMap<String, ArrayList<TextView>> allInfoTexts = new HashMap<>();
 
     private OnFragmentInteractionListener mListener;
     private View rootView;
+    private ArrayList<TextView> infoPlayer = new ArrayList<>();
 
     public FragmentGameMultiplayerStatus() {
         // Required empty public constructor
@@ -57,8 +67,8 @@ public class FragmentGameMultiplayerStatus extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+//            mParam1 = getArguments().getString(ARG_PARAM1);
+//            mParam2 = getArguments().getString(ARG_PARAM2);
         }
     }
 
@@ -66,7 +76,35 @@ public class FragmentGameMultiplayerStatus extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         rootView = inflater.inflate(R.layout.fragment_game_multiplayer_status, container, false);
+
+        Typeface light = Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf");
+
+        for (int id : ALL_TEXT) {
+            ((TextView) rootView.findViewById(id)).setTypeface(light);
+        }
+
+        int count = 1;
+        for (int id : ALL_INFO_TEXT) {
+            infoPlayer.add((TextView) rootView.findViewById(id));
+            infoPlayer.get((count - 1) % 4).setTypeface(light);
+            if (count % 4 == 0 && count != 1) {
+                allInfoTexts.put("p" + (count / 4), infoPlayer);
+                infoPlayer = new ArrayList<>();
+            }
+            count++;
+        }
+
+
+//        TextView tvInfo = (TextView)rootView.findViewById(R.id.tvInfo);
+//        TextView tvPlayer1 = (TextView)rootView.findViewById(R.id.tvPlayer1);
+//        TextView tvPlayer2 = (TextView)rootView.findViewById(R.id.tvPlayer2);
+//        TextView tvPlayer3 = (TextView)rootView.findViewById(R.id.tvPlayer3);
+//        TextView tvPlayer4 = (TextView)rootView.findViewById(R.id.tvPlayer4);
         return rootView;
+    }
+
+    public TextView getTextView(String key, int index) {
+        return allInfoTexts.get(key).get(index);
     }
 
     // TODO: Rename method, update argument and hook method into UI event

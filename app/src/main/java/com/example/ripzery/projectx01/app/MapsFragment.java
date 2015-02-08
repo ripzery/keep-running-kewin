@@ -192,7 +192,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
     private float ALPHA = 0.2f;
     private float[] orientation;
     private OnFragmentInteractionListener mListener;
-    private Activity mapsActivity;
+    private MultiplayerMapsActivity mapsActivity;
     private View rootView;
 
     public MapsFragment() {
@@ -208,7 +208,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mapsActivity = getActivity();
+        mapsActivity = (MultiplayerMapsActivity) getActivity();
     }
 
     @Override
@@ -1391,6 +1391,7 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
 
             distanceGoal -= distance * Me.distanceMultiplier;
             mCvDistanceStatus.setTitleText((int) distanceGoal + " m");
+            mapsActivity.getFragmentMultiplayerStatus().getTextView("p1", 1).setText("Distance : " + (int) (distanceGoal));
 
             // เลื่อนตำแหน่งของลูกษรใหม่
             myArrow.setPosition(mCurrentLatLng);
