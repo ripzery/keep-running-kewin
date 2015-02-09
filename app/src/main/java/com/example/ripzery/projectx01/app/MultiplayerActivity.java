@@ -319,6 +319,20 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         Log.d(TAG, "Room created, waiting for it to be ready...");
     }
 
+    public void startQuickGame() {
+        // quick-start a game with 1 randomly selected opponent
+        final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 1;
+        Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS,
+                MAX_OPPONENTS, 0);
+        RoomConfig.Builder rtmConfigBuilder = RoomConfig.builder(roomUpdateListener);
+        rtmConfigBuilder.setMessageReceivedListener(Singleton.myRealTimeMessageReceived);
+        rtmConfigBuilder.setRoomStatusUpdateListener(roomUpdateListener);
+        rtmConfigBuilder.setAutoMatchCriteria(autoMatchCriteria);
+        switchToScreen(SCREEN_WAIT);
+        keepScreenOn();
+        Games.RealTimeMultiplayer.create(mGoogleApiClient, rtmConfigBuilder.build());
+    }
+
 
     // Accept the given invitation.
     void acceptInviteToRoom(String invId) {
@@ -382,13 +396,13 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     public void onStart() {
         if (mCurScreen != SCREEN_GAME)
 //            switchToScreen(SCREEN_WAIT);
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            Log.w(TAG,
-                    "GameHelper: client was already connected on onStart()");
-        } else {
-            Log.d(TAG, "Connecting client.");
-            mGoogleApiClient.connect();
-        }
+            if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                Log.w(TAG,
+                        "GameHelper: client was already connected on onStart()");
+            } else {
+                Log.d(TAG, "Connecting client.");
+                mGoogleApiClient.connect();
+            }
         super.onStart();
     }
 
@@ -507,6 +521,9 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
                 intent = Games.RealTimeMultiplayer.getSelectOpponentsIntent(mGoogleApiClient, 1, 3);
                 switchToScreen(SCREEN_WAIT);
                 startActivityForResult(intent, RC_SELECT_PLAYERS);
+                break;
+            case R.id.quickMatchButton:
+                startQuickGame();
                 break;
         }
     }

@@ -103,6 +103,7 @@ public class FragmentGameMultiplayerStatus extends Fragment {
 
         for (int i = 0; i < Singleton.mParticipants.size(); i++) {
 
+//            Log.d("MultiplayerStatus : ",Singleton.mParticipants.get(i).getDisplayName() );
             if (!Singleton.mParticipants.get(i).getParticipantId().equals(Singleton.myId)) {
                 String name = Singleton.mParticipants.get(i).getDisplayName();
                 if (name.contains(" ")) {

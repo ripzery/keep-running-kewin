@@ -80,15 +80,13 @@
     <!-- Style for Multiplayer Mode -->
 
     <style name="SignInButton">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_width">match_parent</item>
     </style>
 
     <style name="motivation_text">
-        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">0dp</item>
-        <item name="android:layout_gravity">center</item>
-        <item name="android:layout_weight">0.3</item>
+        <item name="android:layout_weight">0.5</item>
         <item name="android:textSize">30sp</item>
         <item name="android:textColor">@color/circle_view</item>
     </style>
@@ -172,4 +170,14 @@
         <item name="android:textColor">@color/circle_view</item>
     </style>
 
+
+    <style name="MainMultiButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@color/AccentColor</item>
+        <item name="android:textColor">@color/circle_view</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:padding">16dp</item>
+    </style>
 </resources>

@@ -11,32 +11,54 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
-        android:layout_below="@id/my_awesome_toolbar"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
         <View
-            style="@style/empty_view"
-            android:layout_weight="0.5"></View>
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.7" />
 
-        <TextView
-            android:id="@+id/tvMotivated1"
-            style="@style/motivation_text"
-            android:text=" More players" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_below="@id/my_awesome_toolbar"
+            android:layout_weight="2.2"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvMotivated2"
-            style="@style/motivation_text"
-            android:text="More fun ! " />
+            <View
+                style="@style/empty_view"
+                android:layout_weight="0.6"></View>
 
+            <TextView
+                android:id="@+id/tvMotivated1"
+                style="@style/motivation_text"
+                android:gravity="center_vertical"
+                android:text=" &quot; Play together ," />
 
-        <com.google.android.gms.common.SignInButton
-            android:id="@+id/button_sign_in"
-            style="@style/SignInButton"
-            android:layout_gravity="center" />
+            <TextView
+                android:id="@+id/tvMotivated2"
+                style="@style/motivation_text"
+                android:gravity="center"
+                android:paddingBottom="30dp"
+                android:text=" Grow together &quot;" />
+
+            <com.google.android.gms.common.SignInButton
+                android:id="@+id/button_sign_in"
+                style="@style/SignInButton"
+                android:layout_height="56dp"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp" />
+
+            <View
+                style="@style/empty_view"
+                android:layout_weight="1"></View>
+
+        </LinearLayout>
 
         <View
-            style="@style/empty_view"
-            android:layout_weight="1"></View>
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.7" />
 
     </LinearLayout>
 

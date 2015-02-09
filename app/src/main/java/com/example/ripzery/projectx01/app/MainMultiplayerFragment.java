@@ -1,14 +1,21 @@
 package com.example.ripzery.projectx01.app;
 
 import android.app.Activity;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.example.ripzery.projectx01.R;
+import com.google.android.gms.games.Games;
+import com.squareup.picasso.Picasso;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -23,14 +30,18 @@ public class MainMultiplayerFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-
+    private static final int DES_ID[] = {R.id.tvQuickMatchDes, R.id.tvInviteDes, R.id.tvSignOutDes};
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-
     private OnFragmentInteractionListener mListener;
     private Button signOutButton;
     private Button inviteButton;
+    private Button quickMatchButton;
+    private LinearLayout playerStatusBar;
+    private TextView playerName;
+    private CircleImageView playerIcon;
+    private Typeface light;
 
     public MainMultiplayerFragment() {
         // Required empty public constructor
@@ -68,8 +79,34 @@ public class MainMultiplayerFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_main_multiplayer, container, false);
+        String myName = Games.Players.getCurrentPlayer(Singleton.mGoogleApiClient).getDisplayName();
+        String myImageUrl = Games.Players.getCurrentPlayer(Singleton.mGoogleApiClient).getHiResImageUrl();
+        light = Typeface.createFromAsset(getActivity().getAssets(), "fonts/Roboto-Light.ttf");
+
         signOutButton = (Button) rootView.findViewById(R.id.signOutButton);
         inviteButton = (Button) rootView.findViewById(R.id.inviteButton);
+        playerStatusBar = (LinearLayout) rootView.findViewById(R.id.layoutPlayerBar);
+        playerName = (TextView) rootView.findViewById(R.id.playerName);
+        playerName.setText(myName);
+        playerName.setTypeface(light);
+        playerIcon = (CircleImageView) rootView.findViewById(R.id.profile_image);
+//        playerIcon.setImageURI(myImageUrl);
+        Picasso.with(getActivity())
+                .load(myImageUrl)
+                .noFade()
+                .into(playerIcon);
+
+        for (int id : DES_ID) {
+            ((TextView) rootView.findViewById(id)).setTypeface(light);
+        }
+
+        quickMatchButton = (Button) rootView.findViewById(R.id.quickMatchButton);
+        quickMatchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onButtonPressed(R.id.quickMatchButton);
+            }
+        });
         inviteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

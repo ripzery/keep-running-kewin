@@ -1,25 +1,128 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/blur"
+    android:background="#29aa24"
     tools:context="com.example.ripzery.projectx01.app.MainMultiplayerFragment">
 
-    <Button
-        android:id="@+id/inviteButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="invite"
-        android:textSize="18sp" />
+    <LinearLayout
+        android:id="@+id/layoutPlayerBar"
+        android:layout_width="match_parent"
+        android:layout_height="128dp"
+        android:background="#3957fc"
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/signOutButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="20dp"
-        android:text="Sign-Out"
-        android:textSize="18sp" />
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/profile_image"
+            android:layout_width="84dp"
+            android:layout_height="84dp"
+            android:layout_gravity="center"
+            android:layout_margin="16dp"
+            app:border_color="@color/circle_view"
+            app:border_width="2dp" />
+
+        <TextView
+            android:id="@+id/playerName"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="name"
+            android:textColor="@color/circle_view"
+            android:textSize="18sp" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginTop="128dp"
+        android:background="@color/circle_view"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.4"></View>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="0.8"></View>
+
+            <Button
+                android:id="@+id/quickMatchButton"
+                style="@style/MainMultiButton"
+                android:text="QUICK MATCH" />
+
+            <TextView
+                android:id="@+id/tvQuickMatchDes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="Challenge a random opponent."
+                android:textColor="@color/BlurbColor" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"></View>
+
+            <Button
+                android:id="@+id/inviteButton"
+                style="@style/MainMultiButton"
+                android:text="invite" />
+
+            <TextView
+                android:id="@+id/tvInviteDes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="Invite friends to play a game."
+                android:textColor="@color/BlurbColor" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"></View>
+
+            <Button
+                android:id="@+id/signOutButton"
+                style="@style/MainMultiButton"
+                android:text="sign-out" />
+
+            <TextView
+                android:id="@+id/tvSignOutDes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="Sign Out"
+                android:textColor="@color/BlurbColor" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"></View>
+
+        </LinearLayout>
+
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.4"></View>
+
+    </LinearLayout>
+
 
 </FrameLayout>

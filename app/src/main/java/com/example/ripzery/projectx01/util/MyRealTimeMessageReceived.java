@@ -84,10 +84,6 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
 
 
         //TODO : Who is sender ?
-        Log.d(TAG, " All participants : " + Singleton.mParticipants.size());
-        Log.d(TAG, " Player 0 : " + Singleton.mParticipants.get(0).getDisplayName());
-        Log.d(TAG, " Player 1 : " + Singleton.mParticipants.get(1).getDisplayName());
-        Log.d(TAG, " Player 2 : " + Singleton.mParticipants.get(2).getDisplayName());
 
         int otherPlayerIndex = 2; // use for set text at the correct place
 
