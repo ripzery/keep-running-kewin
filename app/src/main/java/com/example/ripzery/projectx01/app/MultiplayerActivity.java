@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 import com.example.ripzery.projectx01.R;
 import com.example.ripzery.projectx01.util.MyRealTimeMessageReceived;
-import com.example.ripzery.projectx01.util.MyRoomUpdateListener;
+import com.example.ripzery.projectx01.util.MyUpdateRoomListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.games.Games;
@@ -74,7 +74,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
     private MapsFragment mapsFragment;
     private FragmentGameMultiplayerStatus fragmentGameMultiplayerStatus;
     private Singleton mSing;
-    private MyRoomUpdateListener roomUpdateListener;
+    private MyUpdateRoomListener roomUpdateListener;
     private MyRealTimeMessageReceived myRealTimeMessageReceived;
 
 
@@ -91,7 +91,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
         transaction.replace(R.id.fragment_container, signInFragment);
         transaction.commit();
 
-        roomUpdateListener = new MyRoomUpdateListener(this);
+        roomUpdateListener = new MyUpdateRoomListener(this);
         Singleton.myRealTimeMessageReceived = new MyRealTimeMessageReceived();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
