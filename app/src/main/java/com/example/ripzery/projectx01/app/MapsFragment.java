@@ -2145,5 +2145,5 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         }
     }
 
-    // test
+
 }

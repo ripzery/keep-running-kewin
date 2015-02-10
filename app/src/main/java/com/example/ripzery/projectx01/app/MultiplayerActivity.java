@@ -530,7 +530,7 @@ public class MultiplayerActivity extends ActionBarActivity implements SignInFrag
 
     @Override
     public void onUpdate() {
-
+        Log.d(TAG,"update");
     }
 
     @Override
