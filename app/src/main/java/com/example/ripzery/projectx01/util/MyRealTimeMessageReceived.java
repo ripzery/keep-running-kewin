@@ -121,4 +121,5 @@ public class MyRealTimeMessageReceived implements RealTimeMessageReceivedListene
     public void setMultiplayerMapsActivity(MultiplayerMapsActivity multiplayerMapsActivity) {
         this.multiplayerMapsActivity = multiplayerMapsActivity;
     }
+
 }

@@ -362,7 +362,6 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         handlerItemStatus = new Handler();
         //facUseBtn = (FloatingActionButton)rootView.findViewById(R.id.use_btn);
 
-
         itemBagLayout = (SlidingUpPanelLayout) rootView.findViewById(R.id.sliding_layout);
 
         // TODO : Manage button in dialog
@@ -2146,4 +2145,5 @@ public class MapsFragment extends Fragment implements SensorEventListener, Locat
         }
     }
 
+    // test
 }

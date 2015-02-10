@@ -7,6 +7,7 @@ import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.games.multiplayer.realtime.Room;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 /**
@@ -60,6 +61,16 @@ public class Singleton {
             }
         }
         return null;
+    }
+
+    public static byte[] toByteArray(double value) {
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putDouble(value);
+        return bytes;
+    }
+
+    public static double toDouble(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getDouble();
     }
 
 }
